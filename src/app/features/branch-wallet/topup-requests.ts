@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PermissionService } from '@core/auth/permission.service';
@@ -26,7 +27,7 @@ const STATUS_OPTIONS: SelectOption[] = [
   { value: '', label: 'All' }
 ];
 
-/** Top-up Requests — a company admin's approval queue for branch top-up asks; a branch
+/** Top-up Requests — a company admin's approval queue for branch and customer top-up asks; a branch
  *  manager sees the same list scoped to their own branch (read-only, no approve/reject).
  *  Approving credits the wallet server-side (`WalletService.credit`); nothing here calls
  *  the money path directly. */
@@ -34,12 +35,12 @@ const STATUS_OPTIONS: SelectOption[] = [
   selector: 'app-topup-requests',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, UiCard, UiLoader, UiButton, UiSelect, UiAutocomplete],
+  imports: [ReactiveFormsModule, RouterLink, DatePipe, UiCard, UiLoader, UiButton, UiSelect, UiAutocomplete],
   template: `
     <div class="page">
       <header class="page__head">
         <div><h1 class="text-h1">Top-up Requests</h1>
-          <p class="text-caption">{{ isAdmin() ? 'Branch asks to fund their wallet — approve to credit, reject to decline.' : 'Your branch\\'s top-up requests and their status.' }}</p></div>
+          <p class="text-caption">{{ isAdmin() ? 'Branches and customers asking to fund their wallet — approve to credit, reject to decline.' : 'Your branch\\'s top-up requests and their status.' }}</p></div>
         <app-button variant="stroked" icon="refresh" (pressed)="load()">Refresh</app-button>
       </header>
 
@@ -62,7 +63,7 @@ const STATUS_OPTIONS: SelectOption[] = [
             <table class="tbl">
               <thead>
                 <tr>
-                  <th>#</th><th>Amount</th><th>Remarks</th><th>Proof</th><th>Status</th><th>Requested</th>
+                  <th>#</th><th>For</th><th>Amount</th><th>Remarks</th><th>Proof</th><th>Status</th><th>Requested</th>
                   @if (isAdmin()) { <th class="tbl--right">Actions</th> }
                 </tr>
               </thead>
@@ -70,6 +71,9 @@ const STATUS_OPTIONS: SelectOption[] = [
                 @for (r of rows(); track r.id; let i = $index) {
                   <tr>
                     <td>{{ i + 1 }}</td>
+                    <td>
+                      @if (r.customerId) { <a class="link-btn" [routerLink]="['/customers', r.customerId]">Customer</a> } @else { Branch }
+                    </td>
                     <td class="mono">{{ money(r.requestedAmount) }}</td>
                     <td>{{ r.remarks || '—' }}</td>
                     <td>
