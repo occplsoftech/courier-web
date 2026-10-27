@@ -112,7 +112,9 @@ export type RechargeAttemptStatus = 'PENDING' | 'SUCCESS' | 'FAILED';
 export interface RechargeAttempt {
   id: string;
   transactionNo: string;
-  branchId: string;
+  /** Null for a customer's recharge, which has `customerId` instead. */
+  branchId: string | null;
+  customerId?: string | null;
   branchCode: string | null;
   branchName: string | null;
   amount: number;
@@ -225,7 +227,9 @@ export interface TopupRequest {
   id: string;
   companyId: string;
   walletId: string;
-  branchId: string;
+  /** Null for a customer's request, which has `customerId` instead. */
+  branchId?: string | null;
+  customerId?: string | null;
   requestedAmount: number;
   remarks?: string | null;
   proofImageUrl?: string | null;

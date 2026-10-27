@@ -65,6 +65,8 @@ export const API = {
   /** Loading Sheet, Trip Hire Challan (THC), In Scan, Out For Delivery, Deliver. */
   shipmentMovement: '/shipment-movement',
   branchWallet: '/branch-wallet',
+  /** A business customer's own prepaid wallet (staff side): `${customers}/{id}/wallet`, `/transactions`, `/credit`, `/debit`. */
+  customerWallet: (customerId: string) => `/customers/${encodeURIComponent(customerId)}/wallet`,
   /** Hub Operations — out-scan and exceptions (the genuinely new surface). A hub itself
    *  is a `Branch` row with `branchType: 'HUB'`, so Hub listing reuses `API.branches`
    *  with that filter, not its own endpoint; in-scan/Load Sheet/dispatch reuse

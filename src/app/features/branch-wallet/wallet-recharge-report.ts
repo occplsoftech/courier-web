@@ -85,7 +85,7 @@ const STATUS_TABS: { value: RechargeAttemptStatus | null; label: string }[] = [
         <ng-template #row let-a>
           <td><div class="tc">{{ a.createdAt | date:'dd MMM y' }}</div>
               <div class="tc__sub">{{ a.createdAt | date:'HH:mm:ss' }}</div></td>
-          <td>{{ a.branchName || '—' }}<div class="tc__sub">{{ a.branchCode }}</div></td>
+          <td>{{ a.branchName || (a.customerId ? 'Customer wallet' : '—') }}<div class="tc__sub">{{ a.branchCode }}</div></td>
           <td><span class="mono">{{ a.transactionNo }}</span></td>
           <td><app-status-badge [value]="a.mode" [label]="a.mode === 'ONLINE' ? 'Razorpay' : 'Manual'"
                                  [tone]="a.mode === 'ONLINE' ? 'info' : 'neutral'" /></td>
