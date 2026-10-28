@@ -377,9 +377,11 @@ export class RateCardForm implements OnInit {
   private setCard(c: RateCard, fillHead = false): void {
     this.card.set(c);
     if (fillHead) {
+      // The API leaves empty fields out of its JSON, so every optional one needs its own default here.
       this.head.setValue({
         code: c.code, name: c.name, fromZoneId: c.fromZoneId, effectiveFrom: c.effectiveFrom, effectiveTo: c.effectiveTo ?? '',
-        gstPercent: c.gstPercent, volumetricDivisor: c.volumetricDivisor, totalRounding: c.totalRounding, description: c.description ?? ''
+        gstPercent: c.gstPercent ?? null, volumetricDivisor: c.volumetricDivisor ?? null,
+        totalRounding: c.totalRounding ?? 'NEAREST_RUPEE', description: c.description ?? ''
       });
     }
   }
@@ -525,9 +527,9 @@ export class RateCardForm implements OnInit {
   protected editCharge(c: TariffCharge): void {
     this.editingCharge.set(c.id);
     this.charge.setValue({
-      code: c.code, name: c.name, calcMethod: c.calcMethod, value: c.value, minAmount: c.minAmount, maxAmount: c.maxAmount,
-      appliesWhen: c.appliesWhen, toZoneId: c.toZoneId ?? '', serviceTypeId: c.serviceTypeId ?? '', packageTypeId: c.packageTypeId ?? '',
-      displayOrder: c.displayOrder, status: c.status, taxable: c.taxable
+      code: c.code, name: c.name, calcMethod: c.calcMethod, value: c.value, minAmount: c.minAmount ?? null, maxAmount: c.maxAmount ?? null,
+      appliesWhen: c.appliesWhen ?? 'ALWAYS', toZoneId: c.toZoneId ?? '', serviceTypeId: c.serviceTypeId ?? '', packageTypeId: c.packageTypeId ?? '',
+      displayOrder: c.displayOrder ?? 0, status: c.status ?? 'ACTIVE', taxable: c.taxable ?? true
     });
   }
 
