@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
 import {
-  ChargeRequest, CreateTariffZoneRequest, LaneRequest, OptionsRequest, OptionsResponse, QuoteRequest, QuoteResponse, RateCard, RateCardRequest,
+  ChargeRequest, CreateTariffZoneRequest, LaneRequest, OptionsRequest, OptionsResponse, QuoteRequest, QuoteResponse, RateCard, RateCardRequest, TariffImportResult,
   TariffLocationRequest, TariffStatus, TariffZone, TariffZoneStatus, UpdateTariffZoneRequest, ZoneResolution, ZoneUsage
 } from '@core/models/zone-tariff.model';
 
@@ -47,6 +47,19 @@ export class ZoneTariffService {
   deleteLane(cardId: string, lane: { toZoneId: string; serviceTypeId: string; packageTypeId: string }) {
     const q = new URLSearchParams({ toZoneId: lane.toZoneId, serviceTypeId: lane.serviceTypeId, packageTypeId: lane.packageTypeId });
     return this.api.delete<RateCard>(`${API.tariffRateCards}/${cardId}/lanes?${q}`);
+  }
+
+  /** Reads the rate sheet and reports what it would do; nothing is saved. */
+  previewImport(cardId: string, file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return this.api.post<TariffImportResult>(`${API.tariffRateCards}/${cardId}/import/preview`, body);
+  }
+  /** All or nothing: refused while the sheet has problems; otherwise replaces every lane it contains. */
+  importSheet(cardId: string, file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return this.api.post<TariffImportResult>(`${API.tariffRateCards}/${cardId}/import`, body);
   }
 
   addCharge(cardId: string, body: ChargeRequest) { return this.api.post<RateCard>(`${API.tariffRateCards}/${cardId}/charges`, body); }

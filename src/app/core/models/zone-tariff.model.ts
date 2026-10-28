@@ -232,3 +232,21 @@ export interface OptionsResponse {
   /** Options that cannot carry this shipment, with why (usually: above the weight limit). */
   unavailable: { serviceTypeCode: string; serviceTypeName: string; packageTypeCode: string; reason: string }[];
 }
+
+/** Result of POST /tariff-rate-cards/{id}/import[/preview]. Row numbers are as Excel shows them. */
+export interface TariffImportResult {
+  rateCardCode: string;
+  fromZoneCode: string | null;
+  rowsRead: number;
+  duplicateRows: number;
+  skippedRows: number;
+  lanes: {
+    toZoneId: string; toZoneCode: string; serviceTypeId: string; serviceTypeCode: string;
+    packageTypeId: string; packageTypeCode: string; slabCount: number; summary: string;
+    /** The card already has rates for this lane; importing replaces them. */
+    replaces: boolean;
+  }[];
+  errors: { row: number | null; message: string }[];
+  warnings: { row: number | null; message: string }[];
+  imported: boolean;
+}
