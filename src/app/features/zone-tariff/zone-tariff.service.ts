@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
 import {
-  ChargeRequest, CreateTariffZoneRequest, LaneRequest, QuoteRequest, QuoteResponse, RateCard, RateCardRequest,
+  ChargeRequest, CreateTariffZoneRequest, LaneRequest, OptionsRequest, OptionsResponse, QuoteRequest, QuoteResponse, RateCard, RateCardRequest,
   TariffLocationRequest, TariffStatus, TariffZone, TariffZoneStatus, UpdateTariffZoneRequest, ZoneResolution, ZoneUsage
 } from '@core/models/zone-tariff.model';
 
@@ -58,4 +58,6 @@ export class ZoneTariffService {
   }
 
   quote(body: QuoteRequest) { return this.api.post<QuoteResponse>(`${API.tariffRateCards}/quote`, body); }
+  /** Every service and package type the applicable card has to the delivery zone, cheapest first. */
+  quoteOptions(body: OptionsRequest) { return this.api.post<OptionsResponse>(`${API.tariffRateCards}/quote/options`, body); }
 }

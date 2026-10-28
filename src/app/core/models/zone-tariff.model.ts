@@ -196,7 +196,12 @@ export interface QuoteResponse {
   rateCardCode: string;
   fromZone: QuoteZone;
   toZone: QuoteZone;
+  serviceTypeId: string;
   serviceTypeCode: string;
+  serviceTypeName: string;
+  /** The service type's promised transit days, if set. */
+  deliveryDays: number | null;
+  packageTypeId: string;
   packageTypeCode: string;
   oda: boolean;
   actualWeightKg: number;
@@ -211,4 +216,19 @@ export interface QuoteResponse {
   nonTaxableAmount: number;
   roundOff: number;
   total: number;
+}
+
+/** {@link QuoteRequest} without service and package type: the calculator prices every option. */
+export type OptionsRequest = Omit<QuoteRequest, 'serviceTypeId' | 'packageTypeId'>;
+
+export interface OptionsResponse {
+  rateCardId: string | null;
+  rateCardCode: string | null;
+  fromZone: QuoteZone | null;
+  toZone: QuoteZone | null;
+  oda: boolean;
+  /** Cheapest first. */
+  options: QuoteResponse[];
+  /** Options that cannot carry this shipment, with why (usually: above the weight limit). */
+  unavailable: { serviceTypeCode: string; serviceTypeName: string; packageTypeCode: string; reason: string }[];
 }

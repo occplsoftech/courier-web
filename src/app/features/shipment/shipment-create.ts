@@ -930,6 +930,20 @@ export class ShipmentCreate implements OnInit {
           widthCm: null, heightCm: null, declaredValue: null, fragile: false, dangerousGoods: false }]);
       }
     }
+    const fromTariff = this.route.snapshot.queryParamMap;
+    if (fromTariff.get('fromTariff')) {
+      // "Book" on a Tariff Calculator option: the destination, service, package and package details it priced.
+      this.form.patchValue({
+        deliveryPincode: fromTariff.get('deliveryPincode') ?? '',
+        serviceTypeId: fromTariff.get('serviceTypeId'), packageTypeId: fromTariff.get('packageTypeId')
+      });
+      const weight = Number(fromTariff.get('weight'));
+      if (weight > 0) {
+        const value = Number(fromTariff.get('declaredValue'));
+        this.voiceItems.set([{ itemName: 'Package', quantity: Number(fromTariff.get('parcels')) || 1, weight, lengthCm: null,
+          widthCm: null, heightCm: null, declaredValue: value > 0 ? value : null, fragile: false, dangerousGoods: false }]);
+      }
+    }
     this.breadcrumb.set(this.isBusinessBooking
       ? [{ label: 'Operations' }, { label: 'Business Customer Booking' }]
       : [{ label: 'Shipments', route: '/shipments' }, { label: 'New' }]);
