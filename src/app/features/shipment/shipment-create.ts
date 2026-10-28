@@ -128,6 +128,10 @@ type FreightOutcome =
                   <p class="hint">Expected delivery: {{ edp | date: 'mediumDate' }}</p>
                 }
               </div>
+              <div class="fld">
+                <app-select [control]="c('packageTypeId')" label="Package Type" [options]="packageTypeOptions()" [allowEmpty]="true" emptyLabel="Not set" placeholder="Not set" />
+                <p class="hint">Needed when your zone tariff prices this branch's bookings.</p>
+              </div>
               <label class="fld"><span class="fld__l">Shipment No. (optional)</span>
                 <input class="fld__i" [formControl]="c('manualShipmentNumber')" placeholder="Leave blank to auto-generate" maxlength="30" /></label>
             </div>
@@ -430,7 +434,9 @@ type FreightOutcome =
                 <div class="factor-row">
                   <span class="sum__lbl">Rate / KG
                     <span class="hint">(min {{ f.ratePerKg | number: '1.2-2' }}, increase only)</span>
-                    @if (f.customerZoneName) { <span class="hint">· Customer zone {{ f.customerZoneName }}</span> }
+                    @if (f.customerZoneName) {
+                      <span class="hint">· {{ f.customerZoneName.startsWith('Zone tariff') ? f.customerZoneName + ' (' + f.weightSlabLabel + ')' : 'Customer zone ' + f.customerZoneName }}</span>
+                    }
                   </span>
                   <input class="factor-input" type="number" step="0.01" [min]="f.ratePerKg"
                          [value]="ratePerKgOverride() ?? f.ratePerKg"
@@ -672,6 +678,7 @@ export class ShipmentCreate implements OnInit {
   /** The booking branch's own city — shown as "From City" instead of a branch picker. */
   protected readonly myBranchCity = signal<string | null>(null);
   protected readonly serviceTypeOptions = signal<SelectOption[]>([]);
+  protected readonly packageTypeOptions = signal<SelectOption[]>([]);
   /** Service Type id -> `deliveryDays`, from the raw directory (options() only carries
    *  {value,label}) — feeds {@link expectedDeliveryPreview}. */
   private readonly serviceTypeDeliveryDays = signal<Map<string, number | null>>(new Map());
@@ -864,6 +871,7 @@ export class ShipmentCreate implements OnInit {
     receiverAddress: ['', [Validators.required, Validators.maxLength(500)]],
     receiverContact: ['', [Validators.required, Validators.maxLength(20)]],
     serviceTypeId: [null as string | null, Validators.required],
+    packageTypeId: [null as string | null],
     paymentModeId: [null as string | null, Validators.required],
     bookingDate: [{ value: today(), disabled: true }],
     numberOfPackages: [1],
@@ -1082,6 +1090,7 @@ export class ShipmentCreate implements OnInit {
       this.serviceTypeOptions.set(o);
       if (o.length && !this.form.get('serviceTypeId')?.value) this.form.get('serviceTypeId')?.setValue(o[0].value);
     });
+    this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
     this.masters.serviceTypeDirectory().subscribe((rows) => {
       this.serviceTypeDeliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays])));
       this.updateDeliveryPreview();
@@ -1111,6 +1120,9 @@ export class ShipmentCreate implements OnInit {
     // (it doesn't care about service type/package type/payment mode/declared value/
     // booking date); weight reschedules via {@link onWeight}.
     this.c('deliveryPincode').valueChanges.subscribe(() => this.scheduleFreightCalc());
+    // The zone tariff prices by service type and package type too (District Level Freight ignores them).
+    merge(this.c('serviceTypeId').valueChanges, this.c('packageTypeId').valueChanges)
+      .subscribe(() => this.scheduleFreightCalc());
     // A Business Customer zone's FOV % is a share of the declared value, so it moves with it.
     this.c('declaredValue').valueChanges.subscribe(() => {
       if (this.selectedBusinessCustomer()) this.scheduleFreightCalc();
@@ -1730,7 +1742,9 @@ export class ShipmentCreate implements OnInit {
     return this.freightCalculationService.calculate({
       bookingBranchId: v.bookingBranchId, destinationPincode: v.deliveryPincode,
       destinationAreaId: v.destinationAreaId, chargeableWeight: this.weight().chargeable,
-      businessCustomerId: this.selectedBusinessCustomer() || null, declaredValue: v.declaredValue || null
+      businessCustomerId: this.selectedBusinessCustomer() || null, declaredValue: v.declaredValue || null,
+      serviceTypeId: v.serviceTypeId || null, packageTypeId: v.packageTypeId || null,
+      numberOfPackages: v.numberOfPackages || 1, bookingDate: v.bookingDate || null
     }).pipe(
       switchMap((data) => of({ ok: true, data }) as Observable<FreightOutcome>),
       catchError((e: HttpErrorResponse) =>
@@ -1783,7 +1797,7 @@ export class ShipmentCreate implements OnInit {
       pickupPincode: v.pickupPincode, deliveryPincode: v.deliveryPincode,
       senderName: v.senderName, senderAddress: v.senderAddress, senderContact: v.senderContact,
       receiverName: v.receiverName, receiverAddress: v.receiverAddress, receiverContact: v.receiverContact,
-      serviceTypeId: v.serviceTypeId, paymentModeId: v.paymentModeId,
+      serviceTypeId: v.serviceTypeId, packageTypeId: v.packageTypeId || null, paymentModeId: v.paymentModeId,
       bookingDate: v.bookingDate || null,
       declaredValue: v.declaredValue || null, numberOfPackages: v.numberOfPackages || 1,
       remarks: v.remarks || null, otherCharges: this.otherCharges() || null,
@@ -1865,7 +1879,7 @@ export class ShipmentCreate implements OnInit {
             senderName: v.senderName, senderAddress: v.senderAddress, senderContact: v.senderContact,
             receiverName: v.receiverName, receiverAddress: v.receiverAddress, receiverContact: v.receiverContact,
             serviceTypeLabel: this.labelOf(this.serviceTypeOptions(), v.serviceTypeId),
-            packageTypeLabel: '—',
+            packageTypeLabel: v.packageTypeId ? this.labelOf(this.packageTypeOptions(), v.packageTypeId) : '—',
             paymentModeLabel: this.labelOf(this.paymentModeOptions(), v.paymentModeId),
             deliveryType: v.deliveryType,
             numberOfPackages: v.numberOfPackages || 1, chargeableWeight: this.weight().chargeable,

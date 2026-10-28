@@ -286,6 +286,36 @@ export const routes: Routes = [
         data: { roles: COMPANY_ONLY, businessOnly: true },
         loadComponent: () => import('@features/customer/customer-list').then((m) => m.CustomerList)
       },
+      // Zone Tariff: company zones, rate cards (slabs + charges) and the calculator. Writes are
+      // COMPANY_ADMIN on the server; the calculator is a read any booking user may run.
+      {
+        path: 'zone-tariff/zones', title: 'Tariff Zones', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/tariff-zone-list').then((m) => m.TariffZoneList)
+      },
+      {
+        path: 'zone-tariff/zones/new', title: 'New Tariff Zone', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/tariff-zone-form').then((m) => m.TariffZoneForm)
+      },
+      {
+        path: 'zone-tariff/zones/:id', title: 'Tariff Zone', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/tariff-zone-form').then((m) => m.TariffZoneForm)
+      },
+      {
+        path: 'zone-tariff/rate-cards', title: 'Rate Cards', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/rate-card-list').then((m) => m.RateCardList)
+      },
+      {
+        path: 'zone-tariff/rate-cards/new', title: 'New Rate Card', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/rate-card-form').then((m) => m.RateCardForm)
+      },
+      {
+        path: 'zone-tariff/rate-cards/:id', title: 'Rate Card', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/zone-tariff/rate-card-form').then((m) => m.RateCardForm)
+      },
+      {
+        path: 'zone-tariff/calculator', title: 'Tariff Calculator', canActivate: [roleGuard], data: { roles: RATE_READERS },
+        loadComponent: () => import('@features/zone-tariff/tariff-quote').then((m) => m.TariffQuote)
+      },
       {
         path: 'business-customer/pricing-zones', title: 'Pricing Zones', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/business-customer/pricing-zone-list').then((m) => m.PricingZoneList)
