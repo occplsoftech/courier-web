@@ -82,4 +82,12 @@ describe('ZoneTariffService', () => {
     service.activateCard('c-1').subscribe();
     expect(http.expectOne(`${base}/tariff-rate-cards/c-1/activate`).request.method).toBe('PATCH');
   });
+  it('prices every option with POST to quote/options', () => {
+    service.quoteOptions({ originPincode: '411030', destinationPincode: '462001', actualWeightKg: 2.3, lengthCm: null, widthCm: null,
+      heightCm: null, pieces: 1, declaredValue: null, cod: false, bookingDate: null }).subscribe();
+    const req = http.expectOne(`${base}/tariff-rate-cards/quote/options`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body.serviceTypeId).toBeUndefined();
+    req.flush({ success: true, data: { options: [], unavailable: [] } });
+  });
 });
