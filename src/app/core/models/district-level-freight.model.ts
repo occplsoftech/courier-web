@@ -111,6 +111,14 @@ export interface FreightCalculationRequest {
   businessCustomerId?: string | null;
   /** Basis of the zone rate's FOV %. */
   declaredValue?: number | null;
+  /** With both set, a zone tariff covering the booking branch's pincode prices the freight
+   *  (after a Business Customer's own zone). */
+  serviceTypeId?: string | null;
+  packageTypeId?: string | null;
+  /** Pieces, for per-piece tariff charges. */
+  numberOfPackages?: number | null;
+  /** Picks the tariff rate card valid on that date; today when empty. */
+  bookingDate?: string | null;
 }
 
 /** Mirrors backend `FreightCalculationResponse` — every field Shipment Booking's own
@@ -134,8 +142,9 @@ export interface FreightCalculationResponse {
   odaApplicable: boolean;
   odaCharge: number;
   totalFreight: number;
-  /** Set when a Business Customer pricing zone priced the booking; `weightSlabLabel` then names it. */
+  /** Set when a Business Customer pricing zone priced the booking ("Zone tariff CODE: FROM → TO" when the
+   *  company zone tariff did); `weightSlabLabel` then names the zone or how the freight was worked out. */
   customerZoneName?: string | null;
-  /** Zone rate's docket + mathadi + pack + fuel + FOV — the minimum Other Charges. */
+  /** Zone rate's docket + mathadi + pack + fuel + FOV (or the tariff's charges) — the minimum Other Charges. */
   customerExtraCharges?: number;
 }

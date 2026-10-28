@@ -408,8 +408,8 @@ export interface ShipmentFields {
   receiverAddress: string;
   receiverContact: string;
   serviceTypeId: string;
-  /** No longer picked at Shipment Booking's own page (still required on Update — see
-   *  `shipment-edit.ts`). Optional here so `CreateShipmentRequest` can omit it. */
+  /** Optional at Shipment Booking (required on Update — see `shipment-edit.ts`). The zone
+   *  tariff prices by it, so booking offers it again. */
   packageTypeId?: string | null;
   paymentModeId: string;
   shipmentType?: ShipmentType | null;

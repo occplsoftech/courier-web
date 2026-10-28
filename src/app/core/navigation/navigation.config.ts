@@ -159,6 +159,18 @@ export const NAVIGATION: NavNode[] = [
     ]
   },
 
+  // Zone Tariff: the company's own cash rates — zones (state/district/city/pincode groups), rate
+  // cards per from zone with weight slabs and charges, and a calculator. Counter booking and the
+  // customer portal price from it when the booking branch's pincode is in a from zone.
+  {
+    id: 'zone-tariff', title: 'Zone Tariff', icon: 'travel_explore', order: 2.65,
+    children: [
+      { id: 'tariff-zones', title: 'Zones', icon: 'map', route: '/zone-tariff/zones', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
+      { id: 'tariff-rate-cards', title: 'Rate Cards', icon: 'request_quote', route: '/zone-tariff/rate-cards', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
+      { id: 'tariff-calculator', title: 'Calculator', icon: 'calculate', route: '/zone-tariff/calculator', roles: COMPANY_AND_BRANCH }
+    ]
+  },
+
   {
     id: 'rate-master', title: 'Rate Master', icon: 'price_change', order: 2.7,
     children: [

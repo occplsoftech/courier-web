@@ -33,6 +33,8 @@ export const API = {
   busCrossings: '/bus-crossings',
   busDivisions: '/bus-divisions',
   customerRates: '/customer-rates',
+  tariffZones: '/tariff-zones',
+  tariffRateCards: '/tariff-rate-cards',
   pdpRates: '/pdp-rates',
   pickups: '/pickups',
   pdpEarnings: '/pdp-earnings',
