@@ -90,4 +90,15 @@ describe('ZoneTariffService', () => {
     expect(req.request.body.serviceTypeId).toBeUndefined();
     req.flush({ success: true, data: { options: [], unavailable: [] } });
   });
+  it('sends the sheet as multipart to preview and import', () => {
+    const file = new File(['x'], 'rates.xlsx');
+    service.previewImport('c-1', file).subscribe();
+    const preview = http.expectOne(`${base}/tariff-rate-cards/c-1/import/preview`);
+    expect(preview.request.method).toBe('POST');
+    expect((preview.request.body as FormData).get('file')).toBeTruthy();
+    preview.flush({ success: true, data: { lanes: [], errors: [], warnings: [] } });
+
+    service.importSheet('c-1', file).subscribe();
+    expect(http.expectOne(`${base}/tariff-rate-cards/c-1/import`).request.method).toBe('POST');
+  });
 });

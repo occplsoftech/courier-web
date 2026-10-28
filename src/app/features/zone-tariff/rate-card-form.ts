@@ -9,7 +9,7 @@ import { PermissionService } from '@core/auth/permission.service';
 import { AppRole } from '@core/models/role.model';
 import {
   APPLIES_LABELS, CALC_LABELS, ChargeAppliesWhen, ChargeCalcMethod, ChargeRequest, ROUNDING_LABELS, RateCard,
-  RateLane, RateSlab, SlabRateType, TariffCharge, TariffStatus, TotalRounding
+  RateLane, RateSlab, SlabRateType, TariffCharge, TariffImportResult, TariffStatus, TotalRounding
 } from '@core/models/zone-tariff.model';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiInput } from '@shared/components/ui-input/ui-input';
@@ -148,6 +148,39 @@ function defaultSlabs(): RateSlab[] {
             }
           </app-card>
 
+          @if (canUpdate()) {
+            <app-card title="Import from Excel" subtitle="The cash-booking sheet: From zone, To zone, State, City, Mode, Product, Applicable From, Weight From, Weight To, Rate, Rate Type. Preview first; the import is all or nothing and replaces only the lanes in the sheet.">
+              <div class="imp">
+                <input #fileInput type="file" accept=".xlsx,.xls" (change)="pickFile($event)" hidden />
+                <app-button variant="stroked" icon="upload_file" (pressed)="fileInput.click()">{{ importFile() ? importFile()!.name : 'Choose file' }}</app-button>
+                <app-button variant="stroked" icon="preview" [disabled]="!importFile()" [loading]="previewing()" (pressed)="previewImport()">Preview</app-button>
+                @if (importPreview(); as p) {
+                  <app-button icon="file_download_done" [disabled]="p.errors.length > 0 || p.lanes.length === 0" [loading]="importing()" (pressed)="runImport()">Import {{ p.lanes.length }} lane(s)</app-button>
+                }
+              </div>
+              @if (importPreview(); as p) {
+                <p class="imp__sum">{{ p.rowsRead }} rows read · {{ p.duplicateRows }} repeated · {{ p.skippedRows }} skipped · <strong>{{ p.lanes.length }} lanes</strong>
+                  ({{ newLanes(p) }} new, {{ p.lanes.length - newLanes(p) }} replace existing)@if (p.errors.length) { · <span class="bad">{{ p.errors.length }} problem(s) to fix</span> }</p>
+                @for (w of p.warnings; track $index) { <p class="imp__warn"><mat-icon>info</mat-icon> {{ w.message }}</p> }
+                @if (p.errors.length) {
+                  <table class="tbl">
+                    <thead><tr><th>Row</th><th>Problem</th></tr></thead>
+                    <tbody>@for (e of p.errors; track $index) { <tr><td>{{ e.row ?? '—' }}</td><td class="bad">{{ e.message }}</td></tr> }</tbody>
+                  </table>
+                }
+                <table class="tbl">
+                  <thead><tr><th>To zone</th><th>Service</th><th>Package</th><th>Slabs</th><th></th></tr></thead>
+                  <tbody>
+                    @for (l of p.lanes; track l.toZoneId + l.serviceTypeId + l.packageTypeId) {
+                      <tr><td>{{ l.toZoneCode }}</td><td>{{ l.serviceTypeCode }}</td><td>{{ l.packageTypeCode }}</td><td class="slabs">{{ l.summary }}</td>
+                        <td>{{ l.replaces ? 'Replaces' : 'New' }}</td></tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </app-card>
+          }
+
           <app-card title="Charges" subtitle="Added on top of freight. Per charge code the most specific rule wins: one for a to zone beats one for a service type, which beats one for all.">
             @if (c.charges.length === 0) {
               <p class="empty">No charges yet — fuel, hamali, docket, COD, FOV, ODA…</p>
@@ -223,6 +256,11 @@ function defaultSlabs(): RateSlab[] {
     .slab--head { font:600 12px var(--font-sans); color:var(--content-muted); }
     .muted { color:var(--content-muted); text-align:center; }
     .hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:4px 0 0; }
+    .imp { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .imp__sum { font:400 14px var(--font-sans); margin:12px 0 8px; }
+    .imp__warn { display:flex; align-items:center; gap:6px; font:400 13px var(--font-sans); color:var(--content-muted); margin:4px 0; }
+    .imp__warn mat-icon { font-size:18px; width:18px; height:18px; }
+    .bad { color:var(--danger); }
     .chk { display:flex; align-items:center; gap:8px; font:400 14px var(--font-sans); margin-top:8px; }
     @media (max-width:900px){ .grid { grid-template-columns:1fr; } .slab { grid-template-columns:1fr 1fr; } }
   `]
@@ -291,6 +329,10 @@ export class RateCardForm implements OnInit {
     taxable: new FormControl<boolean>(true, { nonNullable: true })
   });
   private readonly calcTick = signal('PERCENT_OF_FREIGHT');
+  protected readonly importFile = signal<File | null>(null);
+  protected readonly importPreview = signal<TariffImportResult | null>(null);
+  protected readonly previewing = signal(false);
+  protected readonly importing = signal(false);
 
   protected readonly canCreate = computed(() => this.perms.canAccess({ roles: [AppRole.COMPANY_ADMIN], permissions: ['TARIFF_CREATE'] }));
   protected readonly canUpdate = computed(() => this.perms.canAccess({ roles: [AppRole.COMPANY_ADMIN], permissions: ['TARIFF_UPDATE'] }));
@@ -521,6 +563,41 @@ export class RateCardForm implements OnInit {
         next: (n) => { this.setCard(n); if (this.editingCharge() === c.id) this.resetCharge(); this.notify.success('Charge removed.'); },
         error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not remove the charge.')
       });
+    });
+  }
+
+  // ---------------------------------------------------------------- import
+
+  protected newLanes(p: TariffImportResult): number { return p.lanes.filter((l) => !l.replaces).length; }
+
+  protected pickFile(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.importFile.set(input.files?.[0] ?? null);
+    this.importPreview.set(null);
+    input.value = '';
+  }
+
+  protected previewImport(): void {
+    const file = this.importFile();
+    if (!file) return;
+    this.previewing.set(true);
+    this.service.previewImport(this.cardId!, file).subscribe({
+      next: (p) => { this.previewing.set(false); this.importPreview.set(p); },
+      error: (e: HttpErrorResponse) => { this.previewing.set(false); this.importPreview.set(null); this.notify.error(e.error?.message ?? 'Could not read the sheet.'); }
+    });
+  }
+
+  protected runImport(): void {
+    const file = this.importFile();
+    if (!file) return;
+    this.importing.set(true);
+    this.service.importSheet(this.cardId!, file).subscribe({
+      next: (r) => {
+        this.importing.set(false); this.importPreview.set(null); this.importFile.set(null);
+        this.notify.success(`Imported ${r.lanes.length} lane(s).`);
+        this.service.card(this.cardId!).subscribe((c) => this.setCard(c));
+      },
+      error: (e: HttpErrorResponse) => { this.importing.set(false); this.notify.error(e.error?.message ?? 'Could not import the sheet.'); }
     });
   }
 
