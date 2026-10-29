@@ -122,7 +122,10 @@ interface Card {
 
                 <div class="hook">
                   <strong>Status updates</strong>
-                  @if (card.info.webhookUrl; as url) {
+                  @if (card.info.statusPush === false) {
+                    <span class="hint">Shipment statuses are checked with {{ card.info.name }} every hour. {{ card.info.name }} has no
+                      webhook for instant updates.</span>
+                  } @else if (card.info.webhookUrl; as url) {
                     <span class="hint">Shipment statuses are checked with {{ card.info.name }} every hour. For instant updates, paste
                       this address in {{ card.info.name }}'s panel ({{ hookWhere(card.info.code) }}).</span>
                     <div class="hook__row">

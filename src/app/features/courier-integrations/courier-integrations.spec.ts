@@ -63,6 +63,13 @@ describe('CourierIntegrations', () => {
     await Promise.resolve();
   });
 
+  it('says a courier without webhooks (sKart) is checked hourly, with no address to paste', () => {
+    const fixture = create(shiprocket({ code: 'SKART', name: 'sKart International', statusPush: false, webhookUrl: null }));
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('sKart International has no webhook for instant updates');
+    expect(text).not.toContain('Save this courier to get its webhook address');
+  });
+
   it('has no webhook address before the courier is saved', () => {
     const unsaved = create(shiprocket({ webhookUrl: null }));
     expect(unsaved.nativeElement.textContent).toContain('Save this courier to get its webhook address');
