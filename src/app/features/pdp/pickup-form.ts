@@ -49,6 +49,15 @@ const SLOTS: SelectOption[] = ['Morning (9-12)', 'Afternoon (12-4)', 'Evening (4
               <app-input class="wide" [control]="c('remarks')" label="Remarks" [maxLength]="500" />
             </div>
           </app-card>
+          @if (photos().length) {
+            <app-card title="Parcel photos from the customer" subtitle="Added by the customer when booking. Click one to open it full size.">
+              <ul class="photos">
+                @for (ph of photos(); track ph.id) {
+                  <li>@if (ph.url) { <a [href]="ph.url" target="_blank" rel="noopener"><img [src]="ph.url" [alt]="ph.name" /></a> }</li>
+                }
+              </ul>
+            </app-card>
+          }
           <div class="bar">
             <app-button variant="stroked" (pressed)="back()">Cancel</app-button>
             <app-button type="submit" icon="save" [loading]="saving()">{{ editing() ? 'Save Changes' : 'Create Pickup' }}</app-button>
@@ -59,6 +68,9 @@ const SLOTS: SelectOption[] = ['Morning (9-12)', 'Afternoon (12-4)', 'Evening (4
   `,
   styles: [`
     .f { display:flex; flex-direction:column; gap:16px; }
+    .photos { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:12px; }
+    .photos li { aspect-ratio:1; border-radius:10px; overflow:hidden; border:1px solid var(--surface-border); background:var(--surface-muted); }
+    .photos img { width:100%; height:100%; object-fit:cover; display:block; }
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; align-items:end; }
     .wide { grid-column:span 2; } .bar { display:flex; justify-content:flex-end; gap:10px; }
     @media (max-width:860px){ .grid { grid-template-columns:1fr; } .wide { grid-column:auto; } }
@@ -94,6 +106,22 @@ export class PickupForm implements OnInit {
     remarks: ['']
   });
 
+  protected readonly photos = signal<{ id: string; name: string; url: string | null }[]>([]);
+
+  /** The customer's parcel photos, fetched as blobs (the endpoint needs the sign-in header). A pickup without any shows nothing. */
+  private loadPhotos(pickupId: string): void {
+    this.svc.photos(pickupId).subscribe({
+      next: (list) => {
+        this.photos.set(list.map((p) => ({ id: p.id, name: p.fileName, url: null as string | null })));
+        list.forEach((p) => this.svc.photoFile(pickupId, p.id).subscribe({
+          next: (blob) => this.photos.update((l) => l.map((x) => x.id === p.id ? { ...x, url: URL.createObjectURL(blob) } : x)),
+          error: () => undefined
+        }));
+      },
+      error: () => undefined
+    });
+  }
+
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Pickup Delivery Partner Management' }, { label: 'Pickup Requests', route: '/pdp/pickups' }, { label: this.id ? 'Edit' : 'New' }]);
     this.pdp.partners({ page: 0, size: 200 }).subscribe((r) =>
@@ -108,6 +136,7 @@ export class PickupForm implements OnInit {
             preferredDate: p.preferredDate ?? '', preferredSlot: p.preferredSlot ?? '', remarks: p.remarks ?? ''
           });
           this.loading.set(false);
+          this.loadPhotos(p.id);
         },
         error: () => { this.loading.set(false); this.back(); }
       });

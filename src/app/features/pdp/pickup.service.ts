@@ -29,5 +29,8 @@ export class PickupService {
   linkShipment(id: string, body: { shipmentId: string; shipmentNo?: string }) {
     return this.api.patch<PickupRequest>(`${API.pickups}/${id}/shipment`, body);
   }
+  /** Parcel photos the customer attached to the portal booking behind this pickup (none for staff-made pickups). */
+  photos(id: string) { return this.api.get<{ id: string; fileName: string; contentType: string }[]>(`${API.pickups}/${id}/photos`); }
+  photoFile(id: string, photoId: string) { return this.api.getBlob(`${API.pickups}/${id}/photos/${photoId}/file`); }
   cancel(id: string, reason: string) { return this.api.patch<PickupRequest>(`${API.pickups}/${id}/cancel`, { reason }); }
 }
