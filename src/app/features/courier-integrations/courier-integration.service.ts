@@ -37,6 +37,8 @@ export interface CourierIntegration {
   logoDataUrl: string | null;
   /** Where this courier pushes status updates for the company; null until the courier has been saved. */
   webhookUrl?: string | null;
+  /** False for a courier without status webhooks (sKart): statuses come from the hourly check only. */
+  statusPush?: boolean;
 }
 
 export interface SaveIntegrationRequest {
