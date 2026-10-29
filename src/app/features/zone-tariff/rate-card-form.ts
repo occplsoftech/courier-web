@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { concat, toArray } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -26,6 +27,8 @@ const APPLIES_OPTS: SelectOption[] = (Object.keys(APPLIES_LABELS) as ChargeAppli
 const CALC_OPTS: SelectOption[] = (Object.keys(CALC_LABELS) as ChargeCalcMethod[]).map((m) => ({ value: m, label: CALC_LABELS[m] }));
 const SLAB_TYPE_OPTS: SelectOption[] = [{ value: 'FIXED', label: 'Fixed' }, { value: 'PER_EXTRA_KG', label: 'Per extra kg' }];
 const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }];
+
+interface GridRow { key: string; lane: RateLane; slab: RateSlab; index: number; }
 
 type SlabGroup = FormGroup<{
   weightFromKg: FormControl<number | null>; weightToKg: FormControl<number | null>;
@@ -100,6 +103,74 @@ function defaultSlabs(): RateSlab[] {
             @if (c.lanes.length === 0) {
               <p class="empty">No rates yet. Add the first lane below.</p>
             } @else {
+              <div class="flt">
+                <label>To zone
+                  <select [value]="fZone()" (change)="fZone.set($any($event.target).value)">
+                    <option value="">All zones</option>
+                    @for (z of zoneFilterOpts(); track z.value) { <option [value]="z.value">{{ z.label }}</option> }
+                  </select></label>
+                <label>Service
+                  <select [value]="fService()" (change)="fService.set($any($event.target).value)">
+                    <option value="">All services</option>
+                    @for (z of serviceFilterOpts(); track z.value) { <option [value]="z.value">{{ z.label }}</option> }
+                  </select></label>
+                <label>Package
+                  <select [value]="fPackage()" (change)="fPackage.set($any($event.target).value)">
+                    <option value="">All packages</option>
+                    @for (z of packageFilterOpts(); track z.value) { <option [value]="z.value">{{ z.label }}</option> }
+                  </select></label>
+                @if (fZone() || fService() || fPackage()) { <button type="button" class="lnk" (click)="clearFilters()">Clear filters</button> }
+                <span class="flt__n">{{ rows().length }} rate(s) shown</span>
+              </div>
+
+              @if (canUpdate()) {
+                <div class="bulk">
+                  <strong>Change all {{ rows().length }} shown at once</strong>
+                  <select [value]="bulkMode()" (change)="bulkMode.set($any($event.target).value)" aria-label="How to change">
+                    <option value="PCT_UP">Increase by %</option><option value="PCT_DOWN">Decrease by %</option>
+                    <option value="ADD">Add ₹</option><option value="SUB">Subtract ₹</option><option value="SET">Set to ₹</option>
+                  </select>
+                  <input type="number" min="0" step="0.5" [value]="bulkValue()" (input)="bulkValue.set($any($event.target).valueAsNumber)" aria-label="Amount" />
+                  <select [value]="bulkType()" (change)="bulkType.set($any($event.target).value)" aria-label="Which slabs">
+                    <option value="ALL">Fixed + per-kg rates</option><option value="FIXED">Fixed rates only</option><option value="PER_EXTRA_KG">Per-kg rates only</option>
+                  </select>
+                  <app-button variant="stroked" icon="bolt" [disabled]="rows().length === 0 || !(bulkValue() >= 0)" (pressed)="applyBulk()">Apply</app-button>
+                </div>
+              }
+
+              <div class="scroll">
+                <table class="tbl">
+                  <thead><tr><th>To zone</th><th>Service</th><th>Package</th><th>Weight (kg)</th><th>Type</th><th class="num">Rate ₹</th><th></th></tr></thead>
+                  <tbody>
+                    @for (r of rows(); track r.key) {
+                      <tr [class.chg]="isChanged(r)">
+                        <td>{{ r.lane.toZoneCode }}</td><td>{{ r.lane.serviceTypeCode }}</td><td>{{ r.lane.packageTypeCode }}</td>
+                        <td>{{ weightLabel(r.slab) }}</td>
+                        <td>{{ r.slab.rateType === 'FIXED' ? 'Fixed' : '+ per ' + (r.slab.stepKg && Number(r.slab.stepKg) !== 1 ? r.slab.stepKg + ' kg' : 'kg') }}</td>
+                        <td class="num">
+                          @if (canUpdate()) {
+                            <input class="cell" type="number" min="0" step="0.5" [value]="rateOf(r)" (input)="setRate(r, $any($event.target).valueAsNumber)" [attr.aria-label]="'Rate ' + r.lane.toZoneCode + ' ' + weightLabel(r.slab)" />
+                          } @else { {{ rateOf(r) }} }
+                        </td>
+                        <td class="act">
+                          @if (isChanged(r)) { <button type="button" class="ico" aria-label="Undo" title="Undo" (click)="undo(r)"><mat-icon>undo</mat-icon></button> }
+                        </td>
+                      </tr>
+                    }
+                    @if (rows().length === 0) { <tr><td colspan="7" class="empty">No rates match these filters.</td></tr> }
+                  </tbody>
+                </table>
+              </div>
+
+              @if (canUpdate() && changedCount() > 0) {
+                <div class="savebar">
+                  <span><strong>{{ changedCount() }}</strong> rate(s) changed in {{ changedLanes().length }} lane(s) — not saved yet.</span>
+                  <app-button variant="stroked" (pressed)="discardChanges()">Discard</app-button>
+                  <app-button icon="save" [loading]="savingBulk()" (pressed)="saveChanges()">Save {{ changedCount() }} change(s)</app-button>
+                </div>
+              }
+
+              <h3 class="text-h3 lanes__h">Lanes</h3>
               <table class="tbl">
                 <thead><tr><th>To zone</th><th>Service</th><th>Package</th><th>Slabs</th><th></th></tr></thead>
                 <tbody>
@@ -246,6 +317,24 @@ function defaultSlabs(): RateSlab[] {
     .tbl td { padding:8px; border-bottom:1px solid var(--surface-border); vertical-align:middle; }
     .tbl tr.sel td { background:var(--surface-muted); }
     .tbl .slabs { color:var(--content-muted); }
+    .flt { display:flex; flex-wrap:wrap; gap:12px 16px; align-items:end; margin-bottom:12px; }
+    .flt label { display:flex; flex-direction:column; gap:4px; font:600 12px var(--font-sans); color:var(--content-muted); }
+    .flt select, .bulk select, .bulk input { height:36px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
+    .flt__n { margin-left:auto; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .lnk { border:0; background:transparent; color:var(--brand-primary, #c8102e); cursor:pointer; font:600 13px var(--font-sans); padding:8px 0; }
+    .bulk { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px; margin-bottom:12px; border:1px dashed var(--surface-border); border-radius:12px; background:var(--surface-muted); font:400 14px var(--font-sans); }
+    .bulk input { width:100px; }
+    .scroll { max-height:480px; overflow:auto; margin-bottom:12px; border:1px solid var(--surface-border); border-radius:8px; }
+    .scroll .tbl { margin:0; }
+    .scroll thead th { position:sticky; top:0; background:var(--surface-card, #fff); z-index:1; }
+    .num { text-align:right; }
+    .cell { width:96px; height:32px; text-align:right; border:1px solid var(--surface-border); border-radius:6px; padding:0 8px; background:transparent; color:var(--content-fg); font:400 13px var(--font-sans); }
+    .cell:focus { outline:2px solid var(--brand-primary, #c8102e); outline-offset:-1px; }
+    .tbl tr.chg td { background:color-mix(in srgb, #f59e0b 14%, transparent); }
+    .tbl tr.chg .cell { border-color:#f59e0b; font-weight:600; }
+    .savebar { position:sticky; bottom:0; display:flex; gap:10px; align-items:center; justify-content:flex-end; padding:12px; margin-bottom:16px; border:1px solid #f59e0b; border-radius:12px; background:var(--surface-card, #fff); font:400 14px var(--font-sans); }
+    .savebar span { margin-right:auto; }
+    .lanes__h { margin:8px 0; }
     .act { text-align:right; white-space:nowrap; }
     .ico { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .ico:hover:not([disabled]) { background:var(--surface-muted); color:var(--content-fg); }
@@ -281,6 +370,16 @@ export class RateCardForm implements OnInit {
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly savingLane = signal(false);
+  protected readonly savingBulk = signal(false);
+  protected readonly fZone = signal('');
+  protected readonly fService = signal('');
+  protected readonly fPackage = signal('');
+  protected readonly bulkMode = signal<'PCT_UP' | 'PCT_DOWN' | 'ADD' | 'SUB' | 'SET'>('PCT_UP');
+  protected readonly bulkValue = signal<number>(10);
+  protected readonly bulkType = signal<'ALL' | 'FIXED' | 'PER_EXTRA_KG'>('ALL');
+  /** Rates edited on screen and not saved yet, by row key. */
+  private readonly edits = signal<ReadonlyMap<string, number>>(new Map());
+  protected readonly Number = Number;
   protected readonly savingCharge = signal(false);
   protected readonly card = signal<RateCard | null>(null);
   protected readonly editingLane = signal<string | null>(null);
@@ -432,6 +531,99 @@ export class RateCardForm implements OnInit {
         next: () => { this.notify.success('Rate card deleted.'); this.back(); },
         error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not delete the rate card.')
       });
+    });
+  }
+
+  // ------------------------------------------------- rates grid (filter, edit in place, bulk change)
+
+  protected readonly rows = computed<GridRow[]>(() => {
+    const c = this.card();
+    if (!c) return [];
+    const z = this.fZone(), sv = this.fService(), pk = this.fPackage();
+    return c.lanes
+      .filter((l) => (!z || l.toZoneId === z) && (!sv || l.serviceTypeId === sv) && (!pk || l.packageTypeId === pk))
+      .flatMap((lane) => lane.slabs.map((slab, i) => ({ key: `${this.laneKey(lane)}:${i}`, lane, slab, index: i })));
+  });
+
+  private distinct(pick: (l: RateLane) => [string, string | null]): SelectOption[] {
+    const seen = new Map<string, string>();
+    (this.card()?.lanes ?? []).forEach((l) => { const [id, code] = pick(l); seen.set(id, code ?? id); });
+    return [...seen].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label));
+  }
+  protected readonly zoneFilterOpts = computed(() => this.distinct((l) => [l.toZoneId, l.toZoneCode]));
+  protected readonly serviceFilterOpts = computed(() => this.distinct((l) => [l.serviceTypeId, l.serviceTypeCode]));
+  protected readonly packageFilterOpts = computed(() => this.distinct((l) => [l.packageTypeId, l.packageTypeCode]));
+
+  protected clearFilters(): void { this.fZone.set(''); this.fService.set(''); this.fPackage.set(''); }
+
+  protected weightLabel(s: RateSlab): string {
+    const n = (x: number) => String(Number(x));
+    return s.rateType === 'FIXED' ? `up to ${n(s.weightToKg)}` : `${n(s.weightFromKg)} – ${n(s.weightToKg)}`;
+  }
+
+  protected rateOf(r: GridRow): number { return this.edits().get(r.key) ?? Number(r.slab.rate); }
+  protected isChanged(r: GridRow): boolean { return this.edits().has(r.key); }
+
+  protected setRate(r: GridRow, v: number): void {
+    if (isNaN(v) || v < 0) return;
+    this.putEdit(r, Math.round(v * 100) / 100);
+  }
+
+  private putEdit(r: GridRow, v: number): void {
+    const next = new Map(this.edits());
+    if (v === Number(r.slab.rate)) next.delete(r.key); else next.set(r.key, v);
+    this.edits.set(next);
+  }
+
+  protected undo(r: GridRow): void { const next = new Map(this.edits()); next.delete(r.key); this.edits.set(next); }
+
+  protected applyBulk(): void {
+    const v = this.bulkValue(), mode = this.bulkMode(), type = this.bulkType();
+    if (!(v >= 0)) return;
+    const next = new Map(this.edits());
+    for (const r of this.rows()) {
+      if (type !== 'ALL' && r.slab.rateType !== type) continue;
+      const cur = next.get(r.key) ?? Number(r.slab.rate);
+      const raw = mode === 'PCT_UP' ? cur * (1 + v / 100) : mode === 'PCT_DOWN' ? cur * (1 - v / 100)
+        : mode === 'ADD' ? cur + v : mode === 'SUB' ? cur - v : v;
+      const out = Math.max(0, Math.round(raw * 100) / 100);
+      if (out === Number(r.slab.rate)) next.delete(r.key); else next.set(r.key, out);
+    }
+    this.edits.set(next);
+  }
+
+  protected readonly changedCount = computed(() => this.edits().size);
+
+  protected changedLanes(): RateLane[] {
+    const keys = new Set([...this.edits().keys()].map((k) => k.slice(0, k.lastIndexOf(':'))));
+    return (this.card()?.lanes ?? []).filter((l) => keys.has(this.laneKey(l)));
+  }
+
+  protected discardChanges(): void { this.edits.set(new Map()); }
+
+  /** One request per changed lane (the API replaces a lane's slabs whole); the last answer is the refreshed card. */
+  protected saveChanges(): void {
+    const lanes = this.changedLanes();
+    if (lanes.length === 0) return;
+    const edits = this.edits();
+    this.savingBulk.set(true);
+    const calls = lanes.map((l) => this.service.saveLane(this.cardId!, {
+      toZoneId: l.toZoneId, serviceTypeId: l.serviceTypeId, packageTypeId: l.packageTypeId,
+      slabs: l.slabs.map((s, i) => ({
+        weightFromKg: Number(s.weightFromKg), weightToKg: Number(s.weightToKg), rateType: s.rateType,
+        rate: edits.get(`${this.laneKey(l)}:${i}`) ?? Number(s.rate), stepKg: s.stepKg
+      }))
+    }));
+    concat(...calls).pipe(toArray()).subscribe({
+      next: (cards) => {
+        this.savingBulk.set(false); this.edits.set(new Map());
+        this.setCard(cards[cards.length - 1]);
+        this.notify.success(`Saved ${edits.size} rate(s) in ${lanes.length} lane(s).`);
+      },
+      error: (e: HttpErrorResponse) => {
+        this.savingBulk.set(false);
+        this.notify.error((e.error?.message ?? 'Could not save the rates.') + ' Your changes are still on screen.');
+      }
     });
   }
 
