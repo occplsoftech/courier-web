@@ -101,6 +101,10 @@ export interface PickupRequest {
   cancelReason?: string | null;
   shipmentId?: string | null;
   shipmentNo?: string | null;
+  /** The branch this pickup belongs to (its pincode is mapped to it); it assigns the pickup. */
+  bookingBranchId?: string | null;
+  bookingBranchCode?: string | null;
+  bookingBranchName?: string | null;
   createdDate?: string | null;
   updatedDate?: string | null;
   version: number;
