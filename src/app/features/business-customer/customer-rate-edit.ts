@@ -15,7 +15,7 @@ import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { DialogService } from '@shared/components/ui-dialog/dialog.service';
 import { BusinessCustomerService } from './business-customer.service';
 
-/** Slabs are half-open [min,max): sorted by min, no overlap, only the last may be open-ended. */
+/** Slabs run from above their min up to and including their max: sorted by min, no overlap, only the last may be open-ended. */
 function slabsValid(array: AbstractControl): ValidationErrors | null {
   const rows = (array as FormArray).controls.map((g) => ({
     min: Number(g.get('minWeight')!.value), maxRaw: g.get('maxWeight')!.value as string | number | null
@@ -81,7 +81,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
             </div>
           </app-card>
 
-          <app-card title="Per-kg Weight Slabs" subtitle="Freight = chargeable weight × the rate of the slab it falls in. A slab covers min up to, not including, max.">
+          <app-card title="Per-kg Weight Slabs" subtitle="Freight = chargeable weight × the rate of the slab it falls in. A slab covers weights above its min up to and including its max: with 0–5 and 5–10, a 5 kg parcel is in the first slab and 5.3 kg in the second.">
             <div class="slabs">
               <div class="slab slab--head"><span>Min weight (kg)</span><span>Max weight (kg)</span><span>Rate / kg</span><span></span></div>
               @for (g of slabs.controls; track g; let i = $index) {
