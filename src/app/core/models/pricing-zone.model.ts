@@ -65,6 +65,10 @@ export interface CustomerRate {
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
   status: ZoneStatus;
+  /** The service type (AIR, SURFACE...) this card prices; null is the card for every service. */
+  serviceTypeId?: string | null;
+  serviceTypeCode?: string | null;
+  serviceTypeName?: string | null;
   slabs: RateSlab[];
   createdDate?: string | null;
   updatedDate?: string | null;
@@ -94,6 +98,7 @@ export interface CalculateRateRequest {
   declaredValue?: number | null;
   odaApplicable: boolean;
   bookingDate?: string | null;
+  serviceTypeId?: string | null;
 }
 
 export interface CalculateRateResponse {

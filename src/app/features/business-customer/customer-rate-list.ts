@@ -28,7 +28,8 @@ interface RateRow { zone: PricingZone; rate?: CustomerRate; }
     <div class="page">
       <header class="page__head">
         <div><h1 class="text-h1">Customer Rates</h1>
-          <p class="text-caption">Per-kg slab rates and charges for each customer pricing zone — {{ rows().length }} zone(s).</p></div>
+          <p class="text-caption">Per-kg slab rates and charges for each customer pricing zone, per service type (AIR, SURFACE, CARGO, PREMIUM) — {{ rows().length }} rate row(s).</p></div>
+        @if (canWrite()) { <div class="page__actions"><app-button icon="upload_file" (pressed)="importRates()">Import from Excel</app-button></div> }
       </header>
 
       <div class="filters">
@@ -41,6 +42,7 @@ interface RateRow { zone: PricingZone; rate?: CustomerRate; }
         <ng-template #row let-r>
           <td>{{ r.zone.customerName || '—' }}</td>
           <td><strong>{{ r.zone.zoneName }}</strong></td>
+          <td>{{ r.rate ? (r.rate.serviceTypeName || 'All services') : '—' }}</td>
           <td>{{ r.rate ? r.rate.slabs.length + ' slab(s)' : '—' }}</td>
           <td>{{ r.rate ? (lowest(r.rate) + ' – ' + highest(r.rate) + ' /kg') : '—' }}</td>
           <td>{{ r.rate ? (r.rate.minChargeableWeight + ' kg') : '—' }}</td>
@@ -76,6 +78,7 @@ export class CustomerRateList implements OnInit {
   protected readonly columns: TableColumn<RateRow>[] = [
     { key: 'customer', header: 'Customer' },
     { key: 'zone', header: 'Zone' },
+    { key: 'service', header: 'Service' },
     { key: 'slabs', header: 'Weight Slabs' },
     { key: 'range', header: 'Rate Range' },
     { key: 'minWt', header: 'Min Chargeable' },
@@ -96,8 +99,12 @@ export class CustomerRateList implements OnInit {
     const customerId = this.customerCtl.value || undefined;
     forkJoin({ zones: this.service.zones({ customerId }), rates: this.service.rates(customerId) }).subscribe({
       next: ({ zones, rates }) => {
-        const byZone = new Map((rates ?? []).map((r) => [r.zoneId, r]));
-        this.rows.set((zones ?? []).map((zone) => ({ zone, rate: byZone.get(zone.id) })));
+        // One row per rate card (a zone can have one per service type); a zone with none still shows once, as "Not set".
+        this.rows.set((zones ?? []).flatMap((zone): RateRow[] => {
+          const cards = (rates ?? []).filter((r) => r.zoneId === zone.id)
+            .sort((a, b) => (a.serviceTypeName ?? '').localeCompare(b.serviceTypeName ?? ''));
+          return cards.length ? cards.map((rate) => ({ zone, rate })) : [{ zone, rate: undefined }];
+        }));
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -106,5 +113,7 @@ export class CustomerRateList implements OnInit {
 
   protected lowest(r: CustomerRate): number { return Math.min(...r.slabs.map((s) => s.ratePerKg)); }
   protected highest(r: CustomerRate): number { return Math.max(...r.slabs.map((s) => s.ratePerKg)); }
-  protected open(row: RateRow): void { this.router.navigate(['/business-customer/rates', row.zone.id]); }
+  protected importRates(): void { this.router.navigate(['/business-customer/rates/import']); }
+  protected open(row: RateRow): void { this.router.navigate(['/business-customer/rates', row.zone.id],
+      { queryParams: row.rate?.serviceTypeId ? { serviceTypeId: row.rate.serviceTypeId } : {} }); }
 }
