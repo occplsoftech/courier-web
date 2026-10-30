@@ -31,6 +31,18 @@ describe('CourierIntegrationService', () => {
     r.flush({ success: true, data: {} });
   });
 
+  it('reads a customer\'s courier access with GET and replaces it with PUT', () => {
+    service.customerAccess('c-1').subscribe();
+    const g = http.expectOne(`${base}/customer-access/c-1`);
+    expect(g.request.method).toBe('GET');
+    g.flush({ success: true, data: { customerId: 'c-1', customised: false, couriers: [] } });
+    service.saveCustomerAccess('c-1', ['DELHIVERY']).subscribe();
+    const p = http.expectOne(`${base}/customer-access/c-1`);
+    expect(p.request.method).toBe('PUT');
+    expect(p.request.body).toEqual({ providerCodes: ['DELHIVERY'] });
+    p.flush({ success: true, data: { customerId: 'c-1', customised: true, couriers: [] } });
+  });
+
   it('tests with POST and disconnects with DELETE', () => {
     service.test('DELHIVERY').subscribe();
     const t = http.expectOne(`${base}/DELHIVERY/test`);

@@ -41,6 +41,10 @@ export interface CourierIntegration {
   statusPush?: boolean;
 }
 
+/** One courier in a customer's access list: `enabled` = the customer sees its rates in the portal. */
+export interface CustomerCourierOption { code: string; name: string; connected: boolean; enabled: boolean; }
+export interface CustomerCourierAccess { customerId: string; customised: boolean; couriers: CustomerCourierOption[]; }
+
 export interface SaveIntegrationRequest {
   enabled: boolean;
   /** Field key to value. A secret left out or blank keeps the stored one. */
@@ -52,6 +56,13 @@ export class CourierIntegrationService {
   private readonly api = inject(ApiService);
 
   list() { return this.api.get<CourierIntegration[]>(API.courierIntegrations); }
+  /** Which couriers a business customer sees in the shipping portal (none assigned = OCCPL Network only). */
+  customerAccess(customerId: string) {
+    return this.api.get<CustomerCourierAccess>(`${API.courierIntegrations}/customer-access/${encodeURIComponent(customerId)}`);
+  }
+  saveCustomerAccess(customerId: string, providerCodes: string[]) {
+    return this.api.put<CustomerCourierAccess>(`${API.courierIntegrations}/customer-access/${encodeURIComponent(customerId)}`, { providerCodes });
+  }
   save(code: string, body: SaveIntegrationRequest) {
     return this.api.put<CourierIntegration>(`${API.courierIntegrations}/${encodeURIComponent(code)}`, body);
   }
