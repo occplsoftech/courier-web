@@ -61,13 +61,14 @@ import { PickupAssignDialog, PickupCompleteDialog } from './pickup-dialogs';
           <td><div class="cs">{{ p.contactName }}</div><div class="text-caption">{{ p.contactMobile }}</div></td>
           <td>{{ p.addressLine }}<div class="text-caption">{{ p.city || '' }} {{ p.pincode }}</div></td>
           <td>{{ p.actualWeightKg ?? p.expectedWeightKg ?? '—' }}<div class="text-caption">{{ p.actualParcels ?? p.expectedParcels }} parcel(s)</div></td>
+          <td>{{ p.bookingBranchName || '—' }}<div class="text-caption">{{ p.bookingBranchCode || '' }}</div></td>
           <td>{{ p.pdpBranchName || '—' }}<div class="text-caption">{{ p.pdpBranchCode || '' }}</div></td>
           <td><app-status-badge [value]="p.status" [label]="label(p.status)" />
             @if (p.shipmentNo) { <div class="text-caption">{{ p.shipmentNo }}</div> }
             @if (p.status === 'REQUESTED' && p.rejectReason) { <div class="text-caption warn">Rejected: {{ p.rejectReason }}</div> }
             @if (p.status === 'FAILED') { <div class="text-caption warn">{{ p.failReason }}</div> }</td>
           <td class="col-actions">
-            @if (isAdmin() && (p.status === 'REQUESTED' || p.status === 'ASSIGNED' || p.status === 'ACCEPTED')) {
+            @if (canRoute(p) && (p.status === 'REQUESTED' || p.status === 'ASSIGNED' || p.status === 'ACCEPTED')) {
               <app-button variant="stroked" icon="person_add" (pressed)="assign(p)">{{ p.pdpBranchId ? 'Reassign' : 'Assign' }}</app-button>
             }
             @if (mine(p)) {
@@ -127,6 +128,7 @@ export class PickupList implements OnInit {
     { key: 'contact', header: 'Contact' },
     { key: 'address', header: 'Address' },
     { key: 'weight', header: 'Weight' },
+    { key: 'branch', header: 'Branch' },
     { key: 'partner', header: 'Partner' },
     { key: 'status', header: 'Status', width: '150px' },
     { key: 'actions', header: '', align: 'right' }
@@ -142,6 +144,11 @@ export class PickupList implements OnInit {
   /** A partner works only requests assigned to their own branch; an admin may work any. */
   protected mine(p: PickupRequest): boolean {
     return this.isAdmin() || (!!p.pdpBranchId && p.pdpBranchId === this.auth.user()?.branchId);
+  }
+
+  /** The admin, or the manager of the branch this pickup belongs to, assigns it to a pickup partner. */
+  protected canRoute(p: PickupRequest): boolean {
+    return this.isAdmin() || (!!p.bookingBranchId && p.bookingBranchId === this.auth.user()?.branchId);
   }
 
   private load(): void {
@@ -184,7 +191,8 @@ export class PickupList implements OnInit {
       .afterClosed().subscribe((id: string | undefined) => { if (id) this.run(this.svc.assign(p.id, id), 'Pickup assigned.'); });
     const suggestion$ = this.svc.suggestedPartner(p.id).pipe(catchError(() => of(undefined)));
     const partners$ = this.partnerOpts().length ? of(this.partnerOpts()) : this.pdp.partners({ page: 0, size: 200 }).pipe(
-      map((r) => r.content.filter((b) => b.status === 'ACTIVE').map((b) => ({ value: b.id, label: `${b.branchName} (${b.branchCode})` }))));
+      map((r) => r.content.filter((b) => b.status === 'ACTIVE').map((b) => ({ value: b.id, label: `${b.branchName} (${b.branchCode})` }))),
+      catchError(() => { this.notify.error('The pickup partners could not be loaded.'); return of([] as SelectOption[]); }));
     forkJoin({ opts: partners$, suggested: suggestion$ }).subscribe(({ opts, suggested }) => {
       this.partnerOpts.set(opts);
       open(opts, suggested ?? undefined);
