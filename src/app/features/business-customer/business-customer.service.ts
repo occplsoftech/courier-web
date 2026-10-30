@@ -43,6 +43,8 @@ export class BusinessCustomerService {
   // ---- rates ---------------------------------------------------------------------
   rates(customerId?: string) { return this.api.get<CustomerRate[]>(API.customerRates, { customerId }); }
   /** Emits `undefined` when the zone has no rate card yet (the backend omits `data`). */
+  rateSource(customerId: string) { return this.api.get<{ customerId: string; useBusinessRates: boolean }>(`${API.customerRates}/customer/${customerId}/source`); }
+  setRateSource(customerId: string, useBusinessRates: boolean) { return this.api.put<{ customerId: string; useBusinessRates: boolean }>(`${API.customerRates}/customer/${customerId}/source`, { useBusinessRates }); }
   rate(zoneId: string) { return this.api.get<CustomerRate | undefined>(`${API.customerRates}/zone/${zoneId}`); }
   saveRate(zoneId: string, body: SaveRateRequest) { return this.api.put<CustomerRate>(`${API.customerRates}/zone/${zoneId}`, body); }
   activateRate(zoneId: string) { return this.api.patch<CustomerRate>(`${API.customerRates}/zone/${zoneId}/activate`, {}); }

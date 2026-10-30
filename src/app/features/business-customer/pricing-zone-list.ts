@@ -43,6 +43,22 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
         <app-select [control]="statusCtl" label="Status" [options]="statusOpts" [allowEmpty]="true" emptyLabel="All" placeholder="All" />
       </div>
 
+      @if (customerCtl.value) {
+        <section class="source" aria-label="Charges for this customer">
+          <div>
+            <div class="source__title">Charges applied to this customer</div>
+            <p class="text-caption">
+              @if (businessRates()) { Business charges: this customer's own rate card (zones below) is used wherever it covers the destination and weight; company charges cover the rest. }
+              @else { Company charges: the company's standard rates are used. This customer's rate card is not applied. }
+            </p>
+          </div>
+          <div class="source__opts" role="radiogroup">
+            <label><input type="radio" name="src" [checked]="!businessRates()" [disabled]="!canUpdate()" (change)="setSource(false)" /> Company charges</label>
+            <label><input type="radio" name="src" [checked]="businessRates()" [disabled]="!canUpdate()" (change)="setSource(true)" /> Business charges</label>
+          </div>
+        </section>
+      }
+
       <app-table [columns]="columns" [rows]="zones()" [loading]="loading()"
                  emptyTitle="No pricing zones" emptyHint="Create a zone for a business customer to start pricing by destination."
                  (rowClick)="open($event)">
@@ -75,6 +91,9 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
   `,
   styles: [`
     .filters { display:grid; grid-template-columns:repeat(2,minmax(0,280px)); gap:16px; margin:0 0 16px; }
+    .source { display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap; padding:14px 16px; margin:0 0 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+    .source__title { font:600 14px var(--font-sans); } .source p { margin:4px 0 0; max-width:640px; }
+    .source__opts { display:flex; gap:20px; font:500 14px var(--font-sans); } .source__opts label { display:inline-flex; gap:6px; align-items:center; cursor:pointer; }
     .zn { font:600 14px var(--font-sans); } .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
@@ -96,6 +115,7 @@ export class PricingZoneList implements OnInit {
   protected readonly customerOpts = signal<SelectOption[]>([]);
   protected readonly zones = signal<PricingZone[]>([]);
   protected readonly loading = signal(true);
+  protected readonly businessRates = signal(false);
   private search = '';
 
   protected readonly columns: TableColumn<PricingZone>[] = [
@@ -115,7 +135,7 @@ export class PricingZoneList implements OnInit {
     this.breadcrumb.set([{ label: 'Business Customer' }, { label: 'Pricing Zone' }]);
     this.service.businessCustomers().subscribe((p) =>
       this.customerOpts.set(p.content.map((c) => ({ value: c.id, label: `${c.displayName} (${c.customerCode})` }))));
-    this.customerCtl.valueChanges.subscribe(() => this.load());
+    this.customerCtl.valueChanges.subscribe(() => { this.load(); this.loadSource(); });
     this.statusCtl.valueChanges.subscribe(() => this.load());
     this.load();
   }
@@ -129,6 +149,21 @@ export class PricingZoneList implements OnInit {
     }).subscribe({
       next: (z) => { this.zones.set(z ?? []); this.loading.set(false); },
       error: () => this.loading.set(false)
+    });
+  }
+
+  private loadSource(): void {
+    const id = this.customerCtl.value;
+    if (!id) return;
+    this.service.rateSource(id).subscribe({ next: (r) => this.businessRates.set(!!r?.useBusinessRates) });
+  }
+
+  setSource(useBusinessRates: boolean): void {
+    const id = this.customerCtl.value;
+    if (!id) return;
+    this.service.setRateSource(id, useBusinessRates).subscribe({
+      next: (r) => { this.businessRates.set(!!r?.useBusinessRates); this.notify.success(useBusinessRates ? 'Business charges applied to this customer.' : 'Company charges applied to this customer.'); },
+      error: (e) => { this.loadSource(); this.notify.error(e?.error?.message ?? 'Could not save.'); }
     });
   }
 
