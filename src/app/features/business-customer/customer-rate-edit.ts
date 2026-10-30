@@ -47,7 +47,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
       <header class="page__head">
         <div>
           <h1 class="text-h1">{{ zone()?.zoneName || 'Rate' }}</h1>
-          <p class="text-caption">{{ zone()?.customerName }} — slab rates and charges for this zone.</p>
+          <p class="text-caption">{{ zone()?.customerName }} — slab rates and charges for this zone, {{ typeLabel() }}.</p>
         </div>
         @if (rate()) {
           <div class="page__actions">
@@ -66,6 +66,17 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
       } @else if (!zone()) {
         <app-card><p class="empty">Zone not found or outside your scope.</p></app-card>
       } @else {
+        <app-card title="Service type" subtitle="A customer can have a different rate for each service. A card for all services applies to any service that has no card of its own.">
+          <div class="chips" role="tablist">
+            <button type="button" role="tab" class="chip" [class.on]="serviceTypeId() === null" (click)="pickType(null)">
+              All services @if (hasCard(null)) { <span class="dot" title="Rate set"></span> }</button>
+            @for (t of types(); track t.id) {
+              <button type="button" role="tab" class="chip" [class.on]="serviceTypeId() === t.id" (click)="pickType(t.id)">
+                {{ t.name }} @if (hasCard(t.id)) { <span class="dot" title="Rate set"></span> }</button>
+            }
+          </div>
+        </app-card>
+
         <form [formGroup]="form" (ngSubmit)="save()" class="rform">
           <app-card title="Charges" subtitle="Applied on top of the per-kg freight. Fuel % is on freight; FOV % is on declared value.">
             <div class="grid">
@@ -136,6 +147,12 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
   `,
   styles: [`
     .rform { display:flex; flex-direction:column; gap:16px; }
+    .chips { display:flex; flex-wrap:wrap; gap:10px; }
+    .chip { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px; border:1px solid var(--surface-border); background:var(--surface); color:var(--content-fg); font:600 13px var(--font-sans); cursor:pointer; }
+    .chip:hover { border-color:var(--brand-600); }
+    .chip.on { background:var(--occpl-gradient-button); border-color:var(--brand-700); color:#fff; }
+    .chip .dot { width:8px; height:8px; border-radius:50%; background:#1a9d5a; }
+    .chip.on .dot { background:#fff; }
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; align-items:end; }
     .slabs { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
     .slab { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 40px; gap:12px; align-items:center; }
@@ -164,6 +181,14 @@ export class CustomerRateEdit implements OnInit {
   private readonly router = inject(Router);
 
   private readonly zoneId = this.route.snapshot.paramMap.get('zoneId') ?? '';
+  /** The service type being edited; null is the card for all services. */
+  protected readonly serviceTypeId = signal<string | null>(this.route.snapshot.queryParamMap.get('serviceTypeId'));
+  protected readonly types = signal<Array<{ id: string; code: string; name: string }>>([]);
+  private readonly cardTypes = signal<Set<string | null>>(new Set());
+  protected readonly typeLabel = computed(() => {
+    const id = this.serviceTypeId();
+    return id ? `for ${this.types().find((t) => t.id === id)?.name ?? 'this service'}` : 'for all services';
+  });
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly quoting = signal(false);
@@ -196,13 +221,30 @@ export class CustomerRateEdit implements OnInit {
       next: (z) => {
         this.zone.set(z);
         this.breadcrumb.set([{ label: 'Business Customer' }, { label: 'Rate', route: '/business-customer/rates' }, { label: z.zoneName }]);
-        this.service.rate(this.zoneId).subscribe({
-          next: (r) => { this.hydrate(r ?? null); this.loading.set(false); },
-          error: () => { this.hydrate(null); this.loading.set(false); }
-        });
+        this.service.serviceTypes().subscribe({ next: (p) => this.types.set(p.content), error: () => this.types.set([]) });
+        this.loadCard();
       },
       error: () => { this.zone.set(null); this.loading.set(false); }
     });
+  }
+
+  private loadCard(): void {
+    this.service.cards(this.zoneId).subscribe({ next: (cs) => this.cardTypes.set(new Set((cs ?? []).map((c) => c.serviceTypeId ?? null))), error: () => undefined });
+    this.service.rate(this.zoneId, this.serviceTypeId()).subscribe({
+      next: (r) => { this.hydrate(r ?? null); this.loading.set(false); },
+      error: () => { this.hydrate(null); this.loading.set(false); }
+    });
+  }
+
+  protected hasCard(id: string | null): boolean { return this.cardTypes().has(id); }
+
+  protected pickType(id: string | null): void {
+    if (id === this.serviceTypeId()) return;
+    this.serviceTypeId.set(id);
+    this.result.set(null);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { serviceTypeId: id }, queryParamsHandling: 'merge', replaceUrl: true });
+    this.loading.set(true);
+    this.loadCard();
   }
 
   protected c(name: string) { return this.form.get(name) as import('@angular/forms').FormControl; }
@@ -255,8 +297,8 @@ export class CustomerRateEdit implements OnInit {
       version: this.rate()?.version ?? null
     };
     this.saving.set(true);
-    this.service.saveRate(this.zoneId, body).subscribe({
-      next: (r) => { this.saving.set(false); this.hydrate(r); this.result.set(null); this.notify.success('Rate saved.'); },
+    this.service.saveRate(this.zoneId, body, this.serviceTypeId()).subscribe({
+      next: (r) => { this.saving.set(false); this.hydrate(r); this.result.set(null); this.cardTypes.update((s) => new Set(s).add(this.serviceTypeId())); this.notify.success('Rate saved.'); },
       error: (e: HttpErrorResponse) => {
         this.saving.set(false);
         if (e.status === 409) this.notify.error('This rate changed since you opened it. Reload and try again.');
@@ -267,7 +309,7 @@ export class CustomerRateEdit implements OnInit {
 
   protected toggle(): void {
     const active = this.rate()!.status === 'ACTIVE';
-    (active ? this.service.deactivateRate(this.zoneId) : this.service.activateRate(this.zoneId)).subscribe({
+    (active ? this.service.deactivateRate(this.zoneId, this.serviceTypeId()) : this.service.activateRate(this.zoneId, this.serviceTypeId())).subscribe({
       next: (r) => { this.rate.set(r); this.notify.success(active ? 'Rate deactivated.' : 'Rate activated.'); },
       error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not change the rate status.')
     });
@@ -275,12 +317,12 @@ export class CustomerRateEdit implements OnInit {
 
   protected remove(): void {
     this.confirm.confirm({
-      title: 'Delete this rate?', message: 'The zone stays; only its rate card and slabs are removed.',
+      title: 'Delete this rate?', message: 'The zone stays; only this rate card and its slabs are removed.',
       confirmLabel: 'Delete', danger: true
     }).subscribe((ok) => {
       if (!ok) return;
-      this.service.deleteRate(this.zoneId).subscribe({
-        next: () => { this.notify.success('Rate deleted.'); this.hydrate(null); },
+      this.service.deleteRate(this.zoneId, this.serviceTypeId()).subscribe({
+        next: () => { this.notify.success('Rate deleted.'); this.hydrate(null); this.cardTypes.update((s) => { const n = new Set(s); n.delete(this.serviceTypeId()); return n; }); },
         error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not delete the rate.')
       });
     });
@@ -292,7 +334,7 @@ export class CustomerRateEdit implements OnInit {
     this.quoting.set(true);
     this.service.calculate({
       customerId: this.zone()!.customerId, districtId: loc.districtId, cityId: loc.cityId ?? null,
-      actualWeight: Number(this.qWeight.value), declaredValue: Number(this.qValue.value) || 0, odaApplicable: this.qOda()
+      actualWeight: Number(this.qWeight.value), declaredValue: Number(this.qValue.value) || 0, odaApplicable: this.qOda(), serviceTypeId: this.serviceTypeId()
     }).subscribe({
       next: (r) => { this.result.set(r); this.quoting.set(false); },
       error: (e: HttpErrorResponse) => { this.quoting.set(false); this.result.set(null); this.notify.error(e.error?.message ?? 'Could not calculate.'); }

@@ -377,6 +377,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/business-customer/customer-rate-list').then((m) => m.CustomerRateList)
       },
       {
+        path: 'business-customer/rates/import', title: 'Import Customer Rates', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/business-customer/customer-rate-import').then((m) => m.CustomerRateImport)
+      },
+      {
         path: 'business-customer/rates/:zoneId', title: 'Customer Rate', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/business-customer/customer-rate-edit').then((m) => m.CustomerRateEdit)
       },
