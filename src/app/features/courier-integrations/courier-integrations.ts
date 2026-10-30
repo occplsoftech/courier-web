@@ -10,6 +10,7 @@ import { UiInput } from '@shared/components/ui-input/ui-input';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { apiMessage } from '@features/communication/api-error';
 import { CourierIntegration, CourierIntegrationService } from './courier-integration.service';
+import { CustomerCourierAccessCard } from './customer-courier-access';
 
 interface Card {
   info: CourierIntegration;
@@ -25,7 +26,7 @@ interface Card {
   selector: 'app-courier-integrations',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatSlideToggleModule, DatePipe, UiCard, UiInput, UiButton],
+  imports: [ReactiveFormsModule, MatSlideToggleModule, DatePipe, UiCard, UiInput, UiButton, CustomerCourierAccessCard],
   template: `
     <div class="page">
       <header class="page__head">
@@ -142,6 +143,8 @@ interface Card {
           </app-card>
         }
       </section>
+
+      <app-customer-courier-access />
     </div>
   `,
   styles: [`
