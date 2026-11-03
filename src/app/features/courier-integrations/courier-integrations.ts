@@ -191,6 +191,7 @@ export class CourierIntegrations implements OnInit {
   hookWhere(code: string): string {
     return code === 'SHIPROCKET' ? 'Settings → API → Webhooks'
       : code === 'DELHIVERY' ? 'ask your Delhivery account manager to enable status push to it'
+      : code === 'PORTER' ? "Porter's webhook form in their API document, or ask pfe_kam@theporter.in; no token needed"
       : 'webhook settings';
   }
 
