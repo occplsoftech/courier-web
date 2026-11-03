@@ -70,6 +70,13 @@ describe('CourierIntegrations', () => {
     expect(text).not.toContain('Save this courier to get its webhook address');
   });
 
+  it("tells where Porter takes the webhook address (its form; no token)", () => {
+    const fixture = create(shiprocket({ code: 'PORTER', name: 'Porter', webhookUrl: 'https://courier.example/api/v1/webhooks/courier-tracking/abc123' }));
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain("Porter's webhook form");
+    expect(text).toContain('no token needed');
+  });
+
   it('has no webhook address before the courier is saved', () => {
     const unsaved = create(shiprocket({ webhookUrl: null }));
     expect(unsaved.nativeElement.textContent).toContain('Save this courier to get its webhook address');
