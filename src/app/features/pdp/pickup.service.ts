@@ -18,6 +18,8 @@ export class PickupService {
   update(id: string, body: SavePickupRequest) { return this.api.put<PickupRequest>(`${API.pickups}/${id}`, body); }
   assign(id: string, pdpBranchId: string) { return this.api.patch<PickupRequest>(`${API.pickups}/${id}/assign`, { pdpBranchId }); }
   /** Partner mapped to the pickup's pincode (Pincode Branch Mapping); undefined when none. */
+  /** Active pickup partners this user may assign a pickup to (admin and branch managers). */
+  assignablePartners() { return this.api.get<Array<{ id: string; code: string; name: string }>>(`${API.pickups}/partners`); }
   suggestedPartner(id: string) { return this.api.get<string | undefined>(`${API.pickups}/${id}/suggested-partner`); }
   accept(id: string) { return this.api.patch<PickupRequest>(`${API.pickups}/${id}/accept`, {}); }
   reject(id: string, reason: string) { return this.api.patch<PickupRequest>(`${API.pickups}/${id}/reject`, { reason }); }

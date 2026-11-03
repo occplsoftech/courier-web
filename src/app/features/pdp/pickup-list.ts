@@ -190,8 +190,8 @@ export class PickupList implements OnInit {
       .open(PickupAssignDialog, { data: { pickup: p, partners: opts, suggested }, autoFocus: false, panelClass: 'app-dialog' })
       .afterClosed().subscribe((id: string | undefined) => { if (id) this.run(this.svc.assign(p.id, id), 'Pickup assigned.'); });
     const suggestion$ = this.svc.suggestedPartner(p.id).pipe(catchError(() => of(undefined)));
-    const partners$ = this.partnerOpts().length ? of(this.partnerOpts()) : this.pdp.partners({ page: 0, size: 200 }).pipe(
-      map((r) => r.content.filter((b) => b.status === 'ACTIVE').map((b) => ({ value: b.id, label: `${b.branchName} (${b.branchCode})` }))),
+    const partners$ = this.partnerOpts().length ? of(this.partnerOpts()) : this.svc.assignablePartners().pipe(
+      map((list) => list.map((b) => ({ value: b.id, label: `${b.name} (${b.code})` }))),
       catchError(() => { this.notify.error('The pickup partners could not be loaded.'); return of([] as SelectOption[]); }));
     forkJoin({ opts: partners$, suggested: suggestion$ }).subscribe(({ opts, suggested }) => {
       this.partnerOpts.set(opts);
