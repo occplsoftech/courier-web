@@ -78,7 +78,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
         </app-card>
 
         <form [formGroup]="form" (ngSubmit)="save()" class="rform">
-          <app-card title="Charges" subtitle="Applied on top of the per-kg freight. Fuel % is on freight; FOV % is on declared value.">
+          <app-card title="Charges" subtitle="Applied on top of the freight. Fuel % is on freight; FOV % is on declared value. Min chargeable weight: a lighter parcel is charged as this weight (e.g. 20 kg for Cargo).">
             <div class="grid">
               <app-input [control]="c('minChargeableWeight')" label="Min Chargeable Weight (kg)" type="number" [min]="0" [step]="0.5" />
               <app-input [control]="c('docketCharge')" label="Docket Charge" type="number" [min]="0" />
@@ -92,14 +92,18 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
             </div>
           </app-card>
 
-          <app-card title="Per-kg Weight Slabs" subtitle="Freight = chargeable weight × the rate of the slab it falls in. A slab covers weights above its min up to and including its max: with 0–5 and 5–10, a 5 kg parcel is in the first slab and 5.3 kg in the second.">
+          <app-card title="Weight Slabs" subtitle="Per kg: freight = chargeable weight × the slab rate. Fixed price: the rate is the whole freight for any weight in the slab (0–10 kg at 100 fixed costs 100 for 1 kg and for 10 kg). A slab covers weights above its min up to and including its max: with 0–5 and 5–10, a 5 kg parcel is in the first slab and 5.3 kg in the second.">
             <div class="slabs">
-              <div class="slab slab--head"><span>Min weight (kg)</span><span>Max weight (kg)</span><span>Rate / kg</span><span></span></div>
+              <div class="slab slab--head"><span>Min weight (kg)</span><span>Max weight (kg)</span><span>Rate (₹)</span><span>Pricing</span><span></span></div>
               @for (g of slabs.controls; track g; let i = $index) {
                 <div class="slab" [formGroup]="asGroup(g)">
                   <app-input [control]="gc(g, 'minWeight')" type="number" [min]="0" [step]="0.5" />
                   <app-input [control]="gc(g, 'maxWeight')" type="number" [min]="0" [step]="0.5" placeholder="No limit" />
                   <app-input [control]="gc(g, 'ratePerKg')" type="number" [min]="0" [step]="0.5" />
+                  <select class="pricing" [formControl]="gc(g, 'fixedRate')" aria-label="Pricing">
+                    <option [ngValue]="false">Per kg</option>
+                    <option [ngValue]="true">Fixed price</option>
+                  </select>
                   @if (canWrite()) {
                     <button type="button" class="rm" aria-label="Remove slab" [disabled]="slabs.length === 1" (click)="removeSlab(i)">✕</button>
                   } @else { <span></span> }
@@ -131,7 +135,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
             @if (result(); as r) {
               <dl class="kv">
                 <dt>Chargeable weight</dt><dd>{{ r.chargeableWeight }} kg</dd>
-                <dt>Rate / kg</dt><dd>{{ r.ratePerKg }}</dd>
+                <dt>{{ r.fixedRate ? 'Fixed slab price' : 'Rate / kg' }}</dt><dd>{{ r.fixedRate ? r.freight : r.ratePerKg }}</dd>
                 <dt>Freight</dt><dd>{{ r.freight }}</dd>
                 <dt>Docket + Mathadi + Pack</dt><dd>{{ r.docketCharge + r.mathadiCharge + r.packCharge }}</dd>
                 <dt>ODA</dt><dd>{{ r.odaCharge }}</dd>
@@ -155,7 +159,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
     .chip.on .dot { background:#fff; }
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; align-items:end; }
     .slabs { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
-    .slab { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) 40px; gap:12px; align-items:center; }
+    .slab { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1fr) 40px; gap:12px; align-items:center; }
     .slab--head { font:600 12px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; }
     .rm { border:0; background:transparent; cursor:pointer; color:var(--content-muted); font-size:16px; }
     .rm:disabled { opacity:.3; cursor:default; } .rm:hover:not(:disabled) { color:var(--danger); }
@@ -167,7 +171,8 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
     .kv { display:grid; grid-template-columns:max-content 1fr; gap:6px 24px; margin:16px 0 0; font:400 14px var(--font-sans); }
     .kv dt { color:var(--content-muted); } .kv dd { margin:0; font-weight:600; }
     .kv .tot { color:var(--content-fg); font-weight:700; border-top:1px solid var(--surface-border); padding-top:8px; }
-    @media (max-width:860px){ .grid { grid-template-columns:1fr; } .slab { grid-template-columns:1fr 1fr 1fr 32px; } }
+    @media (max-width:860px){ .grid { grid-template-columns:1fr; } .slab { grid-template-columns:1fr 1fr 1fr 1fr 32px; } }
+    .pricing { height:44px; padding:0 12px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); color:var(--content-fg); font:500 14px var(--font-sans); }
   `]
 })
 export class CustomerRateEdit implements OnInit {
@@ -255,7 +260,8 @@ export class CustomerRateEdit implements OnInit {
     return this.fb.group({
       minWeight: [s?.minWeight ?? 0, [Validators.required, Validators.min(0)]],
       maxWeight: [s?.maxWeight ?? null as number | null, [Validators.min(0)]],
-      ratePerKg: [s?.ratePerKg ?? 0, [Validators.required, Validators.min(0)]]
+      ratePerKg: [s?.ratePerKg ?? 0, [Validators.required, Validators.min(0)]],
+      fixedRate: [s?.fixedRate ?? false]
     });
   }
 
@@ -291,8 +297,8 @@ export class CustomerRateEdit implements OnInit {
       minChargeableWeight: num(v.minChargeableWeight), docketCharge: num(v.docketCharge), mathadiCharge: num(v.mathadiCharge),
       packCharge: num(v.packCharge), odaCharge: num(v.odaCharge), fuelSurchargePercent: num(v.fuelSurchargePercent),
       fovPercent: num(v.fovPercent), effectiveFrom: v.effectiveFrom || null, effectiveTo: v.effectiveTo || null,
-      slabs: (v.slabs as Array<{ minWeight: unknown; maxWeight: unknown; ratePerKg: unknown }>).map((s) => ({
-        minWeight: Number(s.minWeight), maxWeight: num(s.maxWeight), ratePerKg: Number(s.ratePerKg)
+      slabs: (v.slabs as Array<{ minWeight: unknown; maxWeight: unknown; ratePerKg: unknown; fixedRate: unknown }>).map((s) => ({
+        minWeight: Number(s.minWeight), maxWeight: num(s.maxWeight), ratePerKg: Number(s.ratePerKg), fixedRate: s.fixedRate === true
       })),
       version: this.rate()?.version ?? null
     };

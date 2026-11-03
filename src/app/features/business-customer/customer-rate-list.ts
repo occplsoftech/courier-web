@@ -44,7 +44,7 @@ interface RateRow { zone: PricingZone; rate?: CustomerRate; }
           <td><strong>{{ r.zone.zoneName }}</strong></td>
           <td>{{ r.rate ? (r.rate.serviceTypeName || 'All services') : '—' }}</td>
           <td>{{ r.rate ? r.rate.slabs.length + ' slab(s)' : '—' }}</td>
-          <td>{{ r.rate ? (lowest(r.rate) + ' – ' + highest(r.rate) + ' /kg') : '—' }}</td>
+          <td>{{ r.rate ? range(r.rate) : '—' }}</td>
           <td>{{ r.rate ? (r.rate.minChargeableWeight + ' kg') : '—' }}</td>
           <td>
             @if (r.rate) { <app-status-badge [value]="r.rate.status" [label]="r.rate.status === 'ACTIVE' ? 'Active' : 'Inactive'" /> }
@@ -111,6 +111,13 @@ export class CustomerRateList implements OnInit {
     });
   }
 
+  /** "50 – 100 /kg", with "+ fixed price" when a slab is a flat price (those are not per-kg rates). */
+  protected range(r: CustomerRate): string {
+    const perKg = r.slabs.filter((s) => !s.fixedRate).map((s) => s.ratePerKg);
+    const fixed = r.slabs.some((s) => s.fixedRate);
+    const kg = perKg.length ? `${Math.min(...perKg)} – ${Math.max(...perKg)} /kg` : '';
+    return [kg, fixed ? 'fixed slab' : ''].filter(Boolean).join(' + ');
+  }
   protected lowest(r: CustomerRate): number { return Math.min(...r.slabs.map((s) => s.ratePerKg)); }
   protected highest(r: CustomerRate): number { return Math.max(...r.slabs.map((s) => s.ratePerKg)); }
   protected importRates(): void { this.router.navigate(['/business-customer/rates/import']); }

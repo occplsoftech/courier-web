@@ -46,7 +46,10 @@ export interface RateSlab {
   minWeight: number;
   /** Null = no upper bound (only the last slab). */
   maxWeight?: number | null;
+  /** The price per kg, or the flat price of the whole slab when `fixedRate`. */
   ratePerKg: number;
+  /** True: `ratePerKg` is one flat price for any weight in this slab (0-10 kg at 100: 1 kg and 10 kg both cost 100). */
+  fixedRate?: boolean;
 }
 
 export interface CustomerRate {
@@ -115,6 +118,7 @@ export interface CalculateRateResponse {
   fuelSurcharge: number;
   fovCharge: number;
   total: number;
+  fixedRate?: boolean;
 }
 
 /** Mirrors backend `BusinessCustomerDashboard` (GET /business-customers/dashboard). */
