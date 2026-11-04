@@ -6,7 +6,8 @@ import {
   Shipment, ShipmentResponse, ShipmentCharge, ShipmentStatusHistoryEntry, ShipmentDocument,
   ShipmentItem, CreateShipmentRequest, UpdateShipmentRequest, AddShipmentDocumentRequest,
   PricingRequest, PricingResponse, TimelineStep, ShipmentDrs, ShipmentSearchRequest, ShipmentSummaryStats,
-  BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange
+  BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange,
+  ForwardOptions, ForwardResult
 } from '@core/models/shipment.model';
 
 /**
@@ -79,6 +80,12 @@ export class ShipmentService {
   /** COMPANY_ADMIN only, BOOKED only — debits or credits the booking wallet. */
   changePaymentMode(id: string, version: number, paymentModeId: string) {
     return this.api.put<PaymentModeChange>(`${API.shipments}/${id}/payment-mode`, { version, paymentModeId });
+  }
+  /** The connected couriers' own prices for a shipment a hub holds (the courier collects from the hub). */
+  forwardOptions(id: string) { return this.api.get<ForwardOptions>(`${API.shipments}/${id}/forwarding/options`); }
+  /** Hands the shipment to the chosen courier service (priced afresh on the server). */
+  forward(id: string, providerCode: string, serviceCode: string) {
+    return this.api.post<ForwardResult>(`${API.shipments}/${id}/forwarding`, { providerCode, serviceCode });
   }
   cancel(id: string, remarks: string) {
     return this.api.post<ShipmentResponse>(
