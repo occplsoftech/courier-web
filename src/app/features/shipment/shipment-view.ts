@@ -27,6 +27,7 @@ import { EwayBillService } from './eway-bill.service';
 import { companyAddressLine, ConsignmentPrintData } from './consignment-print.util';
 import { printPerformaBillCopies } from './performa-bill-print.util';
 import { ShipmentLabelsDialog } from './shipment-labels-dialog';
+import { ShipmentForwardDialog } from './shipment-forward-dialog';
 import { ShipmentLabelData } from './shipment-label-print.util';
 import { emptyPage } from '@core/models/page.model';
 import { TicketService } from '@core/services/ticket.service';
@@ -104,10 +105,30 @@ const TIMELINE_ICONS: Record<string, string> = {
           @if (can().update && shipment()!.status === 'BOOKED') {
             <app-button variant="stroked" icon="edit" (pressed)="edit()">Edit</app-button>
           }
+          @if (canForward()) {
+            <app-button variant="stroked" icon="local_shipping" (pressed)="forward()">Forward to courier</app-button>
+          }
           @if (can().cancel && cancellable()) {
             <app-button variant="danger" icon="cancel" (pressed)="cancel()">Cancel</app-button>
           }
         </div>
+
+        @if (shipment()!.forward; as f) {
+          <app-card title="Courier partner">
+            @if (f.state === 'BOOKED') {
+              <p class="sv__name">Forwarded to {{ courierName(f.provider) }} · {{ f.service }}</p>
+              <p class="sv__sub">Courier AWB <strong>{{ f.awb || '—' }}</strong>@if (f.cost !== null) { · our cost ₹{{ f.cost | number: '1.2-2' }} }
+                @if (f.forwardedAt) { · {{ f.forwardedAt | date: 'dd MMM yyyy, h:mm a' }} }</p>
+              <p class="sv__sub">The customer keeps the OCCPL tracking number {{ shipment()!.trackingNumber }}; the courier delivers.</p>
+              @if (f.labelUrl) { <p class="sv__sub"><a class="sv__link" [href]="f.labelUrl" target="_blank" rel="noopener"><mat-icon>label</mat-icon> Open the courier's label</a></p> }
+            } @else if (f.state === 'UNKNOWN') {
+              <p class="sv__name">Forward to {{ courierName(f.provider) }} not confirmed</p>
+              <p class="sv__sub">We could not tell whether {{ courierName(f.provider) }} accepted it{{ f.note ? ' (' + f.note + ')' : '' }}. Check with the courier before trying again; it is not retried automatically.</p>
+            } @else {
+              <p class="sv__sub">Being forwarded to {{ courierName(f.provider) }}…</p>
+            }
+          </app-card>
+        }
 
         <div class="sv__grid-parties">
           <app-card title="Sender">
@@ -534,6 +555,13 @@ export class ShipmentView implements OnInit {
     update: this.perms.canAccess({ roles: WRITERS, permissions: ['SHIPMENT_UPDATE'] }),
     cancel: this.perms.canAccess({ roles: WRITERS, permissions: ['SHIPMENT_DELETE'] })
   }));
+  /** The admin, or a branch / hub manager, on a shipment still at the hub that was not forwarded (the backend checks the hub is theirs). */
+  readonly canForward = computed(() => {
+    const st = this.shipment()?.status;
+    return !!this.shipment() && !this.shipment()!.forward
+      && (st === 'BOOKED' || st === 'READY_FOR_MANIFEST' || st === 'IN_SCAN')
+      && this.auth.hasAnyRole([AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER, AppRole.HUB_MANAGER]);
+  });
   readonly cancellable = computed(() => !!this.shipment() && CANCELLABLE_STATUSES.includes(this.shipment()!.status));
   /** Commission is a company-level figure — hidden for branch-level roles tracking
    *  someone else's shipment (BRANCH_MANAGER, BOOKING_OPERATOR, etc). */
@@ -549,6 +577,18 @@ export class ShipmentView implements OnInit {
     const c = this.charge(); const w = this.shipment()?.chargeableWeight;
     return c && w ? Math.round((c.freight / w) * 100) / 100 : 0;
   });
+
+  /** DELHIVERY -> Delhivery (the shipment carries the courier's code). */
+  protected courierName(code: string | null): string {
+    return code ? code.charAt(0) + code.slice(1).toLowerCase().replace(/_(\w)/g, (_, c: string) => ' ' + c.toUpperCase()) : 'the courier';
+  }
+
+  protected forward(): void {
+    const s = this.shipment();
+    if (!s) return;
+    this.matDialog.open(ShipmentForwardDialog, { data: { shipmentId: s.id, shipmentNumber: s.shipmentNumber }, autoFocus: false, panelClass: 'app-dialog' })
+      .afterClosed().subscribe((r) => { if (r) this.load(); });
+  }
 
   protected onRateInput(e: Event): void {
     const v = Number((e.target as HTMLInputElement).value);

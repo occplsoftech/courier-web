@@ -24,7 +24,7 @@ export const DELIVERY_TYPES: DeliveryType[] = ['DOOR', 'OFFICE'];
  */
 export type ShipmentStatus =
   | 'BOOKED' | 'READY_FOR_MANIFEST' | 'MANIFEST_CREATED' | 'DISPATCHED' | 'IN_SCAN'
-  | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'RETURNED' | 'CANCELLED';
+  | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'RETURNED' | 'CANCELLED' | 'FORWARDED';
 
 /** The states a booking may still be cancelled from — mirrors `ShipmentStatus.isCancellable()`. */
 export const CANCELLABLE_STATUSES: ShipmentStatus[] =
@@ -184,6 +184,8 @@ export interface ShipmentResponse {
   updatedDate?: string | null;
   version: number;
   items: ShipmentItem[];
+  /** Set when a hub handed the shipment to a courier partner. */
+  forward?: ShipmentForwardInfo | null;
 }
 
 /**
@@ -1026,4 +1028,39 @@ export interface PaymentModeChange {
   changedFromModeName: string | null;
   changedAt: string | null;
   targets: PaymentModeTarget[];
+}
+
+
+// ---- forwarding a shipment to a courier partner from the hub -------------------------------------------------------
+
+/** Where a forward stands: SUBMITTING, UNKNOWN (needs checking with the courier) or BOOKED. */
+export interface ShipmentForwardInfo {
+  provider: string | null;
+  service: string | null;
+  state: 'SUBMITTING' | 'UNKNOWN' | 'BOOKED';
+  awb: string | null;
+  labelUrl: string | null;
+  cost: number | null;
+  forwardedAt: string | null;
+  note: string | null;
+}
+
+export interface ForwardOption {
+  providerCode: string; providerName: string; serviceCode: string; serviceName: string; transportMode: string | null;
+  etaMinDays: number | null; etaMaxDays: number | null; chargeableWeightKg: number | null; cost: number;
+  breakdown: Array<{ label: string; amount: number }>;
+}
+
+export interface ForwardOptions {
+  shipmentId: string; shipmentNumber: string;
+  /** Why this shipment cannot be forwarded (already forwarded, not at the hub, To Pay...); then there are no options. */
+  blocker: string | null;
+  collectFrom: string | null;
+  options: ForwardOption[];
+  unavailable: Array<{ providerCode: string; providerName: string; reason: string | null }>;
+}
+
+export interface ForwardResult {
+  shipmentId: string; outcome: 'FORWARDED' | 'UNCONFIRMED'; message: string; provider: string; serviceName: string;
+  awb: string | null; labelUrl: string | null; cost: number;
 }

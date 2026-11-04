@@ -8,7 +8,7 @@ import { ShipmentSearchRequest, ShipmentStatus } from '@core/models/shipment.mod
 
 const STATUSES: SelectOption[] = ([
   'BOOKED', 'READY_FOR_MANIFEST', 'MANIFEST_CREATED', 'DISPATCHED', 'IN_SCAN',
-  'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURNED', 'CANCELLED'
+  'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURNED', 'CANCELLED', 'FORWARDED'
 ] as ShipmentStatus[]).map((s) => ({ value: s, label: s === 'OUT_FOR_DELIVERY' ? 'DRS' : s.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') }));
 
 /** Advanced filter for the shipment list, and for the Booking/Delivery Report screens.

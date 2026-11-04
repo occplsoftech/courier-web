@@ -11,7 +11,8 @@ const TONE: Record<ShipmentStatus, 'success' | 'warning' | 'danger' | 'info' | '
   OUT_FOR_DELIVERY: 'warning',
   DELIVERED: 'success',
   RETURNED: 'danger',
-  CANCELLED: 'danger'
+  CANCELLED: 'danger',
+  FORWARDED: 'info'
 };
 
 /** Overrides the default word-split label — MANIFEST_CREATED doubles as "loading sheet
@@ -20,7 +21,8 @@ const TONE: Record<ShipmentStatus, 'success' | 'warning' | 'danger' | 'info' | '
  *  word-split label. */
 const LABEL: Partial<Record<ShipmentStatus, string>> = {
   MANIFEST_CREATED: 'Loading Sheet Created',
-  OUT_FOR_DELIVERY: 'DRS'
+  OUT_FOR_DELIVERY: 'DRS',
+  FORWARDED: 'Forwarded to courier'
 };
 
 /** Shipment lifecycle pill — the full nine-state vocabulary. Shipment Booking only ever
