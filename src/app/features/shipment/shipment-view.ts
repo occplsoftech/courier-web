@@ -28,6 +28,7 @@ import { companyAddressLine, ConsignmentPrintData } from './consignment-print.ut
 import { printPerformaBillCopies } from './performa-bill-print.util';
 import { ShipmentLabelsDialog } from './shipment-labels-dialog';
 import { ShipmentForwardDialog } from './shipment-forward-dialog';
+import { ShipmentResolveForwardDialog } from './shipment-resolve-forward-dialog';
 import { ShipmentLabelData } from './shipment-label-print.util';
 import { emptyPage } from '@core/models/page.model';
 import { TicketService } from '@core/services/ticket.service';
@@ -124,6 +125,9 @@ const TIMELINE_ICONS: Record<string, string> = {
             } @else if (f.state === 'UNKNOWN') {
               <p class="sv__name">Forward to {{ courierName(f.provider) }} not confirmed</p>
               <p class="sv__sub">We could not tell whether {{ courierName(f.provider) }} accepted it{{ f.note ? ' (' + f.note + ')' : '' }}. Check with the courier before trying again; it is not retried automatically.</p>
+              @if (canResolve()) {
+                <app-button variant="stroked" icon="rule" (pressed)="resolveForward()">Resolve</app-button>
+              }
             } @else {
               <p class="sv__sub">Being forwarded to {{ courierName(f.provider) }}…</p>
             }
@@ -562,6 +566,8 @@ export class ShipmentView implements OnInit {
       && (st === 'BOOKED' || st === 'READY_FOR_MANIFEST' || st === 'IN_SCAN')
       && this.auth.hasAnyRole([AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER, AppRole.HUB_MANAGER]);
   });
+  readonly canResolve = computed(() => this.shipment()?.forward?.state === 'UNKNOWN'
+    && this.auth.hasAnyRole([AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER, AppRole.HUB_MANAGER]));
   readonly cancellable = computed(() => !!this.shipment() && CANCELLABLE_STATUSES.includes(this.shipment()!.status));
   /** Commission is a company-level figure — hidden for branch-level roles tracking
    *  someone else's shipment (BRANCH_MANAGER, BOOKING_OPERATOR, etc). */
@@ -588,6 +594,15 @@ export class ShipmentView implements OnInit {
     if (!s) return;
     this.matDialog.open(ShipmentForwardDialog, { data: { shipmentId: s.id, shipmentNumber: s.shipmentNumber }, autoFocus: false, panelClass: 'app-dialog' })
       .afterClosed().subscribe((r) => { if (r) this.load(); });
+  }
+
+  protected resolveForward(): void {
+    const s = this.shipment();
+    if (!s) return;
+    this.matDialog.open(ShipmentResolveForwardDialog, {
+      data: { shipmentId: s.id, shipmentNumber: s.shipmentNumber, courier: this.courierName(s.forward?.provider ?? null) },
+      autoFocus: false, panelClass: 'app-dialog'
+    }).afterClosed().subscribe((r) => { if (r) this.load(); });
   }
 
   protected onRateInput(e: Event): void {

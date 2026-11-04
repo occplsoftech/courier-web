@@ -1064,3 +1064,5 @@ export interface ForwardResult {
   shipmentId: string; outcome: 'FORWARDED' | 'UNCONFIRMED'; message: string; provider: string; serviceName: string;
   awb: string | null; labelUrl: string | null; cost: number;
 }
+
+export interface ResolveForwardResult { shipmentId: string; outcome: 'CLEARED' | 'FORWARDED'; message: string; }

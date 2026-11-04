@@ -7,7 +7,7 @@ import {
   ShipmentItem, CreateShipmentRequest, UpdateShipmentRequest, AddShipmentDocumentRequest,
   PricingRequest, PricingResponse, TimelineStep, ShipmentDrs, ShipmentSearchRequest, ShipmentSummaryStats,
   BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange,
-  ForwardOptions, ForwardResult
+  ForwardOptions, ForwardResult, ResolveForwardResult
 } from '@core/models/shipment.model';
 
 /**
@@ -82,6 +82,11 @@ export class ShipmentService {
     return this.api.put<PaymentModeChange>(`${API.shipments}/${id}/payment-mode`, { version, paymentModeId });
   }
   /** The connected couriers' own prices for a shipment a hub holds (the courier collects from the hub). */
+  /** Settle a forward the courier never confirmed: cancel it at the courier, or record the AWB the courier gave. */
+  resolveForward(id: string, courierTookIt: boolean, awb?: string) {
+    return this.api.post<ResolveForwardResult>(`${API.shipments}/${id}/forwarding/resolve`, { courierTookIt, awb: awb ?? null });
+  }
+
   forwardOptions(id: string) { return this.api.get<ForwardOptions>(`${API.shipments}/${id}/forwarding/options`); }
   /** Hands the shipment to the chosen courier service (priced afresh on the server). */
   forward(id: string, providerCode: string, serviceCode: string) {
