@@ -15,11 +15,15 @@ import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { DialogService } from '@shared/components/ui-dialog/dialog.service';
 import { BusinessCustomerService } from './business-customer.service';
 
-/** Slabs run from above their min up to and including their max: sorted by min, no overlap, only the last may be open-ended. */
+/**
+ * Slabs run from above their min up to and including their max: sorted by min, starting at 0, no overlap and no gap, only the last
+ * may be open-ended. A weight in no slab cannot be priced, so the customer would silently get the company's rates.
+ */
 function slabsValid(array: AbstractControl): ValidationErrors | null {
   const rows = (array as FormArray).controls.map((g) => ({
     min: Number(g.get('minWeight')!.value), maxRaw: g.get('maxWeight')!.value as string | number | null
   })).sort((a, b) => a.min - b.min);
+  if (rows.length && rows[0].min !== 0) return { start: `The first slab must start at 0 kg (it starts at ${rows[0].min} kg, so lighter parcels have no rate).` };
   for (let i = 0; i < rows.length; i++) {
     const max = rows[i].maxRaw === null || rows[i].maxRaw === '' ? null : Number(rows[i].maxRaw);
     if (max !== null && max <= rows[i].min) return { range: `Slab ${i + 1}: maximum must be above its minimum.` };
@@ -27,6 +31,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
     if (i > 0) {
       const prev = rows[i - 1].maxRaw === null || rows[i - 1].maxRaw === '' ? null : Number(rows[i - 1].maxRaw);
       if (prev !== null && rows[i].min < prev) return { overlap: `Slabs overlap at ${rows[i].min} kg.` };
+      if (prev !== null && rows[i].min > prev) return { gap: `Gap between slab ${i} (ends at ${prev} kg) and slab ${i + 1} (starts at ${rows[i].min} kg): weights in between have no rate.` };
     }
   }
   return null;
@@ -292,6 +297,11 @@ export class CustomerRateEdit implements OnInit {
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
     const v = this.form.getRawValue();
+    const heaviest = (v.slabs as Array<{ maxWeight: unknown }>).map((x) => x.maxWeight === null || x.maxWeight === '' ? Infinity : Number(x.maxWeight));
+    if (Number(v.minChargeableWeight) > Math.max(...heaviest)) {
+      this.notify.error(`The minimum chargeable weight (${v.minChargeableWeight} kg) is above the heaviest slab (${Math.max(...heaviest)} kg), so no parcel could be priced.`);
+      return;
+    }
     const num = (x: unknown) => (x === '' || x === null || x === undefined ? null : Number(x));
     const body: SaveRateRequest = {
       minChargeableWeight: num(v.minChargeableWeight), docketCharge: num(v.docketCharge), mathadiCharge: num(v.mathadiCharge),
