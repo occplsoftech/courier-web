@@ -20,18 +20,23 @@ import { ShipmentService } from './shipment.service';
     <mat-dialog-content>
       <p class="sub">{{ data.shipmentNumber }} · we could not confirm whether {{ data.courier }} accepted it. Check the {{ data.courier }} panel if unsure.</p>
       <div class="opts" role="radiogroup" aria-label="What happened">
-        <label class="opt" [class.on]="!tookIt()">
-          <input type="radio" name="r" [checked]="!tookIt()" (change)="tookIt.set(false)" />
+        <label class="opt" [class.on]="mode() === 'cancel'">
+          <input type="radio" name="r" [checked]="mode() === 'cancel'" (change)="mode.set('cancel')" />
           <span><strong>{{ data.courier }} did not take it</strong>
             <small>We cancel the order at {{ data.courier }}, then you can forward the shipment again.</small></span>
         </label>
-        <label class="opt" [class.on]="tookIt()">
-          <input type="radio" name="r" [checked]="tookIt()" (change)="tookIt.set(true)" />
+        <label class="opt" [class.on]="mode() === 'hand'">
+          <input type="radio" name="r" [checked]="mode() === 'hand'" (change)="mode.set('hand')" />
+          <span><strong>I already cancelled it at {{ data.courier }}</strong>
+            <small>Use this if the cancel above is refused. Cancel the order in the {{ data.courier }} panel first; then you can forward again.</small></span>
+        </label>
+        <label class="opt" [class.on]="mode() === 'took'">
+          <input type="radio" name="r" [checked]="mode() === 'took'" (change)="mode.set('took')" />
           <span><strong>{{ data.courier }} did take it</strong>
             <small>Enter the tracking number (AWB) it gave. The shipment becomes Forwarded.</small></span>
         </label>
       </div>
-      @if (tookIt()) {
+      @if (mode() === 'took') {
         <label class="fld">Courier AWB
           <input type="text" maxlength="80" [ngModel]="awb()" (ngModelChange)="awb.set($event)" placeholder="e.g. 14327700012345" />
         </label>
@@ -42,8 +47,8 @@ import { ShipmentService } from './shipment.service';
     <mat-dialog-actions align="end">
       <app-button variant="stroked" (pressed)="ref.close(result())">{{ result() ? 'Close' : 'Cancel' }}</app-button>
       @if (!result()) {
-        <app-button [loading]="busy()" [disabled]="tookIt() && !awb().trim()" (pressed)="confirm()">
-          {{ tookIt() ? 'Record AWB' : 'Cancel at ' + data.courier }}</app-button>
+        <app-button [loading]="busy()" [disabled]="mode() === 'took' && !awb().trim()" (pressed)="confirm()">
+          {{ mode() === 'took' ? 'Record AWB' : mode() === 'hand' ? 'Clear it' : 'Cancel at ' + data.courier }}</app-button>
       }
     </mat-dialog-actions>
   `,
@@ -65,7 +70,7 @@ export class ShipmentResolveForwardDialog {
   protected readonly ref = inject<MatDialogRef<ShipmentResolveForwardDialog, ResolveForwardResult | null>>(MatDialogRef);
   private readonly service = inject(ShipmentService);
 
-  protected readonly tookIt = signal(false);
+  protected readonly mode = signal<'cancel' | 'hand' | 'took'>('cancel');
   protected readonly awb = signal('');
   protected readonly busy = signal(false);
   protected readonly error = signal('');
@@ -74,7 +79,7 @@ export class ShipmentResolveForwardDialog {
   protected confirm(): void {
     this.busy.set(true);
     this.error.set('');
-    this.service.resolveForward(this.data.shipmentId, this.tookIt(), this.tookIt() ? this.awb().trim() : undefined).subscribe({
+    this.service.resolveForward(this.data.shipmentId, this.mode() === 'took', this.mode() === 'took' ? this.awb().trim() : undefined, this.mode() === 'hand').subscribe({
       next: (r) => { this.busy.set(false); this.result.set(r); },
       error: (e: HttpErrorResponse) => { this.busy.set(false); this.error.set(e.error?.message ?? 'It could not be resolved.'); }
     });
