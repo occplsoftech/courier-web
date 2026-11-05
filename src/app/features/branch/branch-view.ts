@@ -114,6 +114,18 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
             </dl>
           </app-card>
 
+          @if (isAdmin()) {
+            <app-card title="Courier pickup location" subtitle="Used when this branch forwards a shipment to Delhivery or Shiprocket.">
+              <p class="bv__hint">Type the pickup location name exactly as it is registered in the courier's panel. Without it, this branch cannot forward to Delhivery or Shiprocket.</p>
+              <div class="bv__pl">
+                <input class="bv__input" type="text" maxlength="120" placeholder="e.g. PUNE-HUB" [value]="pickupName()"
+                  (input)="pickupName.set($any($event.target).value)" aria-label="Courier pickup location name" />
+                <app-button [loading]="pickupSaving()" [disabled]="pickupName().trim() === (branch()!.courierPickupLocation ?? '')"
+                  (pressed)="savePickup()">Save</app-button>
+              </div>
+            </app-card>
+          }
+
           <app-card title="Audit">
             <dl class="kv">
               <dt>Branch Code</dt><dd class="mono">{{ branch()!.branchCode }}</dd>
@@ -130,6 +142,10 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
     </div>
   `,
   styles: [`
+    .bv__hint { margin:0 0 10px; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .bv__pl { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .bv__input { flex:1; min-width:220px; padding:10px 12px; border:1px solid var(--surface-border); border-radius:var(--r-field);
+      background:var(--surface); color:var(--content-fg); font:400 14px var(--font-sans); }
     .bv__banner { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:20px 24px; margin-bottom:16px; }
     .bv__actions { display:flex; gap:10px; align-items:center; flex:0 0 auto; }
     .kebab { border:1px solid var(--surface-border); background:var(--surface); cursor:pointer; color:var(--content-muted);
@@ -169,6 +185,9 @@ export class BranchView implements OnInit {
     update: this.perms.canAccess({ roles: UPDATERS, permissions: ['BRANCH_UPDATE'] }),
     delete: this.perms.canAccess({ roles: WRITERS, permissions: ['BRANCH_DELETE'] })
   }));
+  readonly isAdmin = computed(() => this.perms.canAccess({ roles: WRITERS }));
+  readonly pickupName = signal('');
+  readonly pickupSaving = signal(false);
   readonly hasMenu = computed(() => { const c = this.can(); return c.update || c.delete; });
 
   readonly managerName = computed(() => {
@@ -182,7 +201,7 @@ export class BranchView implements OnInit {
     this.loading.set(true);
     forkJoin({ branch: this.service.get(this.id), managers: this.service.managers() }).subscribe({
       next: (l) => {
-        this.branch.set(l.branch); this.managers.set(l.managers);
+        this.branch.set(l.branch); this.managers.set(l.managers); this.pickupName.set(l.branch.courierPickupLocation ?? '');
         this.breadcrumb.set([{ label: 'Branches', route: '/branches' }, { label: l.branch.branchName }]);
         this.loading.set(false);
       },
@@ -191,6 +210,14 @@ export class BranchView implements OnInit {
   }
 
   private reload(): void { this.service.get(this.id).subscribe((b) => this.branch.set(b)); }
+
+  savePickup(): void {
+    this.pickupSaving.set(true);
+    this.service.setCourierPickupLocation(this.id, this.pickupName().trim()).subscribe({
+      next: (b) => { this.pickupSaving.set(false); this.branch.set(b); this.pickupName.set(b.courierPickupLocation ?? ''); this.notify.success('Pickup location saved.'); },
+      error: () => this.pickupSaving.set(false)
+    });
+  }
 
   time(t?: string | null): string { return t ? t.slice(0, 5) : '—'; }
 
