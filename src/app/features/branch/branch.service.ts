@@ -49,6 +49,11 @@ export class BranchService {
     return this.api.patch<Branch>(`${API.branches}/${id}/assign-hub`, { hubId });
   }
 
+  /** The name this branch's pickup address has at Delhivery / Shiprocket; blank clears it. */
+  setCourierPickupLocation(id: string, name: string) {
+    return this.api.patch<BranchResponse>(`${API.branches}/${id}/courier-pickup-location`, { name });
+  }
+
   // ---- lookups (for dropdowns / id→name resolution) -------------------------
   /** Active company users, as options for the manager picker and the table's name map. */
   managers() {

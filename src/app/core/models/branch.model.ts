@@ -37,6 +37,8 @@ export interface Branch {
 
 /** Full representation — mirrors backend `BranchResponse` (GET /branches/{id}). */
 export interface BranchResponse {
+  /** The name this branch's pickup address has at Delhivery / Shiprocket (needed to forward shipments to them). */
+  courierPickupLocation?: string | null;
   id: string;
   companyId: string;
   branchCode: string;
