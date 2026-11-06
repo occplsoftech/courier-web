@@ -101,6 +101,9 @@ export interface Shipment {
   numberOfPackages?: number | null;
   /** Set once a delivery attempt failed (list rows carry it too). */
   undelivered?: ShipmentUndeliveredInfo | null;
+  /** Portal COD: the amount to collect from the receiver for the customer (goes into their wallet). */
+  codAmount?: number | null;
+  codCollectedAt?: string | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
@@ -190,6 +193,9 @@ export interface ShipmentResponse {
   forward?: ShipmentForwardInfo | null;
   /** Set once a delivery attempt failed. */
   undelivered?: ShipmentUndeliveredInfo | null;
+  /** Portal COD: the amount to collect from the receiver for the customer (goes into their wallet). */
+  codAmount?: number | null;
+  codCollectedAt?: string | null;
 }
 
 /**

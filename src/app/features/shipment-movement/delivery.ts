@@ -133,7 +133,10 @@ const LIST_STATUSES: ShipmentStatus[] = ['IN_SCAN', 'OUT_FOR_DELIVERY', 'DELIVER
                 <span class="pay__badge pay__badge--paid"><mat-icon>check_circle</mat-icon>{{ pm.name }}</span>
               } @else {
                 <span class="pay__badge">{{ pm.name }}</span>
-                @if (pm.collectAtDelivery && s.netAmount != null) {
+                @if (pm.collectAtDelivery && s.codAmount) {
+                  <!-- portal COD: the goods value for the customer (freight was paid online) -->
+                  <span class="pay__amount">Collect ₹{{ s.codAmount | number: '1.2-2' }} <span class="pay__hint">COD for the customer</span></span>
+                } @else if (pm.collectAtDelivery && s.netAmount != null) {
                   <span class="pay__amount">Collect ₹{{ s.netAmount | number: '1.2-2' }}</span>
                 }
               }
@@ -303,6 +306,7 @@ const LIST_STATUSES: ShipmentStatus[] = ['IN_SCAN', 'OUT_FOR_DELIVERY', 'DELIVER
     .pay__badge--paid { background:var(--success-bg, #e6f7ec); color:var(--success-fg, #1a7f3c); }
     .pay__badge--paid mat-icon { font-size:15px; width:15px; height:15px; }
     .pay__amount { font:600 13px var(--font-sans); color:var(--content-fg); }
+    .pay__hint { font:500 11px var(--font-sans); color:var(--content-muted); margin-left:4px; }
     .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
     .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
