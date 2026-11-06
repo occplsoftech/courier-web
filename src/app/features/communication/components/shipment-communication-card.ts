@@ -4,7 +4,7 @@ import { CommunicationLog } from '@core/models/communication.model';
 import { CommunicationService } from '../communication.service';
 
 const EVENT_ORDER = ['SHIPMENT_BOOKED', 'SHIPMENT_PICKED_UP', 'SHIPMENT_DISPATCHED', 'SHIPMENT_RECEIVED', 'OUT_FOR_DELIVERY',
-  'SHIPMENT_DELIVERED', 'SHIPMENT_CANCELLED', 'RTO_INITIATED', 'RTO_DELIVERED'];
+  'SHIPMENT_DELIVERED', 'DELIVERY_FAILED', 'SHIPMENT_CANCELLED', 'RTO_INITIATED', 'RTO_DELIVERED'];
 const CHANNELS = ['WHATSAPP', 'SMS', 'EMAIL'] as const;
 
 function label(value: string): string {
