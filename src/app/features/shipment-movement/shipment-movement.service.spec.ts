@@ -47,6 +47,14 @@ describe('ShipmentMovementService', () => {
     request.flush({ success: true, data: { results: [], successCount: 0, failureCount: 0 } });
   });
 
+  it('records a failed delivery attempt with its reason and note', () => {
+    service.markUndelivered('shp-9', 'RECEIVER_NOT_AVAILABLE', 'door locked').subscribe();
+    const request = http.expectOne(`${base}/shipment-movement/shp-9/undelivered`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ reason: 'RECEIVER_NOT_AVAILABLE', note: 'door locked' });
+    request.flush({ success: true, data: {} });
+  });
+
   it('closes a delivery with receiver name required, everything else optional', () => {
     service.deliver({ shipmentId: 'shp-1', receiverName: 'Rahul Verma' }).subscribe();
     const request = http.expectOne(`${base}/shipment-movement/deliver`);

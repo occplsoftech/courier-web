@@ -186,6 +186,8 @@ export interface ShipmentResponse {
   items: ShipmentItem[];
   /** Set when a hub handed the shipment to a courier partner. */
   forward?: ShipmentForwardInfo | null;
+  /** Set once a delivery attempt failed. */
+  undelivered?: ShipmentUndeliveredInfo | null;
 }
 
 /**
@@ -1066,3 +1068,24 @@ export interface ForwardResult {
 }
 
 export interface ResolveForwardResult { shipmentId: string; outcome: 'CLEARED' | 'FORWARDED'; message: string; }
+
+// ---- failed delivery attempts (Phase 10.2) -------------------------------------------------------------------------------
+
+export type UndeliveredReason = 'RECEIVER_NOT_AVAILABLE' | 'ADDRESS_INCORRECT' | 'REFUSED' | 'PREMISES_CLOSED'
+  | 'RESCHEDULE_REQUESTED' | 'COD_NOT_READY' | 'OTHER';
+
+export const UNDELIVERED_REASONS: { value: UndeliveredReason; label: string }[] = [
+  { value: 'RECEIVER_NOT_AVAILABLE', label: 'Receiver not available' },
+  { value: 'ADDRESS_INCORRECT', label: 'Address wrong or incomplete' },
+  { value: 'REFUSED', label: 'Receiver refused' },
+  { value: 'PREMISES_CLOSED', label: 'Premises closed' },
+  { value: 'RESCHEDULE_REQUESTED', label: 'Receiver asked to deliver later' },
+  { value: 'COD_NOT_READY', label: 'COD amount not ready' },
+  { value: 'OTHER', label: 'Other' }
+];
+
+/** The last failed delivery attempt; `open` until it is sent out again, delivered or returned. */
+export interface ShipmentUndeliveredInfo {
+  attempts: number; reason: UndeliveredReason | null; reasonLabel: string | null; note: string | null; at: string | null;
+  open: boolean; returnDue: boolean;
+}

@@ -54,6 +54,11 @@ export class ShipmentMovementService {
   verifyDeliveryOtp(deliveryUserId: string, otp: string) {
     return this.api.post<void>(`${API.shipmentMovement}/delivery-otp/verify`, { deliveryUserId, otp });
   }
+  /** A delivery attempt failed: the shipment goes back to the branch with the reason. */
+  markUndelivered(shipmentId: string, reason: string, note: string | null) {
+    return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/${shipmentId}/undelivered`, { reason, note });
+  }
+
   deliver(body: DeliverRequest) {
     return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/deliver`, body);
   }

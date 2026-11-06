@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_EVENTS, TemplateKey, channelLabel, channelsFor, eventLabel, eventNote, freeChannels, freeEvents } from './template-catalog';
 
-/** A company seeded with the 15 stock templates plus the WhatsApp daily summary. */
+/** A company seeded with the 18 stock templates plus the WhatsApp daily summary. */
 const SEEDED: TemplateKey[] = [
-  ...(['SHIPMENT_BOOKED', 'SHIPMENT_PICKED_UP', 'SHIPMENT_DISPATCHED', 'OUT_FOR_DELIVERY', 'SHIPMENT_DELIVERED'] as const).flatMap((eventType) =>
+  ...(['SHIPMENT_BOOKED', 'SHIPMENT_PICKED_UP', 'SHIPMENT_DISPATCHED', 'OUT_FOR_DELIVERY', 'SHIPMENT_DELIVERED', 'DELIVERY_FAILED'] as const).flatMap((eventType) =>
     (['WHATSAPP', 'SMS', 'EMAIL'] as const).map((channel) => ({ eventType, channel }))),
   { eventType: 'DAILY_BUSINESS_SUMMARY', channel: 'WHATSAPP' }
 ];
 
 describe('template catalog', () => {
-  it('lists all ten events', () => {
-    expect(ALL_EVENTS).toHaveLength(10);
+  it('lists all eleven events', () => {
+    expect(ALL_EVENTS).toHaveLength(11);
   });
 
   it('the daily summary exists on WhatsApp only, every other event on all three channels', () => {

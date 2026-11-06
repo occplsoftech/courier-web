@@ -20,7 +20,7 @@ import { ShipmentStatusBadge } from '@features/shipment/components/shipment-stat
 import { ShipmentService } from '@features/shipment/shipment.service';
 import { scanCandidates } from '@features/shipment/shipment-label-print.util';
 import { ShipmentMovementService } from './shipment-movement.service';
-import { Shipment, ShipmentStatus } from '@core/models/shipment.model';
+import { Shipment, ShipmentStatus, UNDELIVERED_REASONS } from '@core/models/shipment.model';
 import { PinIllustration } from '@shared/components/illustrations/pin-illustration';
 import { MasterDataService } from '@features/masters/master-data.service';
 import { MASTER_DEFINITIONS } from '@features/masters/master.config';
@@ -100,7 +100,11 @@ const LIST_STATUSES: ShipmentStatus[] = ['IN_SCAN', 'OUT_FOR_DELIVERY', 'DELIVER
                       <td>{{ s.receiverName }}</td>
                       <td>{{ branchNames().get(s.bookingBranchId) || '—' }} → {{ s.deliveryBranchId ? (branchNames().get(s.deliveryBranchId) || '—') : 'Direct Company Delivery' }}</td>
                       <td>{{ s.fromCity || '—' }} → {{ s.toCity || '—' }}</td>
-                      <td><app-shipment-status-badge [status]="s.status" /></td>
+                      <td><app-shipment-status-badge [status]="s.status" />
+                        @if (s.undelivered?.open) {
+                          <span class="ndr" [class.ndr--due]="s.undelivered!.returnDue">Attempt {{ s.undelivered!.attempts }} failed: {{ s.undelivered!.reasonLabel }}{{ s.undelivered!.returnDue ? ' · return due' : '' }}</span>
+                        }
+                      </td>
                       <td class="tbl--right">
                         @if (s.status === 'OUT_FOR_DELIVERY') {
                           <app-button icon="task_alt" (pressed)="selectShipment(s)">Deliver</app-button>
@@ -134,6 +138,27 @@ const LIST_STATUSES: ShipmentStatus[] = ['IN_SCAN', 'OUT_FOR_DELIVERY', 'DELIVER
                 }
               }
             </div>
+          }
+        </app-card>
+
+        <app-card title="Could not deliver?">
+          @if (!notDelivering()) {
+            <app-button variant="stroked" icon="report" (pressed)="notDelivering.set(true)">Not delivered</app-button>
+          } @else {
+            <div class="nd">
+              <label class="nd__field"><span>Reason</span>
+                <select [value]="ndReason()" (change)="ndReason.set($any($event.target).value)">
+                  <option value="">Choose a reason…</option>
+                  @for (r of undeliveredReasons; track r.value) { <option [value]="r.value">{{ r.label }}</option> }
+                </select></label>
+              <label class="nd__field nd__field--wide"><span>Note {{ ndReason() === 'OTHER' ? '(required)' : '(optional)' }}</span>
+                <input type="text" maxlength="255" [value]="ndNote()" (input)="ndNote.set($any($event.target).value)" placeholder="e.g. door locked, called twice" /></label>
+            </div>
+            <div class="nd__actions">
+              <app-button icon="report" [loading]="savingNd()" [disabled]="!ndReason() || (ndReason() === 'OTHER' && !ndNote().trim())" (pressed)="markNotDelivered()">Record failed attempt</app-button>
+              <app-button variant="stroked" (pressed)="notDelivering.set(false)" [disabled]="savingNd()">Cancel</app-button>
+            </div>
+            <p class="text-caption">The shipment goes back to your branch as In Scan, the customer is told, and you can send it out again.</p>
           }
         </app-card>
 
@@ -238,6 +263,13 @@ const LIST_STATUSES: ShipmentStatus[] = ['IN_SCAN', 'OUT_FOR_DELIVERY', 'DELIVER
     </div>
   `,
   styles: [`
+    .ndr { display:block; margin-top:4px; font:600 11px var(--font-sans); color:var(--warning, #a15c00); }
+    .ndr--due { color:var(--danger, #b3123a); }
+    .nd { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+    .nd__field { display:flex; flex-direction:column; gap:4px; font:500 12px var(--font-sans); color:var(--content-muted); min-width:220px; }
+    .nd__field--wide { flex:1; }
+    .nd__field select, .nd__field input { padding:9px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); color:var(--content-fg); font:400 14px var(--font-sans); }
+    .nd__actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .head-actions { display:flex; align-items:center; gap:8px; }
     .filters { display:flex; gap:16px; flex-wrap:wrap; }
@@ -437,6 +469,26 @@ export class Delivery implements OnInit {
     });
   }
 
+  protected readonly undeliveredReasons = UNDELIVERED_REASONS;
+  readonly notDelivering = signal(false);
+  readonly ndReason = signal('');
+  readonly ndNote = signal('');
+  readonly savingNd = signal(false);
+
+  markNotDelivered(): void {
+    const s = this.shipment();
+    if (!s || !this.ndReason()) return;
+    this.savingNd.set(true);
+    this.movementService.markUndelivered(s.id, this.ndReason(), this.ndNote().trim() || null).subscribe({
+      next: (r) => {
+        this.savingNd.set(false);
+        this.notify.success(`Attempt ${r.undelivered?.attempts ?? ''} recorded. ${s.shipmentNumber} is back at your branch.`);
+        this.reset();
+      },
+      error: (e) => { this.savingNd.set(false); this.notify.error(e.error?.message ?? 'The failed attempt could not be recorded.'); }
+    });
+  }
+
   selectShipment(s: Shipment): void {
     if (s.status !== 'OUT_FOR_DELIVERY') {
       this.notify.error(`Shipment is ${s.status}, not OUT_FOR_DELIVERY.`);
@@ -461,6 +513,9 @@ export class Delivery implements OnInit {
   }
 
   reset(): void {
+    this.notDelivering.set(false);
+    this.ndReason.set('');
+    this.ndNote.set('');
     this.shipment.set(null);
     this.paymentMode.set(null);
     this.verification.set(null);
