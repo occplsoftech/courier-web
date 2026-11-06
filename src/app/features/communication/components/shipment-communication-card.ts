@@ -3,7 +3,7 @@ import { UiCard } from '@shared/components/ui-card/ui-card';
 import { CommunicationLog } from '@core/models/communication.model';
 import { CommunicationService } from '../communication.service';
 
-const EVENT_ORDER = ['SHIPMENT_BOOKED', 'SHIPMENT_DISPATCHED', 'SHIPMENT_RECEIVED', 'OUT_FOR_DELIVERY',
+const EVENT_ORDER = ['SHIPMENT_BOOKED', 'SHIPMENT_PICKED_UP', 'SHIPMENT_DISPATCHED', 'SHIPMENT_RECEIVED', 'OUT_FOR_DELIVERY',
   'SHIPMENT_DELIVERED', 'SHIPMENT_CANCELLED', 'RTO_INITIATED', 'RTO_DELIVERED'];
 const CHANNELS = ['WHATSAPP', 'SMS', 'EMAIL'] as const;
 
