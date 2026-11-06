@@ -12,7 +12,7 @@ import { UiButton } from '@shared/components/ui-button/ui-button';
 import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { BUSINESS, PUBLIC_PAGE_LINKS } from './public-page.content';
 
-interface PublicTrackEvent { status: string; changedAt: string; }
+interface PublicTrackEvent { status: string; changedAt: string | null; }
 interface PublicTrackResult {
   trackingNumber: string;
   shipmentNumber: string;
@@ -22,6 +22,10 @@ interface PublicTrackResult {
   fromCity: string | null;
   toCity: string | null;
   timeline: PublicTrackEvent[];
+  /** The outside courier delivering it (booked through the customer portal); null for an OCCPL shipment. */
+  carrier?: string | null;
+  latestStatus?: string | null;
+  latestLocation?: string | null;
 }
 
 /** Public (no-login) Track Shipment — reached from the login screen so anyone with an
@@ -65,7 +69,10 @@ interface PublicTrackResult {
               <app-status-badge [value]="r.status" />
             </div>
             <div class="track__grid">
-              <div><p class="text-caption">Shipment No.</p><p>{{ r.shipmentNumber }}</p></div>
+              <div><p class="text-caption">{{ r.carrier ? 'Reference' : 'Shipment No.' }}</p><p>{{ r.shipmentNumber || '—' }}</p></div>
+              @if (r.carrier) {
+                <div><p class="text-caption">Delivered by</p><p>{{ r.carrier }}</p></div>
+              }
               <div><p class="text-caption">From</p><p>{{ r.fromCity || '—' }}</p></div>
               <div><p class="text-caption">To</p><p>{{ r.toCity || '—' }}</p></div>
               <div><p class="text-caption">Booking Date</p><p>{{ r.bookingDate || '—' }}</p></div>
@@ -74,13 +81,17 @@ interface PublicTrackResult {
               }
             </div>
 
+            @if (r.latestStatus || r.latestLocation) {
+              <p class="track__latest"><span class="text-caption">Latest update</span>
+                {{ r.latestStatus || '' }}@if (r.latestStatus && r.latestLocation) { · }{{ r.latestLocation || '' }}</p>
+            }
             @if (r.timeline.length) {
               <div class="track__timeline">
                 <p class="text-caption">Timeline</p>
                 <ul>
-                  @for (event of r.timeline; track event.changedAt) {
+                  @for (event of r.timeline; track $index) {
                     <li><span class="track__timeline-status">{{ event.status }}</span>
-                        <span class="track__timeline-date">{{ event.changedAt | date: 'medium' }}</span></li>
+                        <span class="track__timeline-date">{{ event.changedAt ? (event.changedAt | date: 'medium') : '' }}</span></li>
                   }
                 </ul>
               </div>
@@ -118,6 +129,7 @@ interface PublicTrackResult {
     .track__number { font:700 18px var(--font-display); color:var(--content-fg); margin:2px 0 0; }
     .track__grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .track__grid p:last-child { font:600 14px var(--font-sans); color:var(--content-fg); margin:2px 0 0; }
+    .track__latest { margin:16px 0 0; font:600 14px var(--font-sans); color:var(--content-fg); display:flex; flex-direction:column; gap:2px; }
     .track__timeline { margin-top:24px; }
     .track__timeline ul { list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
     .track__timeline li { display:flex; align-items:center; justify-content:space-between; padding:10px 14px;
