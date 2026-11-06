@@ -1091,3 +1091,12 @@ export interface ShipmentUndeliveredInfo {
   attempts: number; reason: UndeliveredReason | null; reasonLabel: string | null; note: string | null; at: string | null;
   open: boolean; returnDue: boolean;
 }
+
+/** One open failed-delivery case in the staff queue (GET /shipment-movement/undelivered). */
+export interface UndeliveredCase {
+  shipmentId: string; shipmentNumber: string; trackingNumber: string | null; receiverName: string; receiverContact: string;
+  receiverAddress: string; toCity: string | null; currentLocationId: string | null; deliveryBranchId: string | null;
+  attempts: number; reason: string | null; reasonLabel: string | null; note: string | null; failedAt: string | null; daysWaiting: number;
+  choice: 'REATTEMPT' | 'CHANGE_ADDRESS' | 'RETURN' | null; choiceLabel: string | null; choiceDate: string | null; choiceAt: string | null;
+  returnFlagged: boolean;
+}
