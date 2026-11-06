@@ -187,7 +187,9 @@ export const NAVIGATION: NavNode[] = [
       // District Level Freight — rate setup by From Station + District + weight slab,
       // grouped here alongside the other rate-setup leaves. No `permission` key: this
       // module has no permission-catalogue rows yet, same as Freight Factor above.
-      { id: 'district-level-freight', title: 'District Level Freight', icon: 'map', route: '/district-level-freight', roles: COMPANY_AND_BRANCH }
+      { id: 'district-level-freight', title: 'District Level Freight', icon: 'map', route: '/district-level-freight', roles: COMPANY_AND_BRANCH },
+      // What is added to an outside courier's price before a business customer sees it in the portal (11.5).
+      { id: 'courier-markup', title: 'Courier Markup', icon: 'percent', route: '/courier-markup', roles: COMPANY_ONLY }
     ]
   },
 

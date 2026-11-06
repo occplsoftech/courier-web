@@ -81,6 +81,7 @@ export const API = {
   companyRazorpayConfig: '/company-razorpay-config',
   /** The company's own courier accounts for the customer shipping portal (COMPANY_ADMIN). */
   courierIntegrations: '/courier-integrations',
+  pricingMarkupRules: '/pricing-markup-rules',
   kyc: '/kyc',
   subscriptionPlans: '/subscription-plans',
   /** The platform console: platform dashboard and platform-operator accounts. */
