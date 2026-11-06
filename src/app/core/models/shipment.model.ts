@@ -99,6 +99,8 @@ export interface Shipment {
   ewayBillNumber?: string | null;
   /** Package count — the THC's own QTY column. */
   numberOfPackages?: number | null;
+  /** Set once a delivery attempt failed (list rows carry it too). */
+  undelivered?: ShipmentUndeliveredInfo | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
