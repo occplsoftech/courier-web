@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 import { ApiService } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
-import {
+import { UndeliveredCase,
   BulkMovementResult, DispatchManifestRequest, DispatchManifestResponse,
   InScanRequest, OutForDeliveryRequest, DeliverRequest, ShipmentResponse,
   DrsSummary, DrsDetail, OverrideStatusRequest, OverrideStatusResponse
@@ -54,6 +54,16 @@ export class ShipmentMovementService {
   verifyDeliveryOtp(deliveryUserId: string, otp: string) {
     return this.api.post<void>(`${API.shipmentMovement}/delivery-otp/verify`, { deliveryUserId, otp });
   }
+  /** Open failed-delivery cases for the staff queue. */
+  undelivered() {
+    return this.api.get<UndeliveredCase[]>(`${API.shipmentMovement}/undelivered`);
+  }
+
+  /** Ends the shipment as Returned (to the sender). */
+  returnToSender(shipmentId: string, reason: string) {
+    return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/${shipmentId}/return`, { reason });
+  }
+
   /** A delivery attempt failed: the shipment goes back to the branch with the reason. */
   markUndelivered(shipmentId: string, reason: string, note: string | null) {
     return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/${shipmentId}/undelivered`, { reason, note });

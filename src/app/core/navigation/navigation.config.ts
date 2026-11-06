@@ -272,6 +272,7 @@ export const NAVIGATION: NavNode[] = [
       { id: 'pending-delivery', title: 'Pending Delivery', icon: 'pending_actions', route: '/movement/pending-delivery', permission: 'DELIVERY_ASSIGN', roles: OPS_DELIVERY_DESK },
       { id: 'out-for-delivery', title: 'Generate DRS', icon: 'directions_run', route: '/movement/out-for-delivery', permission: 'DELIVERY_ASSIGN', roles: OPS_DELIVERY_DESK },
       { id: 'delivery', title: 'Delivery', icon: 'task_alt', route: '/movement/delivery', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
+      { id: 'undelivered', title: 'Undelivered Shipments', icon: 'report', route: '/movement/undelivered', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
       // POD Auto Verification's Manual Review screen — reviewer tier only, narrower than
       // OPS_DELIVERY_DESK (which also admits the delivery operator who captures a POD but
       // must not decide their own submission). See MEMORY/modules/pod-verification.md.
