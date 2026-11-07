@@ -140,14 +140,14 @@ export class UndeliveredQueue implements OnInit {
   returnIt(c: UndeliveredCase): void {
     this.dialog.prompt({
       title: `Return ${c.shipmentNumber} to the sender`,
-      message: 'The shipment ends as Returned. Arrange the trip back with your branch. The customer is told when that message is switched on.',
+      message: 'It goes back to its booking branch: put it on a Load Sheet there (Returns shows where it is), then hand it back. A portal customer is charged the forward freight once. The customer is told when that message is switched on.',
       label: 'Reason', placeholder: c.returnFlagged ? 'e.g. 3 failed attempts' : 'Why is it being returned?',
       confirmLabel: 'Return to sender', danger: true
     }).subscribe((reason) => {
       if (!reason) return;
       this.returning.set(c.shipmentId);
       this.movement.returnToSender(c.shipmentId, reason).subscribe({
-        next: () => { this.returning.set(null); this.notify.success(`${c.shipmentNumber} returned to the sender.`); this.load(); },
+        next: () => { this.returning.set(null); this.notify.success(`${c.shipmentNumber} is on its way back to the sender.`); this.load(); },
         error: (e) => { this.returning.set(null); this.notify.error(e.error?.message ?? 'The shipment could not be returned.'); }
       });
     });

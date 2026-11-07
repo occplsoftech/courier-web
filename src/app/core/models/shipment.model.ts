@@ -104,6 +104,8 @@ export interface Shipment {
   /** Portal COD: the amount to collect from the receiver for the customer (goes into their wallet). */
   codAmount?: number | null;
   codCollectedAt?: string | null;
+  /** Being (or was) returned to the sender. On a list row a boolean; on the full shipment the return's details. */
+  rto?: boolean | ShipmentRtoInfo | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
@@ -196,6 +198,8 @@ export interface ShipmentResponse {
   /** Portal COD: the amount to collect from the receiver for the customer (goes into their wallet). */
   codAmount?: number | null;
   codCollectedAt?: string | null;
+  /** Set once a return to the sender started. */
+  rto?: ShipmentRtoInfo | null;
 }
 
 /**
@@ -1096,6 +1100,16 @@ export const UNDELIVERED_REASONS: { value: UndeliveredReason; label: string }[] 
 export interface ShipmentUndeliveredInfo {
   attempts: number; reason: UndeliveredReason | null; reasonLabel: string | null; note: string | null; at: string | null;
   open: boolean; returnDue: boolean;
+}
+
+/** A return to the sender: when it started, whether it is back at the booking branch, and to whom / when it was handed back. */
+export interface ShipmentRtoInfo { startedAt: string | null; backAtOrigin: boolean; deliveredAt: string | null; handedTo: string | null; }
+
+/** One open return in the staff queue (GET /shipment-movement/returns). */
+export interface ReturnCase {
+  id: string; shipmentNumber: string; trackingNumber: string | null; senderName: string; senderContact: string;
+  receiverName: string; toCity: string | null; status: string; currentLocationId: string | null; bookingBranchId: string;
+  backAtOrigin: boolean; rtoStartedAt: string | null; daysOnTheWay: number;
 }
 
 /** One open failed-delivery case in the staff queue (GET /shipment-movement/undelivered). */

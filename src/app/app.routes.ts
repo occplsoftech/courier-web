@@ -669,6 +669,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/shipment-movement/undelivered-queue').then((m) => m.UndeliveredQueue)
       },
       {
+        path: 'movement/returns', title: 'Returns (RTO)', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
+        loadComponent: () => import('@features/shipment-movement/returns-queue').then((m) => m.ReturnsQueue)
+      },
+      {
         path: 'movement/delivery', title: 'Delivery', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
         loadComponent: () => import('@features/shipment-movement/delivery').then((m) => m.Delivery)
       },

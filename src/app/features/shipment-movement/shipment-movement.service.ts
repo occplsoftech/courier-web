@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 import { ApiService } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
-import { UndeliveredCase,
+import { ReturnCase, UndeliveredCase,
   BulkMovementResult, DispatchManifestRequest, DispatchManifestResponse,
   InScanRequest, OutForDeliveryRequest, DeliverRequest, ShipmentResponse,
   DrsSummary, DrsDetail, OverrideStatusRequest, OverrideStatusResponse
@@ -59,9 +59,19 @@ export class ShipmentMovementService {
     return this.api.get<UndeliveredCase[]>(`${API.shipmentMovement}/undelivered`);
   }
 
-  /** Ends the shipment as Returned (to the sender). */
+  /** Starts the return to the sender: it goes back to its booking branch on a Load Sheet (or waits there). */
   returnToSender(shipmentId: string, reason: string) {
     return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/${shipmentId}/return`, { reason });
+  }
+
+  /** Open returns: on their way back, or back at the booking branch ready to hand back. */
+  returns() {
+    return this.api.get<ReturnCase[]>(`${API.shipmentMovement}/returns`);
+  }
+
+  /** The booking branch hands a returned parcel back to its sender: it ends as Returned. */
+  handBack(shipmentId: string, receivedBy: string, remarks: string | null) {
+    return this.api.post<ShipmentResponse>(`${API.shipmentMovement}/${shipmentId}/hand-back`, { receivedBy, remarks });
   }
 
   /** A delivery attempt failed: the shipment goes back to the branch with the reason. */

@@ -134,6 +134,22 @@ const TIMELINE_ICONS: Record<string, string> = {
           </app-card>
         }
 
+        @if (shipment()!.rto; as r) {
+          <app-card title="Return to sender (RTO)">
+            @if (shipment()!.status === 'RETURNED') {
+              <p class="sv__name">Handed back to the sender@if (r.handedTo) { · received by {{ r.handedTo }} }</p>
+              @if (r.deliveredAt) { <p class="sv__sub">{{ r.deliveredAt | date: 'dd MMM yyyy, h:mm a' }}</p> }
+            } @else if (r.backAtOrigin) {
+              <p class="sv__name">Back at the booking branch — hand it back to the sender</p>
+              <p class="sv__sub"><a class="sv__link" href="/movement/returns"><mat-icon>assignment_return</mat-icon> Open Returns (RTO)</a></p>
+            } @else {
+              <p class="sv__name">On its way back to the booking branch</p>
+              <p class="sv__sub">It travels on a normal Load Sheet to its booking branch, then is handed back from Returns (RTO).</p>
+            }
+            @if (r.startedAt) { <p class="sv__sub">Return started {{ r.startedAt | date: 'dd MMM yyyy, h:mm a' }}</p> }
+          </app-card>
+        }
+
         <div class="sv__grid-parties">
           <app-card title="Sender">
             <p class="sv__name">{{ shipment()!.senderName }}</p>

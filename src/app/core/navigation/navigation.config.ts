@@ -275,6 +275,8 @@ export const NAVIGATION: NavNode[] = [
       { id: 'out-for-delivery', title: 'Generate DRS', icon: 'directions_run', route: '/movement/out-for-delivery', permission: 'DELIVERY_ASSIGN', roles: OPS_DELIVERY_DESK },
       { id: 'delivery', title: 'Delivery', icon: 'task_alt', route: '/movement/delivery', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
       { id: 'undelivered', title: 'Undelivered Shipments', icon: 'report', route: '/movement/undelivered', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
+      // Parcels going back to their sender (Phase 12.1): Load Sheet to the booking branch, then hand back.
+      { id: 'returns', title: 'Returns (RTO)', icon: 'assignment_return', route: '/movement/returns', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
       // POD Auto Verification's Manual Review screen — reviewer tier only, narrower than
       // OPS_DELIVERY_DESK (which also admits the delivery operator who captures a POD but
       // must not decide their own submission). See MEMORY/modules/pod-verification.md.
