@@ -52,6 +52,8 @@ export interface RateSlab {
   fixedRate?: boolean;
 }
 
+export type SlabMode = 'WHOLE' | 'TIERED';
+
 export interface CustomerRate {
   id: string;
   zoneId: string;
@@ -73,6 +75,10 @@ export interface CustomerRate {
   serviceTypeCode?: string | null;
   serviceTypeName?: string | null;
   slabs: RateSlab[];
+  /** The least freight a parcel is charged on this card; 0 = no minimum. */
+  minFreight?: number | null;
+  /** WHOLE: the slab the weight falls in prices every kg. TIERED: each slab prices only its own kilos. */
+  slabMode?: SlabMode | null;
   createdDate?: string | null;
   updatedDate?: string | null;
   version: number;
@@ -91,6 +97,8 @@ export interface SaveRateRequest {
   effectiveTo?: string | null;
   slabs: RateSlab[];
   version?: number | null;
+  minFreight?: number | null;
+  slabMode?: SlabMode | null;
 }
 
 export interface CalculateRateRequest {
@@ -119,6 +127,10 @@ export interface CalculateRateResponse {
   fovCharge: number;
   total: number;
   fixedRate?: boolean;
+  /** Freight was worked out slab by slab (TIERED card); ratePerKg is then the average. */
+  tiered?: boolean;
+  /** The card's minimum freight was charged instead of the slab freight. */
+  minFreightApplied?: boolean;
 }
 
 /** Mirrors backend `BusinessCustomerDashboard` (GET /business-customers/dashboard). */

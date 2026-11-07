@@ -177,7 +177,7 @@ const OCCPL_NETWORK = 'OCCPL_NETWORK';
     table { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
     th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--surface-border); white-space:nowrap; }
     th { font-weight:600; color:var(--content-muted); }
-    .cm__note td { color:var(--content-muted); font-size:12px; padding-top:0; white-space:normal; }
+    .cm__note td { color:var(--content-muted); font-size:12px; padding-top:0; white-space:normal; text-transform:none; letter-spacing:normal; }
     .st { display:inline-block; padding:2px 8px; border-radius:999px; font:600 11px var(--font-sans); }
     .st--IN_FORCE { background:#e6f6ec; color:#17733a; }
     .st--UPCOMING { background:#e8f0fe; color:#1a56c4; }

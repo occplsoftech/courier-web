@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,7 +7,7 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PermissionService } from '@core/auth/permission.service';
 import { AppRole } from '@core/models/role.model';
-import { CustomerRate, PricingZone, RateSlab, SaveRateRequest } from '@core/models/pricing-zone.model';
+import { CustomerRate, PricingZone, RateSlab, SaveRateRequest, SlabMode } from '@core/models/pricing-zone.model';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiInput } from '@shared/components/ui-input/ui-input';
 import { UiButton } from '@shared/components/ui-button/ui-button';
@@ -35,6 +36,41 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
     }
   }
   return null;
+}
+
+export interface FreightPreview { freight: number; minApplied: boolean; parts: string[]; }
+
+/**
+ * The freight a card would charge for a weight, as the backend prices it: chargeable = max(weight, min chargeable weight); WHOLE =
+ * the slab the weight falls in prices every kg (or its flat price); TIERED = each slab prices only its own kilos (a fixed slab adds its
+ * flat price once entered); then the minimum freight. Null when no slab covers the weight.
+ */
+export function previewFreight(slabs: RateSlab[], weight: number, mode: SlabMode, minFreight: number, minChargeable: number): FreightPreview | null {
+  const w = Math.max(weight, minChargeable || 0);
+  const sorted = [...slabs].sort((a, b) => a.minWeight - b.minWeight);
+  const covers = (s: RateSlab) => (w > s.minWeight || (s.minWeight === 0 && w >= 0)) && (s.maxWeight === null || s.maxWeight === undefined || w <= s.maxWeight);
+  const slab = sorted.find(covers);
+  if (!slab || !(w > 0)) return null;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const parts: string[] = [];
+  let freight = 0;
+  if (mode === 'TIERED') {
+    for (const s of sorted) {
+      if (w <= s.minWeight && s.minWeight > 0) break;
+      const top = s.maxWeight === null || s.maxWeight === undefined ? w : Math.min(w, s.maxWeight);
+      const kilos = r2(top - s.minWeight);
+      if (kilos <= 0) continue;
+      const amt = s.fixedRate ? s.ratePerKg : kilos * s.ratePerKg;
+      freight += amt;
+      parts.push(s.fixedRate ? `${s.minWeight}–${s.maxWeight ?? '∞'} kg fixed ₹${s.ratePerKg}` : `${kilos} kg × ₹${s.ratePerKg}`);
+    }
+  } else {
+    freight = slab.fixedRate ? slab.ratePerKg : w * slab.ratePerKg;
+    parts.push(slab.fixedRate ? `fixed ₹${slab.ratePerKg}` : `${w} kg × ₹${slab.ratePerKg}`);
+  }
+  freight = r2(freight);
+  const minApplied = (minFreight || 0) > freight;
+  return { freight: minApplied ? r2(minFreight) : freight, minApplied, parts };
 }
 
 /**
@@ -86,6 +122,7 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
           <app-card title="Charges" subtitle="Applied on top of the freight. Fuel % is on freight; FOV % is on declared value. Min chargeable weight: a lighter parcel is charged as this weight (e.g. 20 kg for Cargo).">
             <div class="grid">
               <app-input [control]="c('minChargeableWeight')" label="Min Chargeable Weight (kg)" type="number" [min]="0" [step]="0.5" />
+              <app-input [control]="c('minFreight')" label="Minimum Freight (₹, 0 = none)" type="number" [min]="0" />
               <app-input [control]="c('docketCharge')" label="Docket Charge" type="number" [min]="0" />
               <app-input [control]="c('mathadiCharge')" label="Mathadi Charge" type="number" [min]="0" />
               <app-input [control]="c('packCharge')" label="Pack Charge" type="number" [min]="0" />
@@ -97,7 +134,13 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
             </div>
           </app-card>
 
-          <app-card title="Weight Slabs" subtitle="Per kg: freight = chargeable weight × the slab rate. Fixed price: the rate is the whole freight for any weight in the slab (0–10 kg at 100 fixed costs 100 for 1 kg and for 10 kg). A slab covers weights above its min up to and including its max: with 0–5 and 5–10, a 5 kg parcel is in the first slab and 5.3 kg in the second.">
+          <app-card title="Weight Slabs" subtitle="Whole weight: the slab the weight falls in prices every kg. Tiered: each slab prices only its own kilos. Per kg: freight = chargeable weight × the slab rate. Fixed price: the rate is the whole freight for any weight in the slab (0–10 kg at 100 fixed costs 100 for 1 kg and for 10 kg). A slab covers weights above its min up to and including its max: with 0–5 and 5–10, a 5 kg parcel is in the first slab and 5.3 kg in the second.">
+            <div class="mode" role="radiogroup" aria-label="Slab pricing">
+              <label [class.on]="mode() === 'WHOLE'"><input type="radio" [formControl]="c('slabMode')" value="WHOLE" />
+                <span><b>Whole weight</b><small>7 kg in 5–10 kg @ ₹30 = 7 × 30</small></span></label>
+              <label [class.on]="mode() === 'TIERED'"><input type="radio" [formControl]="c('slabMode')" value="TIERED" />
+                <span><b>Tiered</b><small>0–5 @ ₹40, 5–10 @ ₹30: 7 kg = 5 × 40 + 2 × 30</small></span></label>
+            </div>
             <div class="slabs">
               <div class="slab slab--head"><span>Min weight (kg)</span><span>Max weight (kg)</span><span>Rate (₹)</span><span>Pricing</span><span></span></div>
               @for (g of slabs.controls; track g; let i = $index) {
@@ -116,6 +159,12 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
               }
             </div>
             @if (slabs.errors; as errs) { <p class="err">{{ firstError(errs) }}</p> }
+            <div class="example">
+              <label>Example: <input type="number" min="0" step="0.5" [value]="exWeight()" (input)="exWeight.set(+$any($event.target).value)" aria-label="Example weight" /> kg</label>
+              @if (example(); as ex) {
+                <span>→ freight <b>₹{{ ex.freight }}</b> <small>({{ ex.parts.join(' + ') }}@if (ex.minApplied) {; minimum freight applies})</small></span>
+              } @else { <span class="muted">no slab covers this weight</span> }
+            </div>
             @if (canWrite()) { <app-button variant="stroked" icon="add" (pressed)="addSlab()">Add slab</app-button> }
           </app-card>
 
@@ -140,8 +189,8 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
             @if (result(); as r) {
               <dl class="kv">
                 <dt>Chargeable weight</dt><dd>{{ r.chargeableWeight }} kg</dd>
-                <dt>{{ r.fixedRate ? 'Fixed slab price' : 'Rate / kg' }}</dt><dd>{{ r.fixedRate ? r.freight : r.ratePerKg }}</dd>
-                <dt>Freight</dt><dd>{{ r.freight }}</dd>
+                <dt>{{ r.fixedRate ? 'Fixed slab price' : r.tiered || r.minFreightApplied ? 'Average / kg' : 'Rate / kg' }}</dt><dd>{{ r.fixedRate ? r.freight : r.ratePerKg }}</dd>
+                <dt>Freight</dt><dd>{{ r.freight }}@if (r.tiered) { <span class="tag">tiered</span> }@if (r.minFreightApplied) { <span class="tag">minimum freight</span> }</dd>
                 <dt>Docket + Mathadi + Pack</dt><dd>{{ r.docketCharge + r.mathadiCharge + r.packCharge }}</dd>
                 <dt>ODA</dt><dd>{{ r.odaCharge }}</dd>
                 <dt>Fuel surcharge</dt><dd>{{ r.fuelSurcharge }}</dd>
@@ -177,6 +226,15 @@ function slabsValid(array: AbstractControl): ValidationErrors | null {
     .kv dt { color:var(--content-muted); } .kv dd { margin:0; font-weight:600; }
     .kv .tot { color:var(--content-fg); font-weight:700; border-top:1px solid var(--surface-border); padding-top:8px; }
     @media (max-width:860px){ .grid { grid-template-columns:1fr; } .slab { grid-template-columns:1fr 1fr 1fr 1fr 32px; } }
+    .mode { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .mode label { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; cursor:pointer; }
+    .mode label.on { border-color:var(--brand-600); background:var(--surface-muted, #faf5f6); }
+    .mode b { display:block; font:600 14px var(--font-sans); } .mode small { color:var(--content-muted); font:400 12px var(--font-sans); }
+    .example { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:4px 0 12px; font:400 14px var(--font-sans); }
+    .example input { width:80px; height:34px; padding:0 8px; border:1px solid var(--surface-border); border-radius:8px; background:var(--surface); color:var(--content-fg); }
+    .example small, .example .muted { color:var(--content-muted); }
+    .tag { margin-left:8px; padding:1px 8px; border-radius:999px; background:#fff4e0; color:#9a5b00; font:600 11px var(--font-sans); }
+    @media (max-width:860px){ .mode { grid-template-columns:1fr; } }
     .pricing { height:44px; padding:0 12px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); color:var(--content-fg); font:500 14px var(--font-sans); }
   `]
 })
@@ -214,6 +272,8 @@ export class CustomerRateEdit implements OnInit {
   protected readonly slabs: FormArray<FormGroup> = this.fb.array<FormGroup>([], slabsValid);
   protected readonly form: FormGroup = this.fb.group({
     minChargeableWeight: [0, [Validators.required, Validators.min(0)]],
+    minFreight: [0, [Validators.min(0)]],
+    slabMode: ['WHOLE' as SlabMode],
     docketCharge: [0, [Validators.required, Validators.min(0)]],
     mathadiCharge: [0, [Validators.required, Validators.min(0)]],
     packCharge: [0, [Validators.required, Validators.min(0)]],
@@ -222,6 +282,17 @@ export class CustomerRateEdit implements OnInit {
     fovPercent: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
     effectiveFrom: [''], effectiveTo: [''],
     slabs: this.slabs
+  });
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  protected readonly mode = computed(() => (this.formValue().slabMode ?? 'WHOLE') as SlabMode);
+  protected readonly exWeight = signal(7);
+  protected readonly example = computed(() => {
+    const v = this.formValue();
+    const num = (x: unknown) => (x === '' || x === null || x === undefined ? null : Number(x));
+    const slabs = ((v.slabs ?? []) as Array<{ minWeight: unknown; maxWeight: unknown; ratePerKg: unknown; fixedRate: unknown }>).map((s) => ({
+      minWeight: Number(s.minWeight) || 0, maxWeight: num(s.maxWeight), ratePerKg: Number(s.ratePerKg) || 0, fixedRate: s.fixedRate === true
+    }));
+    return previewFreight(slabs, this.exWeight(), (v.slabMode ?? 'WHOLE') as SlabMode, Number(v.minFreight) || 0, Number(v.minChargeableWeight) || 0);
   });
   protected readonly qWeight = this.fb.nonNullable.control<number>(10, [Validators.min(0.001)]);
   protected readonly qValue = this.fb.nonNullable.control<number>(0, [Validators.min(0)]);
@@ -275,12 +346,13 @@ export class CustomerRateEdit implements OnInit {
     this.slabs.clear();
     if (r) {
       this.form.patchValue({
-        minChargeableWeight: r.minChargeableWeight, docketCharge: r.docketCharge, mathadiCharge: r.mathadiCharge,
+        minChargeableWeight: r.minChargeableWeight, minFreight: r.minFreight ?? 0, slabMode: r.slabMode ?? 'WHOLE', docketCharge: r.docketCharge, mathadiCharge: r.mathadiCharge,
         packCharge: r.packCharge, odaCharge: r.odaCharge, fuelSurchargePercent: r.fuelSurchargePercent,
         fovPercent: r.fovPercent, effectiveFrom: r.effectiveFrom ?? '', effectiveTo: r.effectiveTo ?? ''
       });
       [...r.slabs].sort((a, b) => a.minWeight - b.minWeight).forEach((s) => this.slabs.push(this.slabGroup(s)));
     } else {
+      this.form.patchValue({ minFreight: 0, slabMode: 'WHOLE' });
       this.slabs.push(this.slabGroup({ minWeight: 0, maxWeight: null, ratePerKg: 0 }));
     }
     this.form.markAsPristine();
@@ -310,7 +382,9 @@ export class CustomerRateEdit implements OnInit {
       slabs: (v.slabs as Array<{ minWeight: unknown; maxWeight: unknown; ratePerKg: unknown; fixedRate: unknown }>).map((s) => ({
         minWeight: Number(s.minWeight), maxWeight: num(s.maxWeight), ratePerKg: Number(s.ratePerKg), fixedRate: s.fixedRate === true
       })),
-      version: this.rate()?.version ?? null
+      version: this.rate()?.version ?? null,
+      minFreight: num(v.minFreight) ?? 0,
+      slabMode: (v.slabMode ?? 'WHOLE') as SlabMode
     };
     this.saving.set(true);
     this.service.saveRate(this.zoneId, body, this.serviceTypeId()).subscribe({
