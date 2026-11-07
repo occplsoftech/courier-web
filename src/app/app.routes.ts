@@ -939,6 +939,12 @@ export const routes: Routes = [
         path: 'kyc/review/:type/:id', title: 'KYC', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/kyc/kyc-review-detail').then((m) => m.KycReviewDetail)
       },
+      // Courier markup (11.5): per-customer / per-courier markup on outside couriers' prices in the shipping portal.
+      // COMPANY_ADMIN only, as the backend's MarkupRuleService.
+      {
+        path: 'courier-markup', title: 'Courier Markup', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/courier-markup/courier-markup').then((m) => m.CourierMarkupPage)
+      },
       {
         path: 'courier-integrations', title: 'Courier Integrations', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/courier-integrations/courier-integrations').then((m) => m.CourierIntegrations)
