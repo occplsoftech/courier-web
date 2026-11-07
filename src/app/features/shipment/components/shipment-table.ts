@@ -43,7 +43,7 @@ export type ShipmentAction = 'view' | 'edit' | 'cancel';
           <td class="num">{{ s.companyCommissionOnBasicFreight != null ? ('₹' + (s.companyCommissionOnBasicFreight | number: '1.2-2')) : '—' }}</td>
         }
         <td class="num">{{ s.totalCommission != null ? ('₹' + (s.totalCommission | number: '1.2-2')) : '—' }}</td>
-        <td><app-shipment-status-badge [status]="s.status" />@if (s.rto) { <span class="rto-tag" title="Being (or was) returned to the sender">RTO</span> }</td>
+        <td><app-shipment-status-badge [status]="s.status" />@if (s.rto) { <span class="rto-tag" title="Being (or was) returned to the sender">RTO</span> }@if (s.returnPickup) { <span class="rp-tag" title="Return pickup: collected from the customer's buyer, delivered to the customer">Return pickup</span> }</td>
         <td class="col-actions" (click)="$event.stopPropagation()">
           <button class="kebab" [matMenuTriggerFor]="menu" aria-label="Actions"><mat-icon>more_vert</mat-icon></button>
           <mat-menu #menu="matMenu">
@@ -60,6 +60,7 @@ export type ShipmentAction = 'view' | 'edit' | 'cancel';
     </app-table>
   `,
   styles: [`
+    .rp-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fff4e0; color:#9a5b00; font:700 10px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
     .rto-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fdecef; color:#b3123a; font:700 10px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
     .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .awb { color:var(--brand-600); }

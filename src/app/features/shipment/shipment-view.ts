@@ -134,6 +134,13 @@ const TIMELINE_ICONS: Record<string, string> = {
           </app-card>
         }
 
+        @if (shipment()!.returnPickup) {
+          <app-card title="Return pickup">
+            <p class="sv__name">Collect from the customer's buyer and deliver back to the customer</p>
+            <p class="sv__sub">Booked by the customer from the portal for a delivered shipment. The sender here is the buyer.</p>
+          </app-card>
+        }
+
         @if (shipment()!.rto; as r) {
           <app-card title="Return to sender (RTO)">
             @if (shipment()!.status === 'RETURNED') {
