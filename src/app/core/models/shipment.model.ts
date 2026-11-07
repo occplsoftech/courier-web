@@ -106,6 +106,8 @@ export interface Shipment {
   codCollectedAt?: string | null;
   /** Being (or was) returned to the sender. On a list row a boolean; on the full shipment the return's details. */
   rto?: boolean | ShipmentRtoInfo | null;
+  /** A return pickup booked by a portal customer: collected from their buyer, delivered to them. */
+  returnPickup?: boolean;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
@@ -200,6 +202,8 @@ export interface ShipmentResponse {
   codCollectedAt?: string | null;
   /** Set once a return to the sender started. */
   rto?: ShipmentRtoInfo | null;
+  /** A return pickup booked by a portal customer: collected from their buyer, delivered to them. */
+  returnPickup?: boolean;
 }
 
 /**
