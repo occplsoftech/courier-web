@@ -28,9 +28,10 @@ type RawSummary = Partial<Omit<DashboardSummary, 'statistics' | 'charts'>> & {
 export class DashboardService {
   private readonly api = inject(ApiService);
 
-  load(profile: DashboardProfile): Observable<DashboardSummary> {
+  /** {@code branchId}: a company admin viewing one branch's dashboard (13.4). */
+  load(profile: DashboardProfile, branchId?: string): Observable<DashboardSummary> {
     const summary$ = this.api
-      .get<RawSummary>(API.dashboard)
+      .get<RawSummary>(API.dashboard, branchId ? { branchId } : undefined)
       .pipe(catchError(() => of({} as RawSummary)));
 
     const branches$ = this.api
