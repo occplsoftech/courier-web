@@ -1,3 +1,4 @@
+import { HomeBranchCard } from './components/home-branch-card';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -31,7 +32,7 @@ const ADDRESS_DELETERS = [AppRole.COMPANY_ADMIN];
   selector: 'app-customer-view',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, MatMenuModule, MatIconModule, UiCard, UiLoader, UiButton, CustomerSummaryCard, AddressList, PortalAccessCard, CustomerWalletCard],
+  imports: [DatePipe, MatMenuModule, MatIconModule, UiCard, UiLoader, UiButton, CustomerSummaryCard, AddressList, PortalAccessCard, CustomerWalletCard, HomeBranchCard],
   template: `
     <div class="page">
       @if (loading()) {
@@ -109,6 +110,10 @@ const ADDRESS_DELETERS = [AppRole.COMPANY_ADMIN];
             <app-portal-access-card [customerId]="customer()!.id" [customerEmail]="customer()!.email ?? null" />
           }
 
+          @if (can().homeBranch && customer()!.customerType === 'BUSINESS') {
+            <app-home-branch-card [customer]="customer()!" (changed)="customer.set($event)" />
+          }
+
           @if (can().walletRead && customer()!.customerType === 'BUSINESS') {
             <app-customer-wallet-card [customerId]="customer()!.id" [customerName]="customer()!.displayName" [canAdjust]="can().walletAdjust" />
           }
@@ -173,7 +178,9 @@ export class CustomerView implements OnInit {
     portalAccess: this.perms.hasAnyRole([AppRole.COMPANY_ADMIN]),
     // The wallet's reads are COMPANY_ADMIN / FINANCE_USER on the server, its credit and debit COMPANY_ADMIN only.
     walletRead: this.perms.hasAnyRole([AppRole.COMPANY_ADMIN, AppRole.FINANCE_USER]),
-    walletAdjust: this.perms.hasAnyRole([AppRole.COMPANY_ADMIN])
+    walletAdjust: this.perms.hasAnyRole([AppRole.COMPANY_ADMIN]),
+    // Home branch and courier access (13.2): company admin and branch managers on the server.
+    homeBranch: this.perms.hasAnyRole([AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER])
   }));
   readonly canAddAddress = computed(() => this.perms.canAccess({ roles: WRITERS, permissions: ['ADDRESS_CREATE'] }));
   readonly canDeleteAddress = computed(() => this.perms.canAccess({ roles: ADDRESS_DELETERS, permissions: ['ADDRESS_DELETE'] }));

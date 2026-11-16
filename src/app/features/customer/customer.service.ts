@@ -36,6 +36,10 @@ export class CustomerService {
   update(id: string, body: UpdateCustomerRequest) {
     return this.api.put<CustomerResponse>(`${API.customers}/${id}`, body);
   }
+  /** Sets the home branch (13.2); null fills it again from the branch serving the default pickup pincode. */
+  setHomeBranch(id: string, branchId: string | null) {
+    return this.api.patch<CustomerResponse>(`${API.customers}/${id}/home-branch`, { branchId });
+  }
 
   // ---- brand logo (saved separately from the customer, so it never makes an open edit stale) -------
   logo(id: string) { return this.api.get<{ dataUrl: string | null }>(`${API.customers}/${id}/logo`); }

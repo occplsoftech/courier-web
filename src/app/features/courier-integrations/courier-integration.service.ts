@@ -43,7 +43,16 @@ export interface CourierIntegration {
 
 /** One courier in a customer's access list: `enabled` = the customer sees its rates in the portal. */
 export interface CustomerCourierOption { code: string; name: string; connected: boolean; enabled: boolean; }
-export interface CustomerCourierAccess { customerId: string; customised: boolean; couriers: CustomerCourierOption[]; }
+/**
+ * `customised`: the customer has a list of their own. Otherwise `source` says whether their home branch's list (BRANCH) or the default,
+ * OCCPL Network only (DEFAULT), applies (13.2).
+ */
+export interface CustomerCourierAccess {
+  customerId: string; customised: boolean; couriers: CustomerCourierOption[];
+  source?: 'CUSTOMER' | 'BRANCH' | 'DEFAULT'; homeBranchId?: string | null; homeBranchName?: string | null;
+}
+/** A branch's couriers: the default of its customers who have no list of their own. `customers` counts them. */
+export interface BranchCourierAccess { branchId: string; branchName: string; customised: boolean; couriers: CustomerCourierOption[]; customers: number; }
 
 export interface SaveIntegrationRequest {
   enabled: boolean;
@@ -62,6 +71,12 @@ export class CourierIntegrationService {
   }
   saveCustomerAccess(customerId: string, providerCodes: string[]) {
     return this.api.put<CustomerCourierAccess>(`${API.courierIntegrations}/customer-access/${encodeURIComponent(customerId)}`, { providerCodes });
+  }
+  branchAccess(branchId: string) {
+    return this.api.get<BranchCourierAccess>(`${API.courierIntegrations}/customer-access/branch/${encodeURIComponent(branchId)}`);
+  }
+  saveBranchAccess(branchId: string, providerCodes: string[]) {
+    return this.api.put<BranchCourierAccess>(`${API.courierIntegrations}/customer-access/branch/${encodeURIComponent(branchId)}`, { providerCodes });
   }
   save(code: string, body: SaveIntegrationRequest) {
     return this.api.put<CourierIntegration>(`${API.courierIntegrations}/${encodeURIComponent(code)}`, body);

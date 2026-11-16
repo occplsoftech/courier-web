@@ -18,7 +18,7 @@ import { CourierIntegrationService, CustomerCourierAccess } from './courier-inte
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [UiCard, UiButton],
   template: `
-    <app-card title="Customer access" subtitle="Choose which couriers each business customer sees in the shipping portal.">
+    <app-card title="Customer couriers" subtitle="A list for one business customer. It wins over the customer's home branch list.">
       <div class="ca">
         <label class="ca__pick">Business customer
           <select [value]="customerId()" (change)="choose($any($event.target).value)" aria-label="Business customer">
@@ -32,8 +32,9 @@ import { CourierIntegrationService, CustomerCourierAccess } from './courier-inte
 
         @if (access(); as a) {
           <p class="hint">
-            @if (a.customised) { This customer sees only the ticked couriers. }
-            @else { Nothing is set for this customer, so it sees <strong>OCCPL Network only</strong>. Tick couriers to give it more. }
+            @if (a.customised) { This customer has its own list: it sees only the ticked couriers. }
+            @else if (a.source === 'BRANCH') { Nothing is set for this customer, so it uses its home branch's couriers (<strong>{{ a.homeBranchName }}</strong>). Tick couriers to give it a list of its own. }
+            @else { Nothing is set for this customer@if (a.homeBranchName) { or its home branch ({{ a.homeBranchName }}) }, so it sees <strong>OCCPL Network only</strong>. Tick couriers to give it more. }
           </p>
           <ul class="ca__list">
             @for (o of a.couriers; track o.code) {

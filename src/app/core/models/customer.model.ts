@@ -85,6 +85,8 @@ export interface CustomerAddress {
 /** Full representation, with every address on file — mirrors backend `CustomerResponse`. */
 export interface CustomerResponse extends CustomerBusinessFields {
   id: string;
+  /** The branch this business customer belongs to; its couriers are the customer's default (13.2). */
+  homeBranchId?: string | null;
   companyId: string;
   customerCode: string;
   customerType: CustomerType;
