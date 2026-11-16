@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -24,7 +25,7 @@ describe('CourierIntegrations', () => {
   let http: HttpTestingController;
 
   function create(first: object = shiprocket()) {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations(), provideRouter([])] });
     http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(CourierIntegrations);
     fixture.detectChanges();

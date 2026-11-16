@@ -10,7 +10,7 @@ import { UiInput } from '@shared/components/ui-input/ui-input';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { apiMessage } from '@features/communication/api-error';
 import { CourierIntegration, CourierIntegrationService } from './courier-integration.service';
-import { CustomerCourierAccessCard } from './customer-courier-access';
+import { RouterLink } from '@angular/router';
 
 interface Card {
   info: CourierIntegration;
@@ -26,7 +26,7 @@ interface Card {
   selector: 'app-courier-integrations',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, MatSlideToggleModule, DatePipe, UiCard, UiInput, UiButton, CustomerCourierAccessCard],
+  imports: [ReactiveFormsModule, MatSlideToggleModule, DatePipe, UiCard, UiInput, UiButton, RouterLink],
   template: `
     <div class="page">
       <header class="page__head">
@@ -144,10 +144,14 @@ interface Card {
         }
       </section>
 
-      <app-customer-courier-access />
+      <app-card title="Which couriers customers see" subtitle="Set per branch (the default of its customers) and per customer.">
+        <p class="hint-line">This is now on its own page, where branch managers can manage their own branch:
+          <a routerLink="/business-customer/courier-access">Business Customer → Courier access</a>.</p>
+      </app-card>
     </div>
   `,
   styles: [`
+    .hint-line { font:400 14px var(--font-sans); color:var(--content-muted); margin:0; }
     .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:20px; }
     .ci { display:flex; flex-direction:column; gap:12px; }
     .ci__status { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }

@@ -372,6 +372,13 @@ export const routes: Routes = [
         path: 'pdp/rates/:branchId', title: 'Partner Rate Cards', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/pdp/partner-rate-edit').then((m) => m.PartnerRateEdit)
       },
+      // Which couriers business customers see (13.2): a list per branch and per customer. Company admin and branch managers
+      // (the backend limits a branch manager to their own branch and its customers).
+      {
+        path: 'business-customer/courier-access', title: 'Courier Access', canActivate: [roleGuard],
+        data: { roles: [AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER] },
+        loadComponent: () => import('@features/courier-integrations/courier-access-page').then((m) => m.CourierAccessPage)
+      },
       {
         path: 'business-customer/rates', title: 'Customer Rates', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/business-customer/customer-rate-list').then((m) => m.CustomerRateList)
