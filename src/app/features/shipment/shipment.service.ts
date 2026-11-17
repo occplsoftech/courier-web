@@ -7,7 +7,7 @@ import {
   ShipmentItem, CreateShipmentRequest, UpdateShipmentRequest, AddShipmentDocumentRequest,
   PricingRequest, PricingResponse, TimelineStep, ShipmentDrs, ShipmentSearchRequest, ShipmentSummaryStats,
   BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange,
-  ForwardOptions, ForwardResult, ResolveForwardResult
+  ForwardOptions, ForwardResult, ResolveForwardResult, BulkForwardOptionsRow, BulkForwardResultRow
 } from '@core/models/shipment.model';
 
 /**
@@ -85,6 +85,16 @@ export class ShipmentService {
   /** Settle a forward the courier never confirmed: cancel it at the courier, or record the AWB the courier gave. */
   resolveForward(id: string, courierTookIt: boolean, awb?: string, cancelledByHand = false) {
     return this.api.post<ResolveForwardResult>(`${API.shipments}/${id}/forwarding/resolve`, { courierTookIt, awb: awb ?? null, cancelledByHand });
+  }
+
+  /** Several shipments' courier prices at once (14.1; up to 20 per call). */
+  bulkForwardOptions(shipmentIds: string[]) {
+    return this.api.post<BulkForwardOptionsRow[]>('/forwarding/bulk/options', { shipmentIds });
+  }
+
+  /** Forward several shipments, one after the other (up to 20 per call); one row per shipment. */
+  bulkForward(items: Array<{ shipmentId: string; providerCode: string; serviceCode: string }>) {
+    return this.api.post<BulkForwardResultRow[]>('/forwarding/bulk', { items });
   }
 
   forwardOptions(id: string) { return this.api.get<ForwardOptions>(`${API.shipments}/${id}/forwarding/options`); }
