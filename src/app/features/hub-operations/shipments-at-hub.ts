@@ -15,6 +15,9 @@ import { ShipmentStatusBadge } from '@features/shipment/components/shipment-stat
 import { ShipmentService } from '@features/shipment/shipment.service';
 import { MasterDataService } from '@features/masters/master-data.service';
 
+/** Where a shipment can still be handed to a courier (the server's own rule; it also refuses To Pay, already forwarded…). */
+const FORWARDABLE: ReadonlySet<string> = new Set(['BOOKED', 'READY_FOR_MANIFEST', 'IN_SCAN']);
+
 const STATUS_OPTIONS: SelectOption[] = [
   { value: 'DISPATCHED', label: 'Dispatched (en route)' },
   { value: 'READY_FOR_MANIFEST', label: 'Arrived, not yet sorted' },
@@ -143,12 +146,12 @@ export class ShipmentsAtHub implements OnInit {
     });
   }
 
-  /** Bulk forwarding (14.1): shipments held here (not still on the way); the server checks the rest (already forwarded, To Pay…). */
+  /** Bulk forwarding (14.1): shipments held here in a state a courier can take; the server checks the rest (already forwarded, To Pay…). */
   protected readonly picked = signal<Map<string, string>>(new Map());
   protected readonly maxPick = 50;
   protected clearPicked(): void { this.picked.set(new Map()); }
   protected pickable(s: Shipment): boolean {
-    return s.currentLocationId === this.myBranchId && s.status !== 'DISPATCHED';
+    return s.currentLocationId === this.myBranchId && FORWARDABLE.has(s.status);
   }
   protected toggle(s: Shipment): void {
     const m = new Map(this.picked());
