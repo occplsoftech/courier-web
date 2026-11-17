@@ -9,6 +9,7 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { AuthService } from '@core/auth/auth.service';
 import { DashboardService } from './dashboard.service';
+import { MasterDataService } from '@features/masters/master-data.service';
 import { DASHBOARD_LAYOUTS, QuickActionDef, StatTileDef, resolveProfile } from './dashboard.roles';
 import { DashboardStatistics, DashboardSummary } from './models/dashboard.model';
 import { ChartCard } from './components/chart-card';
@@ -52,6 +53,14 @@ const WEIGHT_KEYS: ReadonlySet<keyof DashboardStatistics> = new Set(['totalActua
           <div class="dash__welcome-text">
             <h1 class="text-h1">{{ greeting() }}, {{ auth.displayName() || 'there' }}</h1>
             <p class="text-caption">{{ companyName }} · {{ scopeLabel() }}</p>
+            @if (ownProfile() === 'COMPANY') {
+              <label class="dash__view">View
+                <select [value]="viewBranchId()" (change)="viewBranch($any($event.target).value)" aria-label="Dashboard of">
+                  <option value="">Whole company</option>
+                  @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.label }}</option> }
+                </select>
+              </label>
+            }
             <div class="dash__date">
               <mat-icon>calendar_today</mat-icon>
               <span>{{ now | date:'EEEE, d MMM y' }}</span>
@@ -187,6 +196,9 @@ const WEIGHT_KEYS: ReadonlySet<keyof DashboardStatistics> = new Set(['totalActua
     .dash__welcome-text { display:flex; flex-direction:column; gap:10px; align-items:flex-start; }
     .dash__welcome-ill { flex-shrink:0; }
     @media (max-width:560px){ .dash__welcome-ill { display:none; } }
+    .dash__view { display:flex; align-items:center; gap:8px; font:600 13px var(--font-sans); color:var(--content-muted); }
+    .dash__view select { height:36px; border:1px solid var(--surface-border); border-radius:var(--r-pill); padding:0 12px;
+      background:var(--surface-card, #fff); color:var(--content-fg); font:500 13px var(--font-sans); max-width:260px; }
     .dash__track { display:flex; flex-direction:column; }
     .dash__track ::ng-deep .ac__body { flex:1; display:flex; align-items:center; }
     .dash__track ::ng-deep .ac__body > * { width:100%; }
@@ -225,6 +237,7 @@ export class Dashboard implements OnInit {
   private readonly breadcrumb = inject(BreadcrumbService);
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly masterData = inject(MasterDataService);
   protected readonly auth = inject(AuthService);
 
   readonly now = new Date();
@@ -234,11 +247,17 @@ export class Dashboard implements OnInit {
   readonly error = signal(false);
   readonly data = signal<DashboardSummary | null>(null);
 
-  protected readonly profile = computed(() =>
+  /** The signed-in user's own dashboard profile. */
+  protected readonly ownProfile = computed(() =>
     resolveProfile(this.auth.roles(), {
       branchId: this.auth.user()?.branchId, hubId: this.auth.user()?.hubId
     })
   );
+  /** A company admin may look at one branch's dashboard (13.4): the branch manager's layout, that branch's figures. */
+  readonly viewBranchId = signal('');
+  readonly branches = signal<{ id: string; label: string }[]>([]);
+  protected readonly profile = computed(() =>
+    this.ownProfile() === 'COMPANY' && this.viewBranchId() ? 'BRANCH_MANAGER' : this.ownProfile());
   readonly layout = computed(() => DASHBOARD_LAYOUTS[this.profile()]);
   readonly hasCharts = computed(() => {
     const s = this.layout().sections;
@@ -259,16 +278,29 @@ export class Dashboard implements OnInit {
 
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Dashboard' }]);
+    if (this.ownProfile() === 'COMPANY') {
+      this.masterData.branchDirectory().subscribe({
+        next: (list) => this.branches.set(list.filter((b) => b.branchType !== 'PICKUP_DELIVERY_PARTNER')
+          .map((b) => ({ id: b.id, label: `${b.branchName} (${b.branchCode})` })).sort((a, b) => a.label.localeCompare(b.label))),
+        error: () => undefined
+      });
+    }
     this.reload();
   }
 
   reload(): void {
     this.loading.set(true);
     this.error.set(false);
-    this.dashboard.load(this.profile()).subscribe({
+    this.dashboard.load(this.profile(), this.viewBranchId() || undefined).subscribe({
       next: (d) => { this.data.set(d); this.loading.set(false); },
       error: () => { this.error.set(true); this.loading.set(false); }
     });
+  }
+
+  viewBranch(id: string): void {
+    this.viewBranchId.set(id);
+    this.data.set(null);
+    this.reload();
   }
 
   greeting(): string {
@@ -283,7 +315,10 @@ export class Dashboard implements OnInit {
       case 'PLATFORM': return 'Platform overview';
       case 'COMPANY': return 'Company-wide';
       case 'BRANCH_MANAGER':
-      case 'BRANCH_OPERATOR': return 'Branch operations';
+      case 'BRANCH_OPERATOR': {
+        const b = this.branches().find((x) => x.id === this.viewBranchId());
+        return b ? `Branch: ${b.label}` : 'Branch operations';
+      }
       case 'HUB_MANAGER':
       case 'HUB_OPERATOR': return 'Hub operations';
     }

@@ -20,6 +20,7 @@ import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { DialogService } from '@shared/components/ui-dialog/dialog.service';
 import { PickupService } from './pickup.service';
 import { PdpService } from './pdp.service';
+import { MasterDataService } from '@features/masters/master-data.service';
 import { PickupAssignDialog, PickupCompleteDialog } from './pickup-dialogs';
 
 /**
@@ -39,6 +40,12 @@ import { PickupAssignDialog, PickupCompleteDialog } from './pickup-dialogs';
         <div><h1 class="text-h1">Pickup Requests</h1>
           <p class="text-caption">Collect shipments from customers through Pickup-Delivery Partners.</p></div>
         <div class="page__actions">
+          @if (isAdmin()) {
+            <select class="branch" [value]="branchId()" (change)="setBranch($any($event.target).value)" aria-label="Branch">
+              <option value="">All branches</option>
+              @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.label }}</option> }
+            </select>
+          }
           <app-search placeholder="Search no., name, mobile, pincode…" (changed)="onSearch($event)" />
           @if (isAdmin()) { <app-button icon="add" (pressed)="create()">New Pickup</app-button> }
         </div>
@@ -97,6 +104,8 @@ import { PickupAssignDialog, PickupCompleteDialog } from './pickup-dialogs';
   `,
   styles: [`
     .chips { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+    .branch { height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff);
+      color:var(--content-fg); font:400 14px var(--font-sans); max-width:260px; }
     .chip { border:1px solid var(--surface-border); background:transparent; border-radius:999px; padding:6px 12px; font:500 13px var(--font-sans); cursor:pointer; color:var(--content-fg); }
     .chip b { margin-left:4px; } .chip.on { background:var(--primary, #1a56db); color:#fff; border-color:transparent; }
     .cs { font:600 14px var(--font-sans); } .warn { color:var(--danger); }
@@ -113,6 +122,11 @@ export class PickupList implements OnInit {
   private readonly dialogs = inject(DialogService);
   private readonly matDialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly masterData = inject(MasterDataService);
+
+  /** Admins (13.4): the booking branch the list and counts are narrowed to; '' = all branches. */
+  protected readonly branchId = signal('');
+  protected readonly branches = signal<{ id: string; label: string }[]>([]);
 
   protected readonly statusCtl = new FormControl<string>('', { nonNullable: true });
   protected readonly page = signal<Page<PickupRequest>>(emptyPage());
@@ -136,8 +150,17 @@ export class PickupList implements OnInit {
 
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Pickup Delivery Partner Management' }, { label: 'Pickup Requests' }]);
+    if (this.isAdmin()) {
+      this.masterData.branchDirectory().subscribe({
+        next: (list) => this.branches.set(list.filter((b) => b.branchType !== 'PICKUP_DELIVERY_PARTNER')
+          .map((b) => ({ id: b.id, label: `${b.branchName} (${b.branchCode})` })).sort((a, b) => a.label.localeCompare(b.label))),
+        error: () => undefined
+      });
+    }
     this.load();
   }
+
+  protected setBranch(id: string): void { this.branchId.set(id); this.query = { ...this.query, page: 0 }; this.load(); }
 
   protected label(s: PickupStatus): string { return PICKUP_STATUS_LABEL[s]; }
   protected total(s: PickupStats): number { return Object.values(s.byStatus).reduce((a, b) => a + b, 0); }
@@ -153,11 +176,12 @@ export class PickupList implements OnInit {
 
   private load(): void {
     this.loading.set(true);
-    this.svc.list({ ...this.query, status: (this.statusCtl.value || undefined) as PickupStatus | undefined }).subscribe({
+    const bookingBranchId = this.branchId() || undefined;
+    this.svc.list({ ...this.query, bookingBranchId, status: (this.statusCtl.value || undefined) as PickupStatus | undefined }).subscribe({
       next: (p) => { this.page.set(p); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
-    this.svc.stats().subscribe((s) => this.stats.set(s));
+    this.svc.stats(bookingBranchId).subscribe((s) => this.stats.set(s));
   }
 
   protected setStatus(s: string): void { this.statusCtl.setValue(s); this.query = { ...this.query, page: 0 }; this.load(); }

@@ -9,10 +9,13 @@ import { PickupRequest, PickupStats, PickupStatus, SavePickupRequest } from '@co
 export class PickupService {
   private readonly api = inject(ApiService);
 
-  list(query: PageQuery & { status?: PickupStatus; pdpBranchId?: string }) {
+  list(query: PageQuery & { status?: PickupStatus; pdpBranchId?: string; bookingBranchId?: string }) {
     return this.api.page<PickupRequest>(API.pickups, query);
   }
-  stats() { return this.api.get<PickupStats>(`${API.pickups}/stats`); }
+  /** Counts per status; an admin may narrow them to one booking branch (13.4). */
+  stats(bookingBranchId?: string) {
+    return this.api.get<PickupStats>(`${API.pickups}/stats`, bookingBranchId ? { bookingBranchId } : undefined);
+  }
   get(id: string) { return this.api.get<PickupRequest>(`${API.pickups}/${id}`); }
   create(body: SavePickupRequest) { return this.api.post<PickupRequest>(API.pickups, body); }
   update(id: string, body: SavePickupRequest) { return this.api.put<PickupRequest>(`${API.pickups}/${id}`, body); }
