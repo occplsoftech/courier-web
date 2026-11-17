@@ -169,6 +169,11 @@ export const routes: Routes = [
         loadComponent: () => import('@features/platform/platform-dashboard').then((m) => m.PlatformDashboardPage)
       },
       {
+        path: 'platform/bookings', title: 'All Bookings', canActivate: [roleGuard],
+        data: { roles: [AppRole.SUPER_ADMIN] },
+        loadComponent: () => import('@features/platform/all-bookings').then((m) => m.AllBookingsPage)
+      },
+      {
         path: 'platform/users', title: 'Platform Operators', canActivate: [roleGuard],
         data: { roles: [AppRole.SUPER_ADMIN] },
         loadComponent: () => import('@features/platform/super-admin-list').then((m) => m.SuperAdminListPage)

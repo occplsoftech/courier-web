@@ -83,6 +83,7 @@ export const NAVIGATION: NavNode[] = [
     id: 'platform', title: 'Platform', icon: 'travel_explore', order: 1.5, roles: PLATFORM,
     children: [
       { id: 'platform-dashboard', title: 'Platform Dashboard', icon: 'monitoring', route: '/platform/dashboard', permission: 'DASHBOARD_READ', roles: PLATFORM },
+      { id: 'platform-bookings', title: 'All Bookings', icon: 'local_shipping', route: '/platform/bookings', permission: 'DASHBOARD_READ', roles: PLATFORM },
       { id: 'companies', title: 'Companies', icon: 'domain', route: '/companies', permission: 'COMPANY_READ', roles: PLATFORM },
       { id: 'subscription-plans', title: 'Subscription Plans', icon: 'workspace_premium', route: '/subscription-plans', permission: 'SUBSCRIPTION_READ', roles: PLATFORM },
       { id: 'super-admins', title: 'Platform Operators', icon: 'shield_person', route: '/platform/users', permission: 'SUPER_ADMIN_USER_READ', roles: PLATFORM }
