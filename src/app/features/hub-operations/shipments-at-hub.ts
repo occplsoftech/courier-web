@@ -38,7 +38,13 @@ const STATUS_OPTIONS: SelectOption[] = [
       <header class="page__head">
         <div><h1 class="text-h1">Shipments At Hub</h1>
           <p class="text-caption">{{ page().totalElements }} shipment(s) at or inbound to your hub.</p></div>
-        <app-button variant="stroked" icon="refresh" (pressed)="load()">Refresh</app-button>
+        <div class="head-acts">
+          @if (picked().size) {
+            <app-button icon="local_shipping" (pressed)="forwardSelected()">Forward selected ({{ picked().size }})</app-button>
+            <app-button variant="text" (pressed)="clearPicked()">Clear</app-button>
+          }
+          <app-button variant="stroked" icon="refresh" (pressed)="load()">Refresh</app-button>
+        </div>
       </header>
 
       <div class="filters">
@@ -51,6 +57,9 @@ const STATUS_OPTIONS: SelectOption[] = [
                  [startIndex]="page().page * page().size"
                  emptyTitle="Nothing here" emptyHint="No shipment matches these filters." (sortChange)="onSort($event)" idKey="id">
         <ng-template #row let-s>
+          <td>@if (pickable(s)) {
+              <input type="checkbox" [checked]="picked().has(s.id)" (change)="toggle(s)" [attr.aria-label]="'Select ' + s.trackingNumber" />
+            }</td>
           <td><div class="cs">{{ s.trackingNumber }}</div><div class="text-caption">{{ s.shipmentNumber }}</div></td>
           <td>{{ branchNames().get(s.bookingBranchId) || '—' }}</td>
           <td>{{ s.fromCity || '—' }}</td>
@@ -79,6 +88,7 @@ const STATUS_OPTIONS: SelectOption[] = [
     .cs { font:600 14px var(--font-sans); }
     .tbl--right { text-align:right; }
     .acts { display:flex; gap:6px; }
+    .head-acts { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   `]
 })
 export class ShipmentsAtHub implements OnInit {
@@ -100,6 +110,7 @@ export class ShipmentsAtHub implements OnInit {
   private query: PageQuery = { page: 0, size: 20 };
 
   readonly columns: TableColumn<Shipment>[] = [
+    { key: 'pick', header: '', width: '40px' },
     { key: 'trackingNumber', header: 'AWB' },
     { key: 'bookingBranchId', header: 'Booking Branch' },
     { key: 'fromCity', header: 'Origin' },
@@ -130,6 +141,22 @@ export class ShipmentsAtHub implements OnInit {
       next: (p) => { this.page.set(p); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
+  }
+
+  /** Bulk forwarding (14.1): shipments held here (not still on the way); the server checks the rest (already forwarded, To Pay…). */
+  protected readonly picked = signal<Map<string, string>>(new Map());
+  protected readonly maxPick = 50;
+  protected clearPicked(): void { this.picked.set(new Map()); }
+  protected pickable(s: Shipment): boolean {
+    return s.currentLocationId === this.myBranchId && s.status !== 'DISPATCHED';
+  }
+  protected toggle(s: Shipment): void {
+    const m = new Map(this.picked());
+    if (m.has(s.id)) m.delete(s.id); else if (m.size < this.maxPick) m.set(s.id, s.trackingNumber ?? s.shipmentNumber ?? s.id);
+    this.picked.set(m);
+  }
+  protected forwardSelected(): void {
+    this.router.navigate(['/hub-operations/forward'], { queryParams: { ids: [...this.picked().keys()].join(',') } });
   }
 
   protected goLoadingSheet(): void { this.router.navigate(['/hub-operations/load-sheet']); }

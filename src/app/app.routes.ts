@@ -762,6 +762,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/shipment-movement/loading-sheet').then((m) => m.LoadingSheet)
       },
       {
+        path: 'hub-operations/forward', title: 'Forward Shipments', canActivate: [roleGuard], data: { roles: HUB_WRITERS },
+        loadComponent: () => import('@features/hub-operations/bulk-forward').then((m) => m.BulkForward)
+      },
+      {
         path: 'hub-operations/load-sheet', title: 'Hub Load Sheet', canActivate: [roleGuard], data: { roles: HUB_WRITERS },
         loadComponent: () => import('@features/shipment-movement/loading-sheet').then((m) => m.LoadingSheet)
       },

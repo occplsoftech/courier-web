@@ -1083,6 +1083,14 @@ export interface ForwardResult {
   awb: string | null; labelUrl: string | null; cost: number;
 }
 
+/** Bulk forwarding (14.1): one shipment's prices, or why it could not be priced. */
+export interface BulkForwardOptionsRow { shipmentId: string; options: ForwardOptions | null; error: string | null; }
+/** Bulk forwarding (14.1): what happened to one shipment. */
+export interface BulkForwardResultRow {
+  shipmentId: string; outcome: 'FORWARDED' | 'UNCONFIRMED' | 'REFUSED' | 'ERROR'; message: string; provider: string | null;
+  serviceName: string | null; awb: string | null; labelUrl: string | null; cost: number | null;
+}
+
 export interface ResolveForwardResult { shipmentId: string; outcome: 'CLEARED' | 'FORWARDED'; message: string; }
 
 // ---- failed delivery attempts (Phase 10.2) -------------------------------------------------------------------------------
