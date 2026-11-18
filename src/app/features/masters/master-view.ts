@@ -5,6 +5,7 @@ import { DatePipe } from '@angular/common';
 import { map } from 'rxjs/operators';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
+import { AppRole } from '@core/models/role.model';
 import { PermissionService } from '@core/auth/permission.service';
 import { MasterRecord } from '@core/models/master.model';
 import { UiButton } from '@shared/components/ui-button/ui-button';
@@ -76,7 +77,7 @@ import {
           }
 
           @if (d.key === 'pincodes') {
-            <app-pincode-areas-card [pincodeId]="r.id" [canWrite]="can().update" />
+            <app-pincode-areas-card [pincodeId]="r.id" [canWrite]="canEditAreas()" />
           }
 
           <app-card title="Audit">
@@ -132,6 +133,13 @@ export class MasterView {
       delete: this.perms.canAccess({ roles: access.roles, permissions: access.permissions.delete })
     };
   });
+
+  /**
+   * The per-area switches (Serviceable, ODA): a company admin may change them as the server allows (PincodeAreaService), even
+   * without the platform's GLOBAL_MASTER_UPDATE that editing the pincode itself needs.
+   */
+  readonly canEditAreas = computed(() => this.can().update || this.perms.hasRole(AppRole.COMPANY_ADMIN)
+    || this.perms.hasRole(AppRole.SUPER_ADMIN));
 
   /**
    * Pincode's own `areaId` is skipped here — the "Areas served by this pincode" card
