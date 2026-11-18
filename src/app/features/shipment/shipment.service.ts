@@ -7,7 +7,7 @@ import {
   ShipmentItem, CreateShipmentRequest, UpdateShipmentRequest, AddShipmentDocumentRequest,
   PricingRequest, PricingResponse, TimelineStep, ShipmentDrs, ShipmentSearchRequest, ShipmentSummaryStats,
   BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange,
-  ForwardOptions, ForwardResult, ResolveForwardResult, BulkForwardOptionsRow, BulkForwardResultRow
+  ForwardOptions, ForwardResult, ResolveForwardResult, ServiceabilityCheck, BulkForwardOptionsRow, BulkForwardResultRow
 } from '@core/models/shipment.model';
 
 /**
@@ -95,6 +95,11 @@ export class ShipmentService {
   /** Forward several shipments, one after the other (up to 20 per call); one row per shipment. */
   bulkForward(items: Array<{ shipmentId: string; providerCode: string; serviceCode: string }>) {
     return this.api.post<BulkForwardResultRow[]>('/forwarding/bulk', { items });
+  }
+
+  /** Is this destination pincode and area serviceable? An unserviceable answer is counted for the report. */
+  checkServiceability(pincode: string, areaId: string, branchId?: string | null) {
+    return this.api.get<ServiceabilityCheck>('/serviceability/check', { pincode, areaId, ...(branchId ? { branchId } : {}) });
   }
 
   forwardOptions(id: string) { return this.api.get<ForwardOptions>(`${API.shipments}/${id}/forwarding/options`); }

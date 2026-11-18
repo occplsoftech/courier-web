@@ -400,6 +400,7 @@ export const NAVIGATION: NavNode[] = [
       // Company-level audit — every branch side by side, so gated same as Finance Reports, not per-branch reports.
       { id: 'vendor-audit-report', title: 'Vendor Audit Report', icon: 'fact_check', route: '/reports/vendor-audit', permission: 'REPORT_READ', roles: [...FINANCE, AppRole.ACCOUNTS] },
       { id: 'customer-report', title: 'Customer Report', icon: 'groups', route: '/reports/customers', permission: 'REPORT_READ', roles: COMPANY_ROLES.filter((r) => r !== AppRole.BRANCH_MANAGER) },
+      { id: 'unserviceable-report', title: 'Unserviceable Requests', icon: 'location_off', route: '/reports/unserviceable', permission: 'REPORT_READ', roles: MANAGERS },
       { id: 'exception-report', title: 'Shipment Exceptions', icon: 'report_problem', route: '/reports/exceptions', permission: 'REPORT_READ', roles: SHIPMENT_READERS },
       { id: 'cancelled-orders-report', title: 'Cancelled Orders', icon: 'cancel', route: '/reports/cancelled-orders', permission: 'REPORT_READ', roles: SHIPMENT_READERS },
       { id: 'bulk-tracking-report', title: 'Bulk Shipment Tracking', icon: 'checklist', route: '/reports/bulk-tracking', permission: 'REPORT_READ', roles: SHIPMENT_READERS }

@@ -113,6 +113,11 @@ type FreightOutcome =
                   <span class="fld__i fld__i--hint">Looking up areas…</span>
                 } @else if (destinationAreaOptions().length) {
                   <app-select [control]="c('destinationAreaId')" [options]="destinationAreaOptions()" placeholder="Select an area" />
+                  @switch (areaService().state) {
+                    @case ('checking') { <span class="svc svc--wait" role="status">Checking serviceability…</span> }
+                    @case ('ok') { <span class="svc svc--ok" role="status">✓ Serviceable</span> }
+                    @case ('off') { <span class="svc svc--off" role="alert">{{ areaService().message }}</span> }
+                  }
                 } @else {
                   <span class="fld__i fld__i--hint">{{ destinationAreaError() ?? 'Enter a destination pincode first' }}</span>
                 }
@@ -504,7 +509,8 @@ type FreightOutcome =
               <app-button icon="check" [loading]="submitting()"
                 [disabled]="!pricing() || pricingLoading() || !freightCalc() || freightCalcLoading()
                   || form.invalid || ewayBillReason() !== null || appointmentDeliveryReason() !== null
-                  || !c('declaredValue').value || (isMsrtc && !msrtcDeliveryBranchId()) || busCrossingIncomplete()"
+                  || !c('declaredValue').value || (isMsrtc && !msrtcDeliveryBranchId()) || busCrossingIncomplete()
+                  || areaService().state === 'off' || areaService().state === 'checking'"
                 (pressed)="book()">Book Shipment</app-button>
             </div>
           </div>
@@ -514,6 +520,10 @@ type FreightOutcome =
     </div>
   `,
   styles: [`
+    .svc { display:block; margin-top:4px; font:600 12.5px var(--font-sans); }
+    .svc--wait { color:var(--content-muted); }
+    .svc--ok { color:var(--success, #15803d); }
+    .svc--off { color:var(--danger, #b91c1c); }
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
     .page__head { margin-bottom:4px; }
     .page__head-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
@@ -790,6 +800,9 @@ export class ShipmentCreate implements OnInit {
   protected readonly destinationAreaOptions = signal<SelectOption[]>([]);
   protected readonly destinationAreaLoading = signal(false);
   protected readonly destinationAreaError = signal<string | null>(null);
+  /** The picked destination area's serviceability: checked (and, when off, counted for the report) every time an area is picked. */
+  protected readonly areaService = signal<{ state: 'idle' | 'checking' | 'ok' | 'off'; message?: string | null }>({ state: 'idle' });
+  private areaCheckSeq = 0;
   private readonly destinationPincodeQuery$ = new Subject<string>();
 
   /** The booking branch's own GST% (V25) — Other Charges is a manual, booking-time amount
@@ -1027,6 +1040,7 @@ export class ShipmentCreate implements OnInit {
         if (this.isMsrtc) { this.pincodeBranch.set(null); this.pincodeBranchLookup.set('idle'); }
         this.destinationAreaOptions.set([]);
         this.destinationAreaError.set(null);
+        this.areaService.set({ state: 'idle' });
         this.c('destinationAreaId').setValue(null, { emitEvent: false });
         if (!/^\d{6}$/.test(code)) return of(null);
         this.destinationAreaLoading.set(true);
@@ -1066,9 +1080,10 @@ export class ShipmentCreate implements OnInit {
     // rate") — also syncs deliveryPincode so Pricing Engine and District Level Freight
     // never target two different destinations for the same booking.
     this.c('destinationAreaId').valueChanges.subscribe((areaId) => {
-      if (!areaId) return;
+      if (!areaId) { this.areaService.set({ state: 'idle' }); return; }
       const pincode = this.c('destinationPincode').value?.trim();
       if (pincode) this.form.get('deliveryPincode')?.setValue(pincode);
+      if (pincode && /^\d{6}$/.test(pincode)) this.checkAreaService(pincode, areaId);
       this.scheduleFreightCalc();
     });
     // At least one Crossing Branch is required only while Crossing is checked —
@@ -1792,10 +1807,28 @@ export class ShipmentCreate implements OnInit {
     );
   }
 
+  /** Serviceability of the picked area; the latest pick wins when answers cross. */
+  private checkAreaService(pincode: string, areaId: string): void {
+    const seq = ++this.areaCheckSeq;
+    this.areaService.set({ state: 'checking' });
+    this.service.checkServiceability(pincode, areaId, this.c('bookingBranchId').value).subscribe({
+      next: (r) => {
+        if (seq !== this.areaCheckSeq) return;
+        this.areaService.set(r.serviceable ? { state: 'ok' } : { state: 'off', message: r.message ?? 'Service unavailable for this area.' });
+      },
+      // a failed check never blocks booking: the server still refuses an unserviceable destination
+      error: () => { if (seq === this.areaCheckSeq) this.areaService.set({ state: 'idle' }); }
+    });
+  }
+
   protected book(): void {
     const p = this.pricing();
     const f = this.freightCalc();
     if (!p || !f || this.form.invalid || this.ewayBillReason() !== null) return;
+    if (this.areaService().state === 'off') {
+      this.notify.error(this.areaService().message ?? 'Service unavailable for this area.');
+      return;
+    }
     const v = this.form.getRawValue();
     if (this.isMsrtc && !this.msrtcDeliveryBranchId()) {
       this.notify.error('Choose the delivery branch.');

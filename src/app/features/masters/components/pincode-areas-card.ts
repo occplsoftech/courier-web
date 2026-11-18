@@ -9,7 +9,7 @@ import { MasterDataService } from '../master-data.service';
 /**
  * Pincode-only card on the pincode detail page: every Area this pincode's postal record
  * names (not just the single primary one `master.config.ts`'s generic field list already
- * shows), each with its own ODA toggle and, once on, an amount.
+ * shows), each with its own Serviceable switch, ODA toggle and, once on, an amount.
  *
  * Not part of the shared four-component master architecture on purpose — this is a
  * per-row editable sub-list, not a flat field descriptor `MasterFieldControl` could
@@ -29,7 +29,7 @@ import { MasterDataService } from '../master-data.service';
         <div class="pa__wrap">
           <table class="pa">
             <thead>
-              <tr><th>Area</th><th>City</th><th></th><th>ODA</th><th>Amount (₹)</th></tr>
+              <tr><th>Area</th><th>City</th><th></th><th>Serviceable</th><th>ODA</th><th>Amount (₹)</th></tr>
             </thead>
             <tbody>
               @for (row of rows(); track row.id) {
@@ -37,6 +37,12 @@ import { MasterDataService } from '../master-data.service';
                   <td class="pa__name">{{ row.areaName ?? '—' }}</td>
                   <td>{{ row.cityName ?? '—' }}</td>
                   <td>@if (row.primary) { <span class="pa__badge">Primary</span> }</td>
+                  <td>
+                    <mat-slide-toggle color="primary" [checked]="row.serviceable"
+                                       [disabled]="!canWrite() || isSaving(row.id)"
+                                       [attr.aria-label]="'Serviceable: ' + (row.areaName ?? '')"
+                                       (change)="toggleServiceable(row, $event.checked)" />
+                  </td>
                   <td>
                     <mat-slide-toggle color="primary" [checked]="row.odaApplicable"
                                        [disabled]="!canWrite() || isSaving(row.id)"
@@ -101,6 +107,11 @@ export class PincodeAreasCard {
     return this.saving().has(rowId);
   }
 
+  /** Switch an area on or off for booking (the pincode itself must be serviceable too). */
+  toggleServiceable(row: PincodeAreaRow, checked: boolean): void {
+    this.save(row, { serviceable: checked });
+  }
+
   toggleOda(row: PincodeAreaRow, checked: boolean): void {
     this.save(row, { odaApplicable: checked });
   }
@@ -122,7 +133,7 @@ export class PincodeAreasCard {
     });
   }
 
-  private save(row: PincodeAreaRow, patch: { odaApplicable?: boolean; odaAmount?: number | null }): void {
+  private save(row: PincodeAreaRow, patch: { odaApplicable?: boolean; odaAmount?: number | null; serviceable?: boolean }): void {
     this.saving.update((s) => new Set(s).add(row.id));
     this.service.updatePincodeAreaOda(this.pincodeId(), row.id, patch).subscribe({
       next: (updated) => {

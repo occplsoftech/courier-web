@@ -555,6 +555,11 @@ export const routes: Routes = [
         loadComponent: () => import('@features/reports/customer-report').then((m) => m.CustomerReport)
       },
       {
+        path: 'reports/unserviceable', title: 'Unserviceable Requests', canActivate: [roleGuard],
+        data: { roles: [AppRole.SUPER_ADMIN, AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER, AppRole.HUB_MANAGER] },
+        loadComponent: () => import('@features/reports/unserviceable-report').then((m) => m.UnserviceableReportPage)
+      },
+      {
         path: 'reports/exceptions', title: 'Shipment Exception Report', canActivate: [roleGuard], data: { roles: SHIPMENT_READERS },
         loadComponent: () => import('@features/reports/shipment-exception-report').then((m) => m.ShipmentExceptionReport)
       },
