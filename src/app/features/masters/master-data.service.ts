@@ -110,7 +110,7 @@ export class MasterDataService {
   /** Sets ODA (and/or its amount) for one Area of one pincode. Both fields optional and
    *  independent — send only what changed. */
   updatePincodeAreaOda(
-    pincodeId: string, areaLinkId: string, body: { odaApplicable?: boolean; odaAmount?: number | null }
+    pincodeId: string, areaLinkId: string, body: { odaApplicable?: boolean; odaAmount?: number | null; serviceable?: boolean }
   ): Observable<PincodeAreaRow> {
     return this.api.patch<PincodeAreaRow>(`/global-masters/pincodes/${pincodeId}/areas/${areaLinkId}`, body);
   }

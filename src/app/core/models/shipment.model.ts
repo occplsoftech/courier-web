@@ -1091,6 +1091,12 @@ export interface BulkForwardResultRow {
   serviceName: string | null; awb: string | null; labelUrl: string | null; cost: number | null;
 }
 
+/** Whether a destination pincode and area can be booked; `message` says why not. */
+export interface ServiceabilityCheck {
+  pincode: string; areaId: string | null; areaName: string | null; cityName: string | null; serviceable: boolean;
+  reason: 'PINCODE_OFF' | 'AREA_OFF' | 'NOT_ON_FILE' | null; message: string | null;
+}
+
 export interface ResolveForwardResult { shipmentId: string; outcome: 'CLEARED' | 'FORWARDED'; message: string; }
 
 // ---- failed delivery attempts (Phase 10.2) -------------------------------------------------------------------------------

@@ -91,6 +91,8 @@ export interface PincodeAreaRow {
   primary: boolean;
   odaApplicable: boolean;
   odaAmount: number | null;
+  /** This area can be booked to (the pincode itself must be serviceable too). */
+  serviceable: boolean;
 }
 
 /** `GET /global-masters/pincodes/lookup/{code}` — the Area (and its ancestor chain)
