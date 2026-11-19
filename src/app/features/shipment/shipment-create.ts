@@ -134,52 +134,6 @@ interface ServiceRate {
                 <input class="fld__i" [value]="freightCalc()?.destinationCityName ?? (freightCalcLoading() ? 'Resolving…' : '—')" disabled /></label>
               }
               <div class="fld">
-                <app-select [control]="c('serviceTypeId')" label="Service Type" [options]="serviceTypeOptions()" placeholder="Select a service type" />
-                @if (expectedDeliveryPreview(); as edp) {
-                  <p class="hint">Expected delivery: {{ edp | date: 'mediumDate' }}</p>
-                }
-              </div>
-              @if (serviceRates(); as rates) {
-                <div class="svcs" role="group" aria-label="Available services for this destination">
-                  <div class="svcs__head">
-                    <span class="svcs__l">Available services{{ serviceRatesLoading() ? ' · updating…' : '' }}</span>
-                    <span class="svcs__note">Before door delivery, To-Pay and other booking charges</span>
-                  </div>
-                  @if (availableRates().length) {
-                    <div class="svcs__grid">
-                      @for (r of availableRates(); track r.serviceTypeId) {
-                        <article class="svc-card" [class.svc-card--on]="c('serviceTypeId').value === r.serviceTypeId">
-                          @if (r === cheapestRate()) { <span class="svc-card__lowest">↓ Lowest</span> }
-                          <span class="svc-card__icon"><mat-icon>{{ serviceIcon(r.label) }}</mat-icon></span>
-                          <h3>{{ r.label }}</h3>
-                          <p class="svc-card__sub">{{ packageCode() }}@if (r.days != null) { · {{ r.days === 0 ? 'same day' : r.days + (r.days === 1 ? ' day' : ' days') }} }</p>
-                          <strong class="svc-card__price">₹{{ r.estimate | number: '1.2-2' }}</strong>
-                          <small>₹{{ (r.estimate ?? 0) / weight().chargeable | number: '1.2-2' }} / kg · {{ weight().chargeable | number: '1.0-3' }} kg chargeable</small>
-                          <details class="svc-card__breakup">
-                            <summary>View breakup →</summary>
-                            <table><tbody>
-                              <tr><td>Freight @if (r.basis) { <span class="why">{{ r.basis }}</span> }</td><td class="amt">₹{{ r.freight | number: '1.2-2' }}</td></tr>
-                              @if (r.oda) { <tr><td>ODA</td><td class="amt">₹{{ r.oda | number: '1.2-2' }}</td></tr> }
-                              @if (r.extras) { <tr><td>Other charges</td><td class="amt">₹{{ r.extras | number: '1.2-2' }}</td></tr> }
-                              <tr><td>GST {{ myBranchGstPercentage() }}%</td><td class="amt">₹{{ r.gst | number: '1.2-2' }}</td></tr>
-                              @if (r.roundOff) { <tr><td>Round off</td><td class="amt">₹{{ r.roundOff | number: '1.2-2' }}</td></tr> }
-                              <tr class="tot"><td>Total</td><td class="amt">₹{{ r.estimate | number: '1.2-2' }}</td></tr>
-                            </tbody></table>
-                          </details>
-                          <button type="button" class="svc-card__pick" [attr.aria-pressed]="c('serviceTypeId').value === r.serviceTypeId"
-                                  (click)="pickService(r.serviceTypeId)">{{ c('serviceTypeId').value === r.serviceTypeId ? '✓ Selected' : 'Select' }}</button>
-                        </article>
-                      }
-                    </div>
-                  } @else if (!serviceRatesLoading()) {
-                    <p class="err">No service has a rate for this destination. Check the zone tariff rate cards.</p>
-                  }
-                  @if (unavailableRates().length) {
-                    <p class="svcs__off">Not available here: @for (r of unavailableRates(); track r.serviceTypeId; let last = $last) { <span [title]="r.error ?? ''">{{ r.label }}</span>@if (!last) {, } }</p>
-                  }
-                </div>
-              }
-              <div class="fld">
                 <app-select [control]="c('packageTypeId')" label="Package Type" [options]="packageTypeOptions()" [allowEmpty]="true" emptyLabel="Not set" placeholder="Not set" />
                 <p class="hint">Your zone tariff prices by package type (Non Document unless you change it).</p>
               </div>
@@ -457,8 +411,66 @@ interface ServiceRate {
         </div>
 
         <aside class="lr__sum">
+          @if (!c('serviceTypeId').value) {
+          <div class="sum sum--pick">
+            @if (serviceRates()) {
+                <div class="svcs" role="group" aria-label="Available services for this destination">
+                  <div class="svcs__head">
+                    <h2 class="sum__title">Choose a service</h2>
+                    <span class="svcs__note">{{ serviceRatesLoading() ? 'Updating rates…' : 'Rates for this destination, GST included' }}</span>
+                  </div>
+                  @if (availableRates().length) {
+                    <div class="svcs__grid">
+                      @for (r of availableRates(); track r.serviceTypeId) {
+                        <article class="svc-card" [class.svc-card--on]="c('serviceTypeId').value === r.serviceTypeId">
+                          @if (r === cheapestRate()) { <span class="svc-card__lowest">↓ Lowest</span> }
+                          <span class="svc-card__icon"><mat-icon>{{ serviceIcon(r.label) }}</mat-icon></span>
+                          <h3>{{ r.label }}</h3>
+                          <p class="svc-card__sub">{{ packageCode() }}@if (r.days != null) { · {{ r.days === 0 ? 'same day' : r.days + (r.days === 1 ? ' day' : ' days') }} }</p>
+                          <strong class="svc-card__price">₹{{ r.estimate | number: '1.2-2' }}</strong>
+                          <small>₹{{ (r.estimate ?? 0) / weight().chargeable | number: '1.2-2' }} / kg · {{ weight().chargeable | number: '1.0-3' }} kg chargeable</small>
+                          <details class="svc-card__breakup">
+                            <summary>View breakup →</summary>
+                            <table><tbody>
+                              <tr><td>Freight @if (r.basis) { <span class="why">{{ r.basis }}</span> }</td><td class="amt">₹{{ r.freight | number: '1.2-2' }}</td></tr>
+                              @if (r.oda) { <tr><td>ODA</td><td class="amt">₹{{ r.oda | number: '1.2-2' }}</td></tr> }
+                              @if (r.extras) { <tr><td>Other charges</td><td class="amt">₹{{ r.extras | number: '1.2-2' }}</td></tr> }
+                              <tr><td>GST {{ myBranchGstPercentage() }}%</td><td class="amt">₹{{ r.gst | number: '1.2-2' }}</td></tr>
+                              @if (r.roundOff) { <tr><td>Round off</td><td class="amt">₹{{ r.roundOff | number: '1.2-2' }}</td></tr> }
+                              <tr class="tot"><td>Total</td><td class="amt">₹{{ r.estimate | number: '1.2-2' }}</td></tr>
+                            </tbody></table>
+                          </details>
+                          <button type="button" class="svc-card__pick" [attr.aria-pressed]="c('serviceTypeId').value === r.serviceTypeId"
+                                  (click)="pickService(r.serviceTypeId)">{{ c('serviceTypeId').value === r.serviceTypeId ? '✓ Selected' : 'Select' }}</button>
+                        </article>
+                      }
+                    </div>
+                  } @else if (!serviceRatesLoading()) {
+                    <p class="err">No service has a rate for this destination. Check the zone tariff rate cards.</p>
+                  }
+                  @if (unavailableRates().length) {
+                    <p class="svcs__off">Not available here: @for (r of unavailableRates(); track r.serviceTypeId; let last = $last) { <span [title]="r.error ?? ''">{{ r.label }}</span>@if (!last) {, } }</p>
+                  }
+                </div>
+            } @else if (isMsrtc) {
+              <h2 class="sum__title">Choose a service</h2>
+              <div class="svc-list">
+                @for (o of serviceTypeOptions(); track o.value) {
+                  <button type="button" class="svc-card__pick" (click)="pickService(o.value)">{{ o.label }}</button>
+                }
+              </div>
+            } @else {
+              <h2 class="sum__title">Choose a service</h2>
+              <p class="hint">Enter the destination pincode, area and the item weight to see the rate of every service.</p>
+            }
+          </div>
+          } @else {
           <div class="sum">
             <h2 class="sum__title">Booking Summary</h2>
+            <div class="chosen">
+              <span><b>{{ chosenRate()?.label ?? serviceLabel() }}</b>@if (expectedDeliveryPreview(); as edp) { · delivery {{ edp | date: 'd MMM' }} }</span>
+              <button type="button" class="chosen__change" (click)="changeService()">Change</button>
+            </div>
 
             <span class="sum__lbl">Route</span>
             <span class="sum__val">{{ myBranchCity() ?? myBranchLabel() }} → {{ freightCalc()?.destinationCityName ?? '—' }}</span>
@@ -476,7 +488,7 @@ interface ServiceRate {
               @if (freightCalcLoading()) {
                 <p class="hint">Calculating freight…</p>
               } @else if (freightCalcError()) {
-                <p class="err">{{ freightCalcError() }}@if (hasOtherRates()) { Pick one of the rates under Service Type. }</p>
+                <p class="err">{{ freightCalcError() }}@if (hasOtherRates()) { Choose another service with Change. }</p>
               }
             }
 
@@ -560,17 +572,24 @@ interface ServiceRate {
                 (pressed)="book()">Book Shipment</app-button>
             </div>
           </div>
+          }
         </aside>
       </div>
       }
     </div>
   `,
   styles: [`
-    .svcs { grid-column:1 / -1; display:flex; flex-direction:column; gap:8px; }
+    .svcs { display:flex; flex-direction:column; gap:10px; }
+    .sum--pick { gap:10px; max-height:calc(100vh - 140px); overflow-y:auto; overscroll-behavior:contain; }
+    .svc-list { display:flex; flex-direction:column; gap:8px; }
+    .chosen { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:2px 0 10px; padding:8px 10px; border-radius:10px;
+      background:var(--brand-50, #fdecef); color:var(--content-fg); font:500 13px var(--font-sans); }
+    .chosen__change { border:0; background:transparent; color:var(--occpl-color-primary, #c2183f); font:700 13px var(--font-sans); cursor:pointer; padding:4px 6px; }
+    .chosen__change:focus-visible { outline:2px solid var(--occpl-color-primary, #c2183f); border-radius:6px; }
     .svcs__head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
     .svcs__l { font:600 13px var(--font-sans); color:var(--content-fg); }
     .svcs__note { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .svcs__grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
+    .svcs__grid { display:grid; grid-template-columns:1fr; gap:12px; }
     .svc-card { position:relative; display:flex; flex-direction:column; gap:4px; padding:18px; background:var(--occpl-color-surface, var(--surface-card, #fff));
       border:1px solid var(--surface-border); border-radius:22px; box-shadow:var(--occpl-shadow-sm); color:var(--content-fg); }
     .svc-card--on { border-color:var(--occpl-color-primary, #c2183f); box-shadow:0 0 0 3px var(--brand-100, #fbe8ed); }
@@ -694,7 +713,7 @@ interface ServiceRate {
     .eway-doc__remove { width:26px; height:26px; border-radius:50%; border:1px solid var(--surface-border);
       background:var(--surface); color:var(--content-fg); display:grid; place-items:center; cursor:pointer; flex-shrink:0; }
     .eway-doc__remove mat-icon { font-size:16px; width:16px; height:16px; }
-    @media (max-width:960px){ .lr { grid-template-columns:1fr; } .lr__sum { position:static; } }
+    @media (max-width:960px){ .lr { grid-template-columns:1fr; } .lr__sum { position:static; } .sum--pick { max-height:none; } }
     @media (max-width:760px){ .grid2, .grid3, .parties, .pref-grid { grid-template-columns:1fr; } }
   `]
 })
@@ -1215,7 +1234,6 @@ export class ShipmentCreate implements OnInit {
     });
     this.masters.options('service-types').subscribe((o) => {
       this.serviceTypeOptions.set(o);
-      if (o.length && !this.form.get('serviceTypeId')?.value) this.form.get('serviceTypeId')?.setValue(o[0].value);
     });
     this.masters.options('package-types').subscribe((o) => {
       this.packageTypeOptions.set(o);
@@ -1879,6 +1897,20 @@ export class ShipmentCreate implements OnInit {
   protected hasOtherRates(): boolean {
     const chosen = this.c('serviceTypeId').value;
     return (this.serviceRates() ?? []).some((r) => r.total !== null && r.serviceTypeId !== chosen);
+  }
+
+  /** The chosen service's card, when the rates are known. */
+  protected chosenRate(): ServiceRate | undefined {
+    return (this.serviceRates() ?? []).find((r) => r.serviceTypeId === this.c('serviceTypeId').value);
+  }
+
+  protected serviceLabel(): string {
+    return (this.serviceTypeOptions().find((o) => o.value === this.c('serviceTypeId').value)?.label ?? '').replace(/\s*\(.*\)$/, '');
+  }
+
+  /** Back to the service cards. */
+  protected changeService(): void {
+    this.c('serviceTypeId').setValue(null);
   }
 
   /** Pick a service from the rates strip. */
