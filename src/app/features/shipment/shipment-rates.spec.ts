@@ -25,10 +25,10 @@ describe('ShipmentCreate rates for this destination', () => {
     expect(calls.map((r) => r.request.body.serviceTypeId)).toEqual(['air', 'srf']);
     expect(calls[0].request.body.packageTypeId).toBe('nd');
     calls[0].flush({ message: 'Rate card PUNE_CASH_2025 has no AIR NON-DOC rate to zone PUNE.' }, { status: 422, statusText: 'x' });
-    calls[1].flush({ data: { totalFreight: 610, weightSlabLabel: '50 up to 1 kg + 14 × 40 per extra kg' } });
-    expect(rates).toEqual([
-      { serviceTypeId: 'air', label: 'AIR', total: null, error: 'Rate card PUNE_CASH_2025 has no AIR NON-DOC rate to zone PUNE.' },
-      { serviceTypeId: 'srf', label: 'SURFACE', total: 610, basis: '50 up to 1 kg + 14 × 40 per extra kg' }]);
+    calls[1].flush({ data: { totalFreight: 610, baseFreight: 610, odaCharge: 0, weightSlabLabel: '50 up to 1 kg + 14 × 40 per extra kg' } });
+    expect(rates[0]).toMatchObject({ serviceTypeId: 'air', label: 'AIR', total: null, error: 'Rate card PUNE_CASH_2025 has no AIR NON-DOC rate to zone PUNE.' });
+    // freight 610 + GST 18% 109.80 = 719.80 → 720 (rounded like the booking summary)
+    expect(rates[1]).toMatchObject({ serviceTypeId: 'srf', label: 'SURFACE', total: 610, freight: 610, gst: 109.8, estimate: 720, roundOff: 0.2 });
     c['form'].get('serviceTypeId').setValue('air');
     c['serviceRates'].set(rates);
     expect(c['hasOtherRates']()).toBe(true);
