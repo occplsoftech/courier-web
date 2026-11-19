@@ -35,4 +35,18 @@ describe('ShipmentCreate rates for this destination', () => {
     c['pickService']('srf');
     expect(c['form'].get('serviceTypeId').value).toBe('srf');
   });
+
+  it('starts with no service chosen and Change goes back to the service cards', () => {
+    const f = TestBed.createComponent(ShipmentCreate);
+    const c = f.componentInstance as unknown as Record<string, any>;
+    f.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((r) => r.url.includes('service-types')).forEach((r) => r.flush({ data: { content: [{ id: 'air', code: 'AIR', name: 'AIR', status: 'ACTIVE' }],
+      page: 0, size: 100, totalElements: 1, totalPages: 1, first: true, last: true, hasNext: false } }));
+    expect(c['form'].get('serviceTypeId').value).toBeNull();
+    c['pickService']('air');
+    expect(c['form'].get('serviceTypeId').value).toBe('air');
+    c['changeService']();
+    expect(c['form'].get('serviceTypeId').value).toBeNull();
+  });
 });
