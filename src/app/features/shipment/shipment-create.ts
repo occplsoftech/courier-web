@@ -62,6 +62,12 @@ type FreightOutcome =
  * delivery pincode are typed alongside the branches, feeding the Pricing Engine
  * directly, since there is no longer an address record to resolve one from.
  */
+/** One service's price for the booking's destination, for the service cards (freight/GST as the summary works them out). */
+interface ServiceRate {
+  serviceTypeId: string; label: string; total: number | null; basis?: string; error?: string;
+  freight?: number; oda?: number; extras?: number; gst?: number; roundOff?: number; estimate?: number; days?: number | null;
+}
+
 @Component({
   selector: 'app-shipment-create',
   standalone: true,
@@ -134,19 +140,43 @@ type FreightOutcome =
                 }
               </div>
               @if (serviceRates(); as rates) {
-                <div class="rates" role="group" aria-label="Rates for this destination">
-                  <span class="rates__l">Rates for this destination{{ serviceRatesLoading() ? ' (updating…)' : '' }}</span>
-                  <div class="rates__row">
-                    @for (r of rates; track r.serviceTypeId) {
-                      <button type="button" class="rate" [class.rate--on]="c('serviceTypeId').value === r.serviceTypeId"
-                              [class.rate--off]="r.total === null" [disabled]="r.total === null"
-                              [title]="r.total === null ? (r.error ?? 'No rate') : (r.basis ?? '')"
-                              (click)="pickService(r.serviceTypeId)">
-                        <b>{{ r.label }}</b>
-                        @if (r.total !== null) { <span>₹{{ r.total | number: '1.0-2' }}</span> } @else { <span>No rate</span> }
-                      </button>
-                    }
+                <div class="svcs" role="group" aria-label="Available services for this destination">
+                  <div class="svcs__head">
+                    <span class="svcs__l">Available services{{ serviceRatesLoading() ? ' · updating…' : '' }}</span>
+                    <span class="svcs__note">Before door delivery, To-Pay and other booking charges</span>
                   </div>
+                  @if (availableRates().length) {
+                    <div class="svcs__grid">
+                      @for (r of availableRates(); track r.serviceTypeId) {
+                        <article class="svc-card" [class.svc-card--on]="c('serviceTypeId').value === r.serviceTypeId">
+                          @if (r === cheapestRate()) { <span class="svc-card__lowest">↓ Lowest</span> }
+                          <span class="svc-card__icon"><mat-icon>{{ serviceIcon(r.label) }}</mat-icon></span>
+                          <h3>{{ r.label }}</h3>
+                          <p class="svc-card__sub">{{ packageCode() }}@if (r.days != null) { · {{ r.days === 0 ? 'same day' : r.days + (r.days === 1 ? ' day' : ' days') }} }</p>
+                          <strong class="svc-card__price">₹{{ r.estimate | number: '1.2-2' }}</strong>
+                          <small>₹{{ (r.estimate ?? 0) / weight().chargeable | number: '1.2-2' }} / kg · {{ weight().chargeable | number: '1.0-3' }} kg chargeable</small>
+                          <details class="svc-card__breakup">
+                            <summary>View breakup →</summary>
+                            <table><tbody>
+                              <tr><td>Freight @if (r.basis) { <span class="why">{{ r.basis }}</span> }</td><td class="amt">₹{{ r.freight | number: '1.2-2' }}</td></tr>
+                              @if (r.oda) { <tr><td>ODA</td><td class="amt">₹{{ r.oda | number: '1.2-2' }}</td></tr> }
+                              @if (r.extras) { <tr><td>Other charges</td><td class="amt">₹{{ r.extras | number: '1.2-2' }}</td></tr> }
+                              <tr><td>GST {{ myBranchGstPercentage() }}%</td><td class="amt">₹{{ r.gst | number: '1.2-2' }}</td></tr>
+                              @if (r.roundOff) { <tr><td>Round off</td><td class="amt">₹{{ r.roundOff | number: '1.2-2' }}</td></tr> }
+                              <tr class="tot"><td>Total</td><td class="amt">₹{{ r.estimate | number: '1.2-2' }}</td></tr>
+                            </tbody></table>
+                          </details>
+                          <button type="button" class="svc-card__pick" [attr.aria-pressed]="c('serviceTypeId').value === r.serviceTypeId"
+                                  (click)="pickService(r.serviceTypeId)">{{ c('serviceTypeId').value === r.serviceTypeId ? '✓ Selected' : 'Select' }}</button>
+                        </article>
+                      }
+                    </div>
+                  } @else if (!serviceRatesLoading()) {
+                    <p class="err">No service has a rate for this destination. Check the zone tariff rate cards.</p>
+                  }
+                  @if (unavailableRates().length) {
+                    <p class="svcs__off">Not available here: @for (r of unavailableRates(); track r.serviceTypeId; let last = $last) { <span [title]="r.error ?? ''">{{ r.label }}</span>@if (!last) {, } }</p>
+                  }
                 </div>
               }
               <div class="fld">
@@ -536,15 +566,33 @@ type FreightOutcome =
     </div>
   `,
   styles: [`
-    .rates { grid-column:1 / -1; display:flex; flex-direction:column; gap:6px; }
-    .rates__l { font:600 12.5px var(--font-sans); color:var(--content-muted); }
-    .rates__row { display:flex; flex-wrap:wrap; gap:8px; }
-    .rate { display:inline-flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:110px; padding:7px 12px; border-radius:10px;
-      border:1px solid var(--surface-border); background:var(--surface-card, #fff); color:var(--content-fg); font:500 13px var(--font-sans); cursor:pointer; text-align:left; }
-    .rate b { font:600 12px var(--font-sans); letter-spacing:.02em; }
-    .rate span { font-variant-numeric:tabular-nums; }
-    .rate--on { border-color:var(--brand-500, #c2183f); box-shadow:0 0 0 2px var(--brand-100, #fbe8ed); }
-    .rate--off { opacity:.55; cursor:not-allowed; }
+    .svcs { grid-column:1 / -1; display:flex; flex-direction:column; gap:8px; }
+    .svcs__head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .svcs__l { font:600 13px var(--font-sans); color:var(--content-fg); }
+    .svcs__note { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .svcs__grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
+    .svc-card { position:relative; display:flex; flex-direction:column; gap:4px; padding:18px; background:var(--occpl-color-surface, var(--surface-card, #fff));
+      border:1px solid var(--surface-border); border-radius:22px; box-shadow:var(--occpl-shadow-sm); color:var(--content-fg); }
+    .svc-card--on { border-color:var(--occpl-color-primary, #c2183f); box-shadow:0 0 0 3px var(--brand-100, #fbe8ed); }
+    .svc-card__icon { display:grid; place-items:center; width:2.75rem; height:2.75rem; border-radius:14px; background:var(--occpl-color-info-surface); color:var(--occpl-color-primary); }
+    .svc-card h3 { margin:10px 0 0; font:800 1.1rem var(--font-display, var(--font-sans)); text-transform:uppercase; }
+    .svc-card__sub { margin:0; color:var(--content-muted); }
+    .svc-card__price { margin-top:12px; font:800 1.6rem var(--font-display, var(--font-sans)); font-variant-numeric:tabular-nums; }
+    .svc-card small { color:var(--content-muted); }
+    .svc-card__lowest { position:absolute; top:14px; right:14px; padding:2px 10px; border-radius:8px; background:var(--occpl-color-success-surface);
+      color:var(--occpl-color-success); border:1px solid var(--occpl-color-success); font:800 .7rem var(--font-sans); letter-spacing:.08em; text-transform:uppercase; }
+    .svc-card__breakup { margin-top:8px; }
+    .svc-card__breakup summary { cursor:pointer; color:var(--occpl-color-primary); font:800 .78rem var(--font-sans); letter-spacing:.06em; text-transform:uppercase; }
+    .svc-card__breakup table { margin-top:8px; width:100%; border-collapse:collapse; font-size:.88rem; }
+    .svc-card__breakup td { padding:4px 0; border-bottom:1px solid var(--surface-border); vertical-align:top; }
+    .svc-card__breakup .why { display:block; font-size:.75rem; color:var(--content-muted); }
+    .svc-card__breakup .amt { text-align:right; white-space:nowrap; padding-left:8px; }
+    .svc-card__breakup .tot td { font-weight:700; border-bottom:0; }
+    .svc-card__pick { margin-top:12px; height:40px; border-radius:12px; border:1px solid var(--occpl-color-primary, #c2183f); cursor:pointer;
+      background:transparent; color:var(--occpl-color-primary, #c2183f); font:700 .9rem var(--font-sans); }
+    .svc-card__pick[aria-pressed="true"] { background:var(--occpl-color-primary, #c2183f); color:#fff; }
+    .svc-card__pick:focus-visible { outline:2px solid var(--occpl-color-primary, #c2183f); outline-offset:2px; }
+    .svcs__off { margin:0; font:400 12.5px var(--font-sans); color:var(--content-muted); }
     .svc { display:block; margin-top:4px; font:600 12.5px var(--font-sans); }
     .svc--wait { color:var(--content-muted); }
     .svc--ok { color:var(--success, #15803d); }
@@ -716,7 +764,27 @@ export class ShipmentCreate implements OnInit {
   protected readonly packageTypeOptions = signal<SelectOption[]>([]);
   /** Freight of every service type for the current destination, weight and package type (zone tariff, else District Level
    *  Freight), so staff can see and pick a service the destination has a rate for. Null until a destination is priced. */
-  protected readonly serviceRates = signal<Array<{ serviceTypeId: string; label: string; total: number | null; basis?: string; error?: string }> | null>(null);
+  protected readonly serviceRates = signal<ServiceRate[] | null>(null);
+  protected readonly availableRates = computed(() => (this.serviceRates() ?? []).filter((r) => r.total !== null));
+  protected readonly unavailableRates = computed(() => (this.serviceRates() ?? []).filter((r) => r.total === null));
+  protected readonly cheapestRate = computed(() => this.availableRates().length > 1
+    ? this.availableRates().reduce((a, b) => ((b.estimate ?? Infinity) < (a.estimate ?? Infinity) ? b : a)) : null);
+
+  /** Same icons as the Tariff Calculator. */
+  protected serviceIcon(label: string): string {
+    const s = label.toUpperCase();
+    if (s.includes('AIR')) return 'flight';
+    if (s.includes('PREMIUM') || s.includes('EXPRESS')) return 'bolt';
+    if (s.includes('CARGO')) return 'inventory_2';
+    return 'local_shipping';
+  }
+
+  /** The chosen package type's code, e.g. NON-DOC, for the cards' sub-line. */
+  protected packageCode(): string {
+    const id = this.c('packageTypeId').value;
+    const label = this.packageTypeOptions().find((o) => o.value === id)?.label ?? '';
+    return label.match(/\(([^)]+)\)\s*$/)?.[1] ?? label;
+  }
   protected readonly serviceRatesLoading = signal(false);
   private readonly serviceRatesTrigger$ = new Subject<string>();
   /** Service Type id -> `deliveryDays`, from the raw directory (options() only carries
@@ -1819,7 +1887,7 @@ export class ShipmentCreate implements OnInit {
   }
 
   /** Every service type priced for the current destination (one freight call each); a service without a rate shows why. */
-  private serviceRates$(): Observable<Array<{ serviceTypeId: string; label: string; total: number | null; basis?: string; error?: string }> | null> {
+  private serviceRates$(): Observable<ServiceRate[] | null> {
     const services = this.serviceTypeOptions();
     if (!this.readyForFreight() || !services.length) return of(null);
     const v = this.form.getRawValue();
@@ -1831,8 +1899,18 @@ export class ShipmentCreate implements OnInit {
       serviceTypeId: String(svc.value), packageTypeId: v.packageTypeId || null,
       numberOfPackages: v.numberOfPackages || 1, bookingDate: v.bookingDate || null
     }).pipe(
-      map((d) => ({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: d.totalFreight as number | null, basis: d.weightSlabLabel ?? undefined })),
-      catchError((e: HttpErrorResponse) => of({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: null,
+      map((d): ServiceRate => {
+        const freight = Number(d.baseFreight ?? 0);
+        const oda = Number(d.odaCharge ?? 0);
+        const extras = Number(d.customerExtraCharges ?? 0);
+        const gst = Math.round((freight + oda + extras) * this.myBranchGstPercentage()) / 100;
+        const raw = freight + oda + extras + gst;
+        const estimate = Math.round(raw);
+        return { serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: d.totalFreight as number | null,
+          basis: d.weightSlabLabel ?? undefined, freight, oda, extras, gst, estimate, roundOff: Math.round((estimate - raw) * 100) / 100,
+          days: this.serviceTypeDeliveryDays().get(String(svc.value)) ?? null };
+      }),
+      catchError((e: HttpErrorResponse) => of<ServiceRate>({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: null,
         error: e?.error?.message ?? 'No rate for this destination.' }))
     )));
   }
