@@ -5,7 +5,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, filter, forkJoin, merge, of, switchMap } from 'rxjs';
+import { Observable, Subject, catchError, debounceTime, distinctUntilChanged, filter, forkJoin, map, merge, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -133,9 +133,25 @@ type FreightOutcome =
                   <p class="hint">Expected delivery: {{ edp | date: 'mediumDate' }}</p>
                 }
               </div>
+              @if (serviceRates(); as rates) {
+                <div class="rates" role="group" aria-label="Rates for this destination">
+                  <span class="rates__l">Rates for this destination{{ serviceRatesLoading() ? ' (updating…)' : '' }}</span>
+                  <div class="rates__row">
+                    @for (r of rates; track r.serviceTypeId) {
+                      <button type="button" class="rate" [class.rate--on]="c('serviceTypeId').value === r.serviceTypeId"
+                              [class.rate--off]="r.total === null" [disabled]="r.total === null"
+                              [title]="r.total === null ? (r.error ?? 'No rate') : (r.basis ?? '')"
+                              (click)="pickService(r.serviceTypeId)">
+                        <b>{{ r.label }}</b>
+                        @if (r.total !== null) { <span>₹{{ r.total | number: '1.0-2' }}</span> } @else { <span>No rate</span> }
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
               <div class="fld">
                 <app-select [control]="c('packageTypeId')" label="Package Type" [options]="packageTypeOptions()" [allowEmpty]="true" emptyLabel="Not set" placeholder="Not set" />
-                <p class="hint">Needed when your zone tariff prices this branch's bookings.</p>
+                <p class="hint">Your zone tariff prices by package type (Non Document unless you change it).</p>
               </div>
               <label class="fld"><span class="fld__l">Shipment No. (optional)</span>
                 <input class="fld__i" [formControl]="c('manualShipmentNumber')" placeholder="Leave blank to auto-generate" maxlength="30" /></label>
@@ -430,7 +446,7 @@ type FreightOutcome =
               @if (freightCalcLoading()) {
                 <p class="hint">Calculating freight…</p>
               } @else if (freightCalcError()) {
-                <p class="err">{{ freightCalcError() }}</p>
+                <p class="err">{{ freightCalcError() }}@if (hasOtherRates()) { Pick one of the rates under Service Type. }</p>
               }
             }
 
@@ -520,6 +536,15 @@ type FreightOutcome =
     </div>
   `,
   styles: [`
+    .rates { grid-column:1 / -1; display:flex; flex-direction:column; gap:6px; }
+    .rates__l { font:600 12.5px var(--font-sans); color:var(--content-muted); }
+    .rates__row { display:flex; flex-wrap:wrap; gap:8px; }
+    .rate { display:inline-flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:110px; padding:7px 12px; border-radius:10px;
+      border:1px solid var(--surface-border); background:var(--surface-card, #fff); color:var(--content-fg); font:500 13px var(--font-sans); cursor:pointer; text-align:left; }
+    .rate b { font:600 12px var(--font-sans); letter-spacing:.02em; }
+    .rate span { font-variant-numeric:tabular-nums; }
+    .rate--on { border-color:var(--brand-500, #c2183f); box-shadow:0 0 0 2px var(--brand-100, #fbe8ed); }
+    .rate--off { opacity:.55; cursor:not-allowed; }
     .svc { display:block; margin-top:4px; font:600 12.5px var(--font-sans); }
     .svc--wait { color:var(--content-muted); }
     .svc--ok { color:var(--success, #15803d); }
@@ -689,6 +714,11 @@ export class ShipmentCreate implements OnInit {
   protected readonly myBranchCity = signal<string | null>(null);
   protected readonly serviceTypeOptions = signal<SelectOption[]>([]);
   protected readonly packageTypeOptions = signal<SelectOption[]>([]);
+  /** Freight of every service type for the current destination, weight and package type (zone tariff, else District Level
+   *  Freight), so staff can see and pick a service the destination has a rate for. Null until a destination is priced. */
+  protected readonly serviceRates = signal<Array<{ serviceTypeId: string; label: string; total: number | null; basis?: string; error?: string }> | null>(null);
+  protected readonly serviceRatesLoading = signal(false);
+  private readonly serviceRatesTrigger$ = new Subject<string>();
   /** Service Type id -> `deliveryDays`, from the raw directory (options() only carries
    *  {value,label}) — feeds {@link expectedDeliveryPreview}. */
   private readonly serviceTypeDeliveryDays = signal<Map<string, number | null>>(new Map());
@@ -1119,7 +1149,12 @@ export class ShipmentCreate implements OnInit {
       this.serviceTypeOptions.set(o);
       if (o.length && !this.form.get('serviceTypeId')?.value) this.form.get('serviceTypeId')?.setValue(o[0].value);
     });
-    this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
+    this.masters.options('package-types').subscribe((o) => {
+      this.packageTypeOptions.set(o);
+      // Non Document by default, so the zone tariff prices the booking straight away; staff can switch to Document.
+      const nonDoc = o.find((opt) => /NON[\s-]?DOC/i.test(opt.label));
+      if (nonDoc && !this.form.get('packageTypeId')?.value) this.form.get('packageTypeId')?.setValue(nonDoc.value);
+    });
     this.masters.serviceTypeDirectory().subscribe((rows) => {
       this.serviceTypeDeliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays])));
       this.updateDeliveryPreview();
@@ -1157,6 +1192,12 @@ export class ShipmentCreate implements OnInit {
       if (this.selectedBusinessCustomer()) this.scheduleFreightCalc();
     });
 
+    this.serviceRatesTrigger$.pipe(
+      debounceTime(600),
+      distinctUntilChanged(),
+      switchMap(() => this.serviceRates$()),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((rates) => { this.serviceRatesLoading.set(false); this.serviceRates.set(rates); });
     this.freightTrigger$.pipe(
       debounceTime(500),
       switchMap(() => this.freightCalc$()),
@@ -1760,6 +1801,40 @@ export class ShipmentCreate implements OnInit {
     this.odaChargeOverride.set(null);
     this.ratePerKgOverride.set(null);
     this.freightTrigger$.next();
+    // The rates strip does not depend on the chosen service, so picking one does not re-price every service.
+    const v = this.form.getRawValue();
+    this.serviceRatesTrigger$.next([v.bookingBranchId, v.deliveryPincode, v.destinationAreaId, this.weight().chargeable, v.packageTypeId,
+      this.selectedBusinessCustomer(), v.declaredValue, v.numberOfPackages].join('|'));
+  }
+
+  /** A service other than the chosen one has a rate for this destination. */
+  protected hasOtherRates(): boolean {
+    const chosen = this.c('serviceTypeId').value;
+    return (this.serviceRates() ?? []).some((r) => r.total !== null && r.serviceTypeId !== chosen);
+  }
+
+  /** Pick a service from the rates strip. */
+  protected pickService(serviceTypeId: string): void {
+    if (this.c('serviceTypeId').value !== serviceTypeId) this.c('serviceTypeId').setValue(serviceTypeId);
+  }
+
+  /** Every service type priced for the current destination (one freight call each); a service without a rate shows why. */
+  private serviceRates$(): Observable<Array<{ serviceTypeId: string; label: string; total: number | null; basis?: string; error?: string }> | null> {
+    const services = this.serviceTypeOptions();
+    if (!this.readyForFreight() || !services.length) return of(null);
+    const v = this.form.getRawValue();
+    this.serviceRatesLoading.set(true);
+    return forkJoin(services.map((svc) => this.freightCalculationService.calculate({
+      bookingBranchId: v.bookingBranchId, destinationPincode: v.deliveryPincode,
+      destinationAreaId: v.destinationAreaId, chargeableWeight: this.weight().chargeable,
+      businessCustomerId: this.selectedBusinessCustomer() || null, declaredValue: v.declaredValue || null,
+      serviceTypeId: String(svc.value), packageTypeId: v.packageTypeId || null,
+      numberOfPackages: v.numberOfPackages || 1, bookingDate: v.bookingDate || null
+    }).pipe(
+      map((d) => ({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: d.totalFreight as number | null, basis: d.weightSlabLabel ?? undefined })),
+      catchError((e: HttpErrorResponse) => of({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: null,
+        error: e?.error?.message ?? 'No rate for this destination.' }))
+    )));
   }
 
   private freightCalc$(): Observable<FreightOutcome> {
