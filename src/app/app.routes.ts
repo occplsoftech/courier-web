@@ -575,6 +575,11 @@ export const routes: Routes = [
         path: 'shipments/new', title: 'New Shipment', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS },
         loadComponent: () => import('@features/shipment/shipment-create').then((m) => m.ShipmentCreate)
       },
+      // Domestic (CASH) Shipment: the earlier portal's five-step booking wizard, beside the single-page booking.
+      {
+        path: 'shipments/domestic-cash', title: 'Domestic (CASH) Shipment', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS },
+        loadComponent: () => import('@features/shipment/domestic-cash-booking').then((m) => m.DomesticCashBooking)
+      },
       // Business Customer Booking: the same booking screen, but the customer is chosen first
       // (route data businessBooking) and fills the consignor + payment mode.
       {
