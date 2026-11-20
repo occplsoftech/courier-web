@@ -31,14 +31,15 @@ describe('ItemEntryGrid — weight preview', () => {
     fixture.detectChanges();
   });
 
-  it('an untouched starting row previews the default weight and is itself a real item', () => {
-    // FALLBACK_DEFAULT_WEIGHT_KG (15) prefills every new row so the preview isn't a misleading
-    // zero, and itemName defaults to 'Package' (a real value, not just a placeholder) so
-    // an untouched row is exactly the "one implicit package" a single-item booking is —
-    // it must survive to the emitted item list unedited, or nothing ever gets booked.
-    expect(weight).toEqual({ actual: 15, volumetric: 0, chargeable: 15 });
+  it('an untouched starting row has no weight yet and is not booked until one is typed', () => {
+    // Nothing is pre-filled: the desk types the real weight. itemName still defaults to
+    // 'Package', so typing just a weight makes the row a real item.
+    expect(weight).toEqual({ actual: 0, volumetric: 0, chargeable: 0 });
+    expect(items).toEqual([]);
+    internals.patch(0, { weight: 2 });
+    fixture.detectChanges();
     expect(items).toEqual([{
-      itemName: 'Package', quantity: 1, weight: 15,
+      itemName: 'Package', quantity: 1, weight: 2,
       lengthCm: null, widthCm: null, heightCm: null,
       declaredValue: null, fragile: false, dangerousGoods: false
     }]);
@@ -89,33 +90,24 @@ describe('ItemEntryGrid — weight preview', () => {
     expect(items.length).toBe(1);
   });
 
-  it('seeds the still-pristine first row from defaultWeightKg once the company setting resolves', () => {
-    // Simulates the real timing: emptyRow() runs with the fallback constant at field-
-    // initializer time, before a parent's [defaultWeightKg] binding (itself fed by an
-    // async settings call) can resolve — the seeding effect must catch up afterwards.
+  it('starts with no weight pre-filled, so nothing is assumed', () => {
     const f = TestBed.createComponent(ItemEntryGrid);
-    let seeded: unknown[] = [];
-    f.componentInstance.itemsChange.subscribe((i) => (seeded = i));
-    f.componentRef.setInput('defaultWeightKg', 25);
+    let emitted: unknown[] | null = null;
+    f.componentInstance.itemsChange.subscribe((i) => (emitted = i));
     f.detectChanges();
 
-    expect(seeded).toEqual([{
-      itemName: 'Package', quantity: 1, weight: 25,
-      lengthCm: null, widthCm: null, heightCm: null,
-      declaredValue: null, fragile: false, dangerousGoods: false
-    }]);
+    expect(emitted).toEqual([]); // a row without a weight is not a package yet
   });
 
-  it('does not override a user-edited row once defaultWeightKg resolves', () => {
-    // The seeding effect only touches a still-untouched default row.
-    internals.patch(0, { itemName: 'Box', quantity: 1, weight: 7 });
-    fixture.componentRef.setInput('defaultWeightKg', 25);
+  it('charges the higher of actual and volumetric weight, with no minimum', () => {
+    let w: { actual: number; volumetric: number; chargeable: number } | null = null;
+    fixture.componentInstance.weightChange.subscribe((x) => (w = x));
+    internals.patch(0, { weight: 0.5 });
     fixture.detectChanges();
+    expect(w).toEqual({ actual: 0.5, volumetric: 0, chargeable: 0.5 });
 
-    expect(items).toEqual([{
-      itemName: 'Box', quantity: 1, weight: 7,
-      lengthCm: null, widthCm: null, heightCm: null,
-      declaredValue: null, fragile: false, dangerousGoods: false
-    }]);
+    internals.patch(0, { lengthCm: 30, widthCm: 20, heightCm: 15 }); // 9000 / 5000 = 1.8 kg
+    fixture.detectChanges();
+    expect(w).toEqual({ actual: 0.5, volumetric: 1.8, chargeable: 1.8 });
   });
 });

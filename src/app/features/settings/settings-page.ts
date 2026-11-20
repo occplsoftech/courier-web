@@ -94,15 +94,6 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
               </div>
               @if (s.key === 'shipment') {
                 <div class="dcw">
-                  <label class="text-caption" for="dcw-input">Default Chargeable Weight (kg)</label>
-                  <div class="dcw__row">
-                    <input id="dcw-input" class="dcw__i" type="number" step="0.001" min="0.001"
-                           [value]="defaultWeightInput() ?? ''" (input)="onWeightInput($event)" />
-                    <button type="button" class="dcw__save" [disabled]="savingWeight() || !defaultWeightInput()"
-                            (click)="saveDefaultWeight()">{{ savingWeight() ? 'Saving…' : 'Save' }}</button>
-                  </div>
-                </div>
-                <div class="dcw">
                   <label class="text-caption" for="dac-input">Default Appointment Delivery Charge</label>
                   <div class="dcw__row">
                     <input id="dac-input" class="dcw__i" type="number" step="0.01" min="0"
@@ -279,12 +270,8 @@ export class SettingsPage implements OnInit {
   readonly data = signal<Record<string, unknown>>({});
   readonly editableSections = new Set(Object.keys(SECTION_FIELDS));
 
-  /** The one editable field on this page so far — see `saveDefaultWeight`. */
-  readonly defaultWeightInput = signal<number | null>(null);
-  readonly savingWeight = signal(false);
-
-  /** Shipment's second inline field — same "no full edit dialog yet" treatment as
-   *  Default Chargeable Weight above. */
+  /** Shipment's inline fields — no full edit dialog yet. (Default chargeable weight is
+   *  retired: chargeable weight is always the higher of actual and volumetric.) */
   readonly defaultAppointmentChargeInput = signal<number | null>(null);
   readonly savingAppointmentCharge = signal(false);
   readonly toPayChargeInput = signal<number | null>(null);
@@ -341,12 +328,9 @@ export class SettingsPage implements OnInit {
       next: (d) => {
         this.data.set(d ?? {});
         const shipment = (d as { shipment?: {
-          defaultChargeableWeightKg?: number; defaultAppointmentDeliveryCharge?: number; toPayCharge?: number;
+          defaultAppointmentDeliveryCharge?: number; toPayCharge?: number;
           manualStatusOverrideEnabled?: boolean;
         } })?.shipment;
-        if (shipment?.defaultChargeableWeightKg != null) {
-          this.defaultWeightInput.set(Number(shipment.defaultChargeableWeightKg));
-        }
         if (shipment?.defaultAppointmentDeliveryCharge != null) {
           this.defaultAppointmentChargeInput.set(Number(shipment.defaultAppointmentDeliveryCharge));
         }
@@ -380,29 +364,6 @@ export class SettingsPage implements OnInit {
         this.razorpayLiveKeyIdInput.set(r.liveKeyId ?? '');
       },
       error: () => { /* Settings is COMPANY_ADMIN-only already; nothing further to show. */ }
-    });
-  }
-
-  onWeightInput(e: Event): void {
-    const v = (e.target as HTMLInputElement).value;
-    this.defaultWeightInput.set(v === '' ? null : Number(v));
-  }
-
-  /** Only field on this page with real edit wiring so far — every other section is
-   *  still preview-only (no edit dialog exists yet). Patches just the shipment
-   *  section; the rest of the settings row is untouched. */
-  saveDefaultWeight(): void {
-    const value = this.defaultWeightInput();
-    if (value == null || value <= 0) return;
-    this.savingWeight.set(true);
-    this.service.patchSection('shipment', { defaultChargeableWeightKg: value }).subscribe({
-      next: (d) => {
-        const shipment = (d as { shipment?: unknown })?.shipment;
-        if (shipment) this.data.update((prev) => ({ ...prev, shipment }));
-        this.savingWeight.set(false);
-        this.notify.success('Default chargeable weight updated');
-      },
-      error: () => this.savingWeight.set(false)
     });
   }
 
@@ -599,7 +560,8 @@ export class SettingsPage implements OnInit {
   preview(section: string): { k: string; v: string }[] {
     const d = this.data() as Record<string, Record<string, unknown>>;
     const s = d[section] ?? {};
-    return Object.entries(s).slice(0, 4).map(([k, v]) => ({
+    // defaultChargeableWeightKg is retired (no minimum chargeable weight); not shown.
+    return Object.entries(s).filter(([k]) => k !== 'defaultChargeableWeightKg').slice(0, 4).map(([k, v]) => ({
       k: k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()),
       v: v === null || v === undefined || v === '' ? '—' : String(v)
     }));
