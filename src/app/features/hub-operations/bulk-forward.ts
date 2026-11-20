@@ -106,21 +106,21 @@ interface Row {
   `,
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
-    .note { font:500 14px var(--font-sans); color:var(--content-muted); }
+    .note { font:500 17px var(--font-sans); color:var(--content-muted); }
     .bar { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin:8px 0 12px; }
-    .pick { display:flex; flex-direction:column; gap:4px; font:600 13px var(--font-sans); }
+    .pick { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); }
     select { height:38px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff);
-      color:var(--content-fg); font:400 14px var(--font-sans); max-width:420px; width:100%; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); background:var(--surface-card, #fff); border-radius:12px; overflow:hidden; }
-    .tbl th { text-align:left; font:600 12px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); padding:10px 12px; }
+      color:var(--content-fg); font:400 17px var(--font-sans); max-width:420px; width:100%; }
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); background:var(--surface-card, #fff); border-radius:12px; overflow:hidden; }
+    .tbl th { text-align:left; font:600 15px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); padding:10px 12px; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--surface-border); vertical-align:top; }
     .num { text-align:right; white-space:nowrap; }
     tr.off td { color:var(--content-muted); }
-    .cs { font:600 14px var(--font-sans); }
+    .cs { font:600 17px var(--font-sans); }
     .warn { color:var(--warning, #b45309); }
-    .res { font:600 13px var(--font-sans); }
+    .res { font:600 16px var(--font-sans); }
     .res.ok { color:var(--success, #15803d); } .res.bad { color:var(--danger, #b91c1c); } .res.warn2 { color:var(--warning, #b45309); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:16px; }
     .foot { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
   `]
 })

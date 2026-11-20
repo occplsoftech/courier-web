@@ -56,8 +56,8 @@ import { BusDepotService } from './bus-depot.service';
     </div>
   `,
   styles: [`
-    .nm { font:600 14px var(--font-sans); } .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .via { font:500 13px var(--font-sans); } .sep { color:var(--content-muted); }
+    .nm { font:600 17px var(--font-sans); } .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .via { font:500 16px var(--font-sans); } .sep { color:var(--content-muted); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

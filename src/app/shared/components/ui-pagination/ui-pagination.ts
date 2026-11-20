@@ -23,7 +23,7 @@ import { Page } from '@core/models/page.model';
   styles: [`
     .pg { display:flex; align-items:center; justify-content:space-between; padding:12px 4px; }
     .pg__ctrls { display:flex; align-items:center; gap:8px; }
-    .pg__cur { font:500 13px var(--font-sans); color:var(--content-muted); }
+    .pg__cur { font:500 16px var(--font-sans); color:var(--content-muted); }
     .pg__btn { display:grid; place-items:center; width:34px; height:34px; border-radius:10px;
       border:0; background:var(--surface-muted); box-shadow:var(--shadow-clay-sm); cursor:pointer;
       transition:transform .12s ease, box-shadow .12s ease; }

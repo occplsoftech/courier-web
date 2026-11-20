@@ -84,10 +84,10 @@ import { ShipmentMovementService } from './shipment-movement.service';
   `,
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
     .rowbtns { display:flex; justify-content:flex-end; gap:8px; }

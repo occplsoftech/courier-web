@@ -48,14 +48,14 @@ interface SlabRow {
   `,
   styles: [`
     .grid { width:100%; border-collapse:collapse; }
-    .grid th { text-align:left; font:600 12px var(--font-sans); color:var(--content-muted); padding:8px 10px; border-bottom:1px solid var(--surface-border); }
-    .grid td { padding:8px 10px; font:400 13px var(--font-sans); border-bottom:1px solid var(--surface-border); }
+    .grid th { text-align:left; font:600 15px var(--font-sans); color:var(--content-muted); padding:8px 10px; border-bottom:1px solid var(--surface-border); }
+    .grid td { padding:8px 10px; font:400 16px var(--font-sans); border-bottom:1px solid var(--surface-border); }
     .mono { font-family:var(--font-mono, ui-monospace); }
     tr.current td { background:var(--brand-50, rgba(59,130,246,.06)); }
     tr.conflict td { background:var(--danger-50, rgba(239,68,68,.06)); }
-    .warn { margin-left:8px; font:600 11px var(--font-sans); color:var(--danger); }
-    em { margin-left:6px; font:400 12px var(--font-sans); color:var(--content-muted); font-style:normal; }
-    .empty { font:400 13px var(--font-sans); color:var(--content-muted); padding:12px 0; }
+    .warn { margin-left:8px; font:600 14px var(--font-sans); color:var(--danger); }
+    em { margin-left:6px; font:400 15px var(--font-sans); color:var(--content-muted); font-style:normal; }
+    .empty { font:400 16px var(--font-sans); color:var(--content-muted); padding:12px 0; }
   `]
 })
 export class WeightSlabGrid {

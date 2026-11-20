@@ -77,14 +77,14 @@ import { downloadCsv } from '@shared/utils/csv-export.util';
   styles: [`
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
     .page__actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .dfld { display:flex; align-items:center; gap:6px; font:500 13px var(--font-sans); color:var(--content-fg); }
+    .dfld { display:flex; align-items:center; gap:6px; font:500 16px var(--font-sans); color:var(--content-fg); }
     .dfld input { height:38px; padding:0 10px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 13px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 16px var(--font-sans); color:var(--content-fg); }
     .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
     .stat { display:flex; flex-direction:column; gap:4px; padding:12px 18px; min-width:140px;
       background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .stat__l { font:500 12px var(--font-sans); color:var(--content-muted); }
-    .stat__v { font:700 20px var(--font-sans); color:var(--content-fg); }
+    .stat__l { font:500 15px var(--font-sans); color:var(--content-muted); }
+    .stat__v { font:700 23px var(--font-sans); color:var(--content-fg); }
     .twrap { overflow-x:auto; }
     .num { text-align:right; }
     .strong { font-weight:700; }

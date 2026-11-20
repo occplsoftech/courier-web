@@ -63,14 +63,14 @@ import { currentMonth, monthLabel, monthRange } from './commission-month.util';
   styles: [`
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
     .page__actions { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
-    .month { display:flex; flex-direction:column; gap:2px; font:500 12px var(--font-sans); color:var(--content-muted); }
+    .month { display:flex; flex-direction:column; gap:2px; font:500 15px var(--font-sans); color:var(--content-muted); }
     .month input { padding:7px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field);
-      background:var(--surface); color:var(--content-fg); font:500 14px var(--font-sans); }
+      background:var(--surface); color:var(--content-fg); font:500 17px var(--font-sans); }
     .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
     .stat { display:flex; flex-direction:column; gap:4px; padding:12px 18px; min-width:150px;
       background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .stat__l { font:500 12px var(--font-sans); color:var(--content-muted); }
-    .stat__v { font:700 20px var(--font-sans); color:var(--content-fg); }
+    .stat__l { font:500 15px var(--font-sans); color:var(--content-muted); }
+    .stat__v { font:700 23px var(--font-sans); color:var(--content-fg); }
     .branch { font-weight:600; color:var(--brand-600); }
     .num { text-align:right; }
     .strong { font-weight:700; }

@@ -28,9 +28,9 @@ import { CompanyProfile } from '@core/models/company.model';
     .kv__row { display:flex; justify-content:space-between; gap:16px; padding:10px 0;
       border-bottom:1px solid var(--surface-border); }
     .kv__row:last-child { border-bottom:0; }
-    dt { display:inline-flex; align-items:center; gap:8px; font:500 13px var(--font-sans); color:var(--content-muted); margin:0; }
+    dt { display:inline-flex; align-items:center; gap:8px; font:500 16px var(--font-sans); color:var(--content-muted); margin:0; }
     dt mat-icon { font-size:18px; width:18px; height:18px; color:var(--content-muted); }
-    dd { font:600 13px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; word-break:break-all; }
+    dd { font:600 16px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; word-break:break-all; }
     dd a { color:var(--brand-600); text-decoration:none; }
     dd a:hover { text-decoration:underline; }
   `]

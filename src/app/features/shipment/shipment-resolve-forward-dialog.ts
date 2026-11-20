@@ -54,15 +54,15 @@ import { ShipmentService } from './shipment.service';
   `,
   styles: [`
     mat-dialog-content { min-width:min(520px, 86vw); }
-    .sub { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
+    .sub { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
     .opts { display:flex; flex-direction:column; gap:8px; }
-    .opt { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid var(--surface-border); border-radius:12px; cursor:pointer; background:var(--surface); font:500 14px var(--font-sans); }
+    .opt { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid var(--surface-border); border-radius:12px; cursor:pointer; background:var(--surface); font:500 17px var(--font-sans); }
     .opt.on { border-color:var(--brand-600); box-shadow:0 0 0 2px color-mix(in srgb, var(--brand-600) 25%, transparent); }
-    .opt small { display:block; font:400 12px var(--font-sans); color:var(--content-muted); margin-top:2px; }
-    .fld { display:flex; flex-direction:column; gap:4px; margin-top:12px; font:500 13px var(--font-sans); }
-    .fld input { padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; font:400 14px var(--font-sans); background:var(--surface); color:inherit; }
-    .err { margin:8px 0 0; padding:10px 12px; border-radius:10px; background:var(--danger-bg, #fdecee); color:var(--danger, #b3123a); font:500 13px var(--font-sans); }
-    .ok { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--success-bg, #e3f5ee); color:var(--success, #0b7a55); font:600 13px var(--font-sans); }
+    .opt small { display:block; font:400 15px var(--font-sans); color:var(--content-muted); margin-top:2px; }
+    .fld { display:flex; flex-direction:column; gap:4px; margin-top:12px; font:500 16px var(--font-sans); }
+    .fld input { padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; font:400 17px var(--font-sans); background:var(--surface); color:inherit; }
+    .err { margin:8px 0 0; padding:10px 12px; border-radius:10px; background:var(--danger-bg, #fdecee); color:var(--danger, #b3123a); font:500 16px var(--font-sans); }
+    .ok { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--success-bg, #e3f5ee); color:var(--success, #0b7a55); font:600 16px var(--font-sans); }
   `]
 })
 export class ShipmentResolveForwardDialog {

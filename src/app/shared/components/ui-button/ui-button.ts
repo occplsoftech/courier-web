@@ -27,7 +27,7 @@ type Variant = 'primary' | 'stroked' | 'text' | 'danger';
   `,
   styles: [`
     .app-btn { display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 22px;
-      border-radius:var(--r-field); font:600 14px/1 var(--font-sans); cursor:pointer;
+      border-radius:var(--r-field); font:600 17px/1 var(--font-sans); cursor:pointer;
       border:1px solid transparent; transition:background .15s ease, border-color .15s ease, box-shadow .15s ease; }
     .app-btn:disabled { opacity:.55; cursor:not-allowed; }
     .app-btn__icon { font-size:18px; width:18px; height:18px; }

@@ -38,10 +38,10 @@ const TYPES = ['image/png', 'image/jpeg', 'image/webp'];
     .lp { display:flex; gap:16px; align-items:center; }
     .lp__box { display:grid; place-items:center; flex:none; width:84px; height:84px; border-radius:14px; background:#fff; border:1px solid var(--surface-border); overflow:hidden; }
     .lp__box img { max-width:85%; max-height:85%; object-fit:contain; }
-    .lp__none { font:600 13px var(--font-sans); color:var(--content-muted); }
+    .lp__none { font:600 16px var(--font-sans); color:var(--content-muted); }
     .lp__text { display:flex; flex-direction:column; gap:4px; min-width:0; }
-    .lp__hint { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .lp__error { font:500 12px var(--font-sans); color:var(--danger); }
+    .lp__hint { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .lp__error { font:500 15px var(--font-sans); color:var(--danger); }
     .lp__actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
   `]
 })

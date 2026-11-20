@@ -44,8 +44,8 @@ import { UiButton } from '@shared/components/ui-button/ui-button';
     .auth-card__head { margin-bottom:24px; }
     .auth-card__form { display:flex; flex-direction:column; gap:16px; }
     .auth-card__ok { width:44px; height:44px; border-radius:16px; background:var(--success-bg); color:var(--success);
-      display:grid; place-items:center; font-size:22px; font-weight:700; margin-bottom:12px; box-shadow:var(--shadow-clay-sm); }
-    .auth-card__back { display:inline-block; margin-top:20px; font:600 13px var(--font-sans);
+      display:grid; place-items:center; font-size:25px; font-weight:700; margin-bottom:12px; box-shadow:var(--shadow-clay-sm); }
+    .auth-card__back { display:inline-block; margin-top:20px; font:600 16px var(--font-sans);
       color:var(--brand-600); text-decoration:none; }
     app-button { display:block; }
   `]

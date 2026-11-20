@@ -63,7 +63,7 @@ const ICONS: Record<string, string> = {
     .tl__row--done .tl__icon { background:linear-gradient(155deg, var(--brand-400), var(--brand-600)); color:#fff; box-shadow:var(--shadow-clay-sm); }
     .tl__row--current .tl__icon { box-shadow:var(--shadow-clay-sm), 0 0 0 4px var(--brand-100); }
     .tl__body { display:flex; flex-direction:column; gap:2px; padding-top:8px; }
-    .tl__body strong { font:600 14px var(--font-sans); color:var(--content-fg); }
+    .tl__body strong { font:600 17px var(--font-sans); color:var(--content-fg); }
     .tl__row--current .tl__body strong { color:var(--brand-700); font-weight:700; }
     .tl__row:not(.tl__row--done) .tl__body strong { color:var(--content-muted); }
     .tl__pending { font-style:italic; }

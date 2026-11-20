@@ -114,12 +114,12 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', DISTRICT: 
   styles: [`
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .picker { display:grid; grid-template-columns:minmax(0,160px) repeat(3,minmax(0,1fr)) auto; gap:12px 16px; align-items:end; margin-bottom:16px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
     .locs { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
     .loc { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); }
     .loc mat-icon { color:var(--content-muted); }
-    .loc__name { font:600 14px var(--font-sans); flex:1; }
-    .loc__tag { font:500 12px var(--font-sans); color:var(--content-muted); }
+    .loc__name { font:600 17px var(--font-sans); flex:1; }
+    .loc__tag { font:500 15px var(--font-sans); color:var(--content-muted); }
     .loc__rm { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .loc__rm:hover { background:var(--surface-muted); color:var(--danger); }
     .bar { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }

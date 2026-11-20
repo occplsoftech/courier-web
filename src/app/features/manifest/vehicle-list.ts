@@ -87,7 +87,7 @@ import { VehicleService } from './vehicle.service';
     .page { display:flex; flex-direction:column; gap:20px; }
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
     .tbl-wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
     .tbl th { text-align:left; padding:10px 12px; color:var(--content-muted); font-weight:600; white-space:nowrap; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--border-subtle); white-space:nowrap; }
     .tbl .mono { font-family:var(--font-mono, monospace); }

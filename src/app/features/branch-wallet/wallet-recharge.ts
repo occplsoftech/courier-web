@@ -123,35 +123,35 @@ type Phase = 'form' | 'processing' | 'success' | 'failed';
     .rform { display:flex; flex-direction:column; gap:16px; }
     .rform__bar { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
     .amt { display:flex; flex-direction:column; gap:6px; }
-    .amt__l { font:500 13px var(--font-sans); color:var(--content-fg); } .amt__l i { color:var(--danger); margin-left:2px; font-style:normal; }
+    .amt__l { font:500 16px var(--font-sans); color:var(--content-fg); } .amt__l i { color:var(--danger); margin-left:2px; font-style:normal; }
     .amt__wrap { display:flex; align-items:center; gap:8px; height:52px; padding:0 16px; background:var(--surface);
       border:1px solid var(--surface-border); border-radius:var(--r-field); transition:.15s; }
     .amt__wrap:focus-within { border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
     .amt__wrap--err { border-color:var(--danger); }
-    .amt__cur { font:600 14px var(--font-sans); color:var(--content-muted); }
-    .amt__i { border:0; outline:0; background:transparent; flex:1; font:700 24px var(--font-sans); color:var(--content-fg); }
-    .amt__err { font:500 12px var(--font-sans); color:var(--danger); }
+    .amt__cur { font:600 17px var(--font-sans); color:var(--content-muted); }
+    .amt__i { border:0; outline:0; background:transparent; flex:1; font:700 27px var(--font-sans); color:var(--content-fg); }
+    .amt__err { font:500 15px var(--font-sans); color:var(--danger); }
     .quick { display:flex; flex-wrap:wrap; gap:8px; }
     .quick__b { border:1px solid var(--surface-border); background:var(--surface); color:var(--content-fg);
-      font:600 13px var(--font-sans); padding:6px 12px; border-radius:999px; cursor:pointer; }
+      font:600 16px var(--font-sans); padding:6px 12px; border-radius:999px; cursor:pointer; }
     .quick__b:hover { background:var(--brand-50); border-color:var(--brand-200); color:var(--brand-700); }
     .state { display:flex; gap:12px; align-items:flex-start; padding:16px; border-radius:var(--r-field); }
     .state mat-icon { font-size:28px; width:28px; height:28px; flex:0 0 auto; }
-    .state strong { font:700 15px var(--font-sans); } .state p { margin:2px 0 0; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .state strong { font:700 18px var(--font-sans); } .state p { margin:2px 0 0; font:400 16px var(--font-sans); color:var(--content-muted); }
     .state--ok { background:var(--success-bg); } .state--ok mat-icon { color:var(--success); }
     .state--err { background:var(--danger-bg); } .state--err mat-icon { color:var(--danger); }
     .state__bar { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
     .kv { display:grid; grid-template-columns:auto 1fr; gap:10px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
     .kv .strong { color:var(--brand-700); font-weight:700; } .mono { font-family:var(--font-mono, ui-monospace); }
     .steps { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
-    .steps li { display:flex; align-items:center; gap:10px; font:500 13px var(--font-sans); color:var(--content-muted); }
+    .steps li { display:flex; align-items:center; gap:10px; font:500 16px var(--font-sans); color:var(--content-muted); }
     .steps li span { display:grid; place-items:center; width:24px; height:24px; border-radius:999px; flex:0 0 auto;
-      background:var(--surface-muted); color:var(--content-muted); font:700 12px var(--font-sans); border:1px solid var(--surface-border); }
+      background:var(--surface-muted); color:var(--content-muted); font:700 15px var(--font-sans); border:1px solid var(--surface-border); }
     .steps li.on { color:var(--content-fg); } .steps li.on span { background:var(--success); color:#fff; border-color:transparent; }
     .steps li.cur span { background:var(--brand-600); color:#fff; border-color:transparent; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:860px){ .rc { grid-template-columns:1fr; } }
   `]
 })

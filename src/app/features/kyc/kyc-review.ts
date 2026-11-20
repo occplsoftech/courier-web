@@ -61,15 +61,15 @@ import { KYC_STATUS_LABELS, KYC_TYPE_LABELS, KycSubjectType, KycSummary } from '
   `,
   styles: [`
     .tabs { display:inline-flex; gap:4px; padding:4px; border-radius:16px; background:var(--surface-muted); align-self:flex-start; flex-wrap:wrap; }
-    .tabs button { border:0; background:transparent; padding:8px 18px; border-radius:12px; font:700 13px var(--font-sans); color:var(--content-muted); cursor:pointer; }
+    .tabs button { border:0; background:transparent; padding:8px 18px; border-radius:12px; font:700 16px var(--font-sans); color:var(--content-muted); cursor:pointer; }
     .tabs button.on { background:var(--surface); color:var(--brand-700); box-shadow:var(--shadow-clay-sm); }
     .wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    th { text-align:left; font:700 12px var(--font-sans); letter-spacing:.06em; text-transform:uppercase; color:var(--content-muted); padding:10px 14px; background:var(--surface-muted); }
+    table { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    th { text-align:left; font:700 15px var(--font-sans); letter-spacing:.06em; text-transform:uppercase; color:var(--content-muted); padding:10px 14px; background:var(--surface-muted); }
     td { padding:12px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .end { text-align:right; }
     a { color:var(--brand-700); font-weight:600; text-decoration:none; }
-    .badge { padding:3px 10px; border-radius:999px; font:700 12px var(--font-sans); }
+    .badge { padding:3px 10px; border-radius:999px; font:700 15px var(--font-sans); }
     .badge.ok { background:var(--success-bg); color:var(--success); } .badge.info { background:var(--info-bg); color:var(--info); }
     .todo { color:var(--warning); } .badge.warn { background:var(--warning-bg); color:var(--warning); }
     .muted { color:var(--content-muted); } .err { color:var(--danger); }

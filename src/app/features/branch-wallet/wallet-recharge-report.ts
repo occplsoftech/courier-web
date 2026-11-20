@@ -132,18 +132,18 @@ const STATUS_TABS: { value: RechargeAttemptStatus | null; label: string }[] = [
     .toolbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin:4px 0 16px; }
     .tabs { display:inline-flex; background:var(--surface-muted); border-radius:var(--r-pill); padding:3px; gap:2px; }
     .tabs button { border:0; background:transparent; padding:7px 16px; border-radius:var(--r-pill);
-      font:600 13px var(--font-sans); color:var(--content-muted); cursor:pointer; }
+      font:600 16px var(--font-sans); color:var(--content-muted); cursor:pointer; }
     .tab--active { background:var(--surface); color:var(--content-fg); box-shadow:var(--shadow-clay); }
     .dt { display:flex; align-items:center; gap:6px; }
-    .dt__l { font:500 13px var(--font-sans); color:var(--content-muted); }
+    .dt__l { font:500 16px var(--font-sans); color:var(--content-muted); }
     .dt__i { height:36px; padding:0 10px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 13px var(--font-sans); color:var(--content-fg); }
-    .tc { font:600 13px var(--font-sans); }
-    .tc__sub { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .mono { font:600 12px var(--font-mono, ui-monospace); color:var(--content-fg); word-break:break-all; }
-    .amt { font:700 14px var(--font-mono, ui-monospace); white-space:nowrap; }
-    .reason { font:400 13px var(--font-sans); color:var(--danger); }
-    .dash { color:var(--content-muted); font:400 13px var(--font-sans); }
+      border-radius:var(--r-field); font:400 16px var(--font-sans); color:var(--content-fg); }
+    .tc { font:600 16px var(--font-sans); }
+    .tc__sub { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .mono { font:600 15px var(--font-mono, ui-monospace); color:var(--content-fg); word-break:break-all; }
+    .amt { font:700 17px var(--font-mono, ui-monospace); white-space:nowrap; }
+    .reason { font:400 16px var(--font-sans); color:var(--danger); }
+    .dash { color:var(--content-muted); font:400 16px var(--font-sans); }
   `]
 })
 export class WalletRechargeReport implements OnInit {

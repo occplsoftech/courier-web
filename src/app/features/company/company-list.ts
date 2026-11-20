@@ -51,9 +51,9 @@ import { ImpersonateDialog } from './components/impersonate-dialog';
     </div>
   `,
   styles: [`
-    .page__actions { display:flex; align-items:center; gap:10px; }.cs{font:600 14px var(--font-sans)}
+    .page__actions { display:flex; align-items:center; gap:10px; }.cs{font:600 17px var(--font-sans)}
     .cl__actions-cell { text-align:right; }
-    .cl__impersonate { display:inline-flex; align-items:center; gap:6px; font:600 12px var(--font-sans);
+    .cl__impersonate { display:inline-flex; align-items:center; gap:6px; font:600 15px var(--font-sans);
       color:var(--brand-600); background:var(--brand-50); border:none; border-radius:var(--r-field);
       padding:6px 10px; cursor:pointer; }
     .cl__impersonate:hover { background:var(--brand-100, var(--brand-50)); }

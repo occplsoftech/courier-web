@@ -73,10 +73,10 @@ export type UserAction =
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
+    .cs { font:600 17px var(--font-sans); }
     .ux { display:flex; align-items:center; gap:10px; }
     .ux__av { width:32px; height:32px; border-radius:50%; background:var(--brand-100); color:var(--brand-700);
-      display:grid; place-items:center; font:700 12px var(--font-sans); }
+      display:grid; place-items:center; font:700 15px var(--font-sans); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

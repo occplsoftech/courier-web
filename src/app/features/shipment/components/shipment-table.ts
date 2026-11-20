@@ -60,9 +60,9 @@ export type ShipmentAction = 'view' | 'edit' | 'cancel';
     </app-table>
   `,
   styles: [`
-    .rp-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fff4e0; color:#9a5b00; font:700 10px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
-    .rto-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fdecef; color:#b3123a; font:700 10px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .rp-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fff4e0; color:#9a5b00; font:700 13px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
+    .rto-tag { display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:#fdecef; color:#b3123a; font:700 13px var(--font-sans); letter-spacing:.04em; vertical-align:middle; }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .awb { color:var(--brand-600); }
     .num { text-align:right; }
     .col-actions { text-align:right; width:56px; }

@@ -16,7 +16,7 @@ import { TransactionType } from '@core/models/wallet.model';
   `,
   styles: [`
     .tt { display:inline-flex; align-items:center; gap:4px; height:22px; padding:0 9px 0 6px;
-      border-radius:var(--r-pill); font:600 12px/1 var(--font-sans); }
+      border-radius:var(--r-pill); font:600 15px/1 var(--font-sans); }
     .tt mat-icon { font-size:14px; width:14px; height:14px; }
     .tt[data-type="CR"] { background:var(--success-bg); color:var(--success); }
     .tt[data-type="DR"]  { background:var(--danger-bg);  color:var(--danger); }

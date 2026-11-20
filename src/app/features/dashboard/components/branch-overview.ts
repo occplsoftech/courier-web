@@ -130,12 +130,12 @@ const STAGE_TONES: Record<string, 'brand' | 'info' | 'warning' | 'success'> = {
       transition:transform .15s ease; }
     .bo-pipeline__stage:hover { transform:translateY(-2px); }
     .bo-pipeline__badge { display:grid; place-items:center; width:40px; height:40px; border-radius:50%;
-      font:700 15px var(--font-sans); color:#fff; box-shadow:var(--shadow-clay-sm); flex-shrink:0; }
+      font:700 18px var(--font-sans); color:#fff; box-shadow:var(--shadow-clay-sm); flex-shrink:0; }
     .bo-pipeline__badge[data-tone="brand"]   { background:linear-gradient(155deg, var(--brand-400),   var(--brand-600)); }
     .bo-pipeline__badge[data-tone="info"]    { background:linear-gradient(155deg, #60a5fa, var(--info)); }
     .bo-pipeline__badge[data-tone="warning"] { background:linear-gradient(155deg, #fbbf24, var(--warning)); }
     .bo-pipeline__badge[data-tone="success"] { background:linear-gradient(155deg, #4ade80, var(--success)); }
-    .bo-pipeline__label { font:600 10.5px var(--font-sans); color:var(--content-muted); text-align:center;
+    .bo-pipeline__label { font:600 13.5px var(--font-sans); color:var(--content-muted); text-align:center;
       max-width:64px; }
     .bo-pipeline__connector { flex:1; min-width:16px; max-width:56px; height:3px; border-radius:2px; margin:0 -2px 26px;
       background:var(--surface-border); }
@@ -160,9 +160,9 @@ const STAGE_TONES: Record<string, 'brand' | 'info' | 'warning' | 'success'> = {
     .bo-actions__icon[data-tone="brand"]   { background:linear-gradient(155deg, var(--brand-400), var(--brand-600)); }
     .bo-actions__icon[data-tone="info"]    { background:linear-gradient(155deg, #60a5fa, var(--info)); }
     .bo-actions__body { flex:1; min-width:0; }
-    .bo-actions__count { font:700 18px var(--font-sans); margin:0; }
+    .bo-actions__count { font:700 21px var(--font-sans); margin:0; }
     .bo-actions__btn { flex-shrink:0; display:inline-flex; align-items:center; gap:2px; padding:6px 8px 6px 14px;
-      border-radius:var(--r-pill); font:600 12px var(--font-sans); text-decoration:none; color:#fff; }
+      border-radius:var(--r-pill); font:600 15px var(--font-sans); text-decoration:none; color:#fff; }
     .bo-actions__btn mat-icon { font-size:16px; width:16px; height:16px; }
     .bo-actions__btn[data-tone="warning"] { background:linear-gradient(155deg, #fbbf24, var(--warning)); }
     .bo-actions__btn[data-tone="danger"]  { background:linear-gradient(155deg, #f87171, var(--danger)); }
@@ -175,15 +175,15 @@ const STAGE_TONES: Record<string, 'brand' | 'info' | 'warning' | 'success'> = {
       transition:transform .15s ease, box-shadow .15s ease; }
     .bo-aging__tile:hover { transform:translateY(-1px); box-shadow:var(--shadow-clay-sm); }
     .bo-aging__tile[data-hot="true"] { background:var(--danger-bg); }
-    .bo-aging__count { font:700 22px var(--font-sans); }
+    .bo-aging__count { font:700 25px var(--font-sans); }
     .bo-aging__tile[data-hot="true"] .bo-aging__count { color:var(--danger); }
-    .bo-aging__label { font:600 11px var(--font-sans); color:var(--content-muted); text-align:center; }
+    .bo-aging__label { font:600 14px var(--font-sans); color:var(--content-muted); text-align:center; }
 
     .bo-rejected { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
     .bo-rejected__item { display:flex; align-items:center; justify-content:space-between; gap:14px;
       padding:12px; border-radius:18px; background:var(--danger-bg); }
     .bo-rejected__body { min-width:0; }
-    .bo-rejected__number { font:700 14px var(--font-sans); margin:0; }
+    .bo-rejected__number { font:700 17px var(--font-sans); margin:0; }
   `]
 })
 export class BranchOverview {

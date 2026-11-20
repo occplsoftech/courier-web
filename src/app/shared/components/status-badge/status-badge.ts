@@ -10,7 +10,7 @@ type Tone = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
   template: `<span class="badge" [attr.data-tone]="resolvedTone()">{{ label() || value() }}</span>`,
   styles: [`
     .badge { display:inline-flex; align-items:center; height:24px; padding:0 11px;
-      border-radius:var(--r-pill); font:700 12px/1 var(--font-sans); text-transform:capitalize; }
+      border-radius:var(--r-pill); font:700 15px/1 var(--font-sans); text-transform:capitalize; }
     .badge[data-tone="success"] { background:var(--success-bg); color:var(--success); }
     .badge[data-tone="warning"] { background:var(--warning-bg); color:var(--warning); }
     .badge[data-tone="danger"]  { background:var(--danger-bg);  color:var(--danger); }

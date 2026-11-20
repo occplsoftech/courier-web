@@ -68,7 +68,7 @@ const STATUSES: SelectOption[] = [
   `,
   styles: [`
     .filters { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; margin:0 0 12px; align-items:end; }
-    .sum { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .sum strong { color:var(--content-fg); }
+    .sum { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .sum strong { color:var(--content-fg); }
     .warn { color:var(--danger); } .col-actions { text-align:right; width:120px; }
     @media (max-width:980px){ .filters { grid-template-columns:1fr 1fr; } }
   `]

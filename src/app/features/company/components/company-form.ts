@@ -102,13 +102,13 @@ const CURRENCY = /^$|^[A-Za-z]{3}$/;
     .cform { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .field-static { display:flex; flex-direction:column; gap:6px; justify-content:center; }
-    .field-static__label { font:500 13px var(--font-sans); color:var(--content-fg); }
-    .field-static__value { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .field-static__hint { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .field-static__label { font:500 16px var(--font-sans); color:var(--content-fg); }
+    .field-static__value { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .field-static__hint { font:400 15px var(--font-sans); color:var(--content-muted); }
     .cform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border);
       border-radius:var(--r-field); }
-    .cform__note { font:500 13px var(--font-sans); color:var(--danger); }
+    .cform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .cform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
   `]

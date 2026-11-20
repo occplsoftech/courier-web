@@ -69,11 +69,11 @@ import { NotificationService } from '@core/services/notification.service';
     .brand { display:flex; flex-direction:column; gap:20px; }
     .brand__row { display:flex; gap:16px; align-items:flex-start; }
     .brand__meta { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; }
-    .brand__label { font:600 13px var(--font-sans); color:var(--content-fg); }
-    .brand__hint { font:400 13px var(--font-sans); color:var(--content-muted); word-break:break-all; }
+    .brand__label { font:600 16px var(--font-sans); color:var(--content-fg); }
+    .brand__hint { font:400 16px var(--font-sans); color:var(--content-muted); word-break:break-all; }
     .brand__file { display:inline-flex; align-items:center; gap:6px; align-self:flex-start;
       border:1px solid var(--surface-border); background:var(--surface); border-radius:var(--r-field);
-      padding:6px 12px; font:600 12px var(--font-sans); color:var(--content-fg); cursor:pointer; }
+      padding:6px 12px; font:600 15px var(--font-sans); color:var(--content-fg); cursor:pointer; }
     .brand__file mat-icon { font-size:16px; width:16px; height:16px; }
     .mark { display:grid; place-items:center; border:1px solid var(--surface-border);
       border-radius:12px; background:var(--surface-muted); overflow:hidden; flex:none; }

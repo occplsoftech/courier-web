@@ -52,15 +52,15 @@ import { AppNotification, NotificationFeedService } from '@core/services/notific
       border-radius:12px; border:0; background:transparent; color:var(--content-muted); cursor:pointer; transition:background .15s, box-shadow .15s; }
     .nm__btn:hover { background:var(--surface-muted); color:var(--content-fg); box-shadow:var(--shadow-clay-inset); }
     .nm__badge { position:absolute; top:5px; right:5px; min-width:16px; height:16px; padding:0 4px;
-      border-radius:999px; background:var(--danger); color:#fff; font:700 10px var(--font-sans);
+      border-radius:999px; background:var(--danger); color:#fff; font:700 13px var(--font-sans);
       display:grid; place-items:center; }
     .nm__head { display:flex; align-items:center; justify-content:space-between; padding:12px 16px;
       border-bottom:1px solid var(--surface-border); }
-    .nm__mark { border:0; background:transparent; color:var(--brand-600); font:600 12px var(--font-sans); cursor:pointer; }
+    .nm__mark { border:0; background:transparent; color:var(--brand-600); font:600 15px var(--font-sans); cursor:pointer; }
     .nm__empty { display:flex; flex-direction:column; align-items:center; gap:4px; padding:32px 24px; text-align:center; }
     .nm__empty mat-icon { color:var(--content-muted); font-size:32px; width:32px; height:32px; margin-bottom:4px; }
-    .nm__empty p { margin:0; font:600 14px var(--font-sans); color:var(--content-fg); }
-    .nm__empty span { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .nm__empty p { margin:0; font:600 17px var(--font-sans); color:var(--content-fg); }
+    .nm__empty span { font:400 15px var(--font-sans); color:var(--content-muted); }
     .nm__list { max-height:360px; overflow-y:auto; }
     .nm__item { display:flex; gap:12px; width:100%; padding:12px 16px; border:0; background:transparent;
       text-align:left; cursor:pointer; border-bottom:1px solid var(--surface-border); }
@@ -68,8 +68,8 @@ import { AppNotification, NotificationFeedService } from '@core/services/notific
     .nm__item--unread { background:var(--brand-50); }
     .nm__item-icon { flex-shrink:0; }
     .nm__item-body { display:flex; flex-direction:column; gap:2px; min-width:0; }
-    .nm__item-title { font:600 13px var(--font-sans); color:var(--content-fg); }
-    .nm__item-msg { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .nm__item-title { font:600 16px var(--font-sans); color:var(--content-fg); }
+    .nm__item-msg { font:400 15px var(--font-sans); color:var(--content-muted); }
   `]
 })
 export class NotificationMenu {

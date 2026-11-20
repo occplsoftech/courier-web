@@ -66,7 +66,7 @@ export interface SettingsSectionDialogData {
   styles: [`
     .ssd { display:flex; flex-direction:column; gap:14px; padding:24px; width:420px; max-width:92vw;
       max-height:85vh; overflow-y:auto; }
-    .ssd__check { display:flex; align-items:center; gap:8px; font:400 13px var(--font-sans); color:var(--content-fg); }
+    .ssd__check { display:flex; align-items:center; gap:8px; font:400 16px var(--font-sans); color:var(--content-fg); }
     .ssd__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
   `]
 })

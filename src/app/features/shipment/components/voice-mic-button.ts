@@ -51,12 +51,12 @@ const VOICE_LANGS: VoiceLangOption[] = [
     .vmb { display:flex; align-items:center; gap:10px; min-width:0; }
     .vmb__langs { display:inline-flex; gap:2px; padding:2px; border-radius:999px; background:var(--surface); border:1px solid var(--surface-border); }
     .vmb__lang { height:28px; min-width:28px; padding:0 8px; border:0; border-radius:999px; background:transparent;
-      color:var(--content-muted); font:600 12px var(--font-sans); cursor:pointer; }
+      color:var(--content-muted); font:600 15px var(--font-sans); cursor:pointer; }
     .vmb__lang:hover:not(:disabled) { background:var(--surface-muted); color:var(--content-fg); }
     .vmb__lang--active { background:var(--brand-600); color:#fff; }
     .vmb__lang:disabled { opacity:.5; cursor:not-allowed; }
     .vmb__btn { position:relative; display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 16px 0 12px;
-      border-radius:999px; border:none; cursor:pointer; white-space:nowrap; font:700 13px var(--font-sans); color:#fff;
+      border-radius:999px; border:none; cursor:pointer; white-space:nowrap; font:700 16px var(--font-sans); color:#fff;
       background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899,#6366f1); background-size:300% 100%;
       animation: vmb-gradient 6s ease infinite; box-shadow:0 1px 8px rgba(147,51,234,.35); }
     .vmb__btn::before { content:''; position:absolute; inset:-2px; border-radius:999px; z-index:-1;
@@ -72,7 +72,7 @@ const VOICE_LANGS: VoiceLangOption[] = [
     @keyframes vmb-sparkle { 0%,100% { transform:scale(1) rotate(0deg); opacity:1; } 50% { transform:scale(1.15) rotate(8deg); opacity:.75; } }
     .vmb__btn--live .vmb__icon mat-icon { animation: vmb-pulse .9s ease-in-out infinite; }
     @keyframes vmb-pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(1.2); } }
-    .vmb__hint { font:400 12px var(--font-sans); color:var(--content-muted); max-width:360px; overflow:hidden;
+    .vmb__hint { font:400 15px var(--font-sans); color:var(--content-muted); max-width:360px; overflow:hidden;
       text-overflow:ellipsis; white-space:nowrap; }
     .vmb__hint--live { color:var(--brand-600); font-style:italic; }
   `]

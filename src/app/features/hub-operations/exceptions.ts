@@ -70,7 +70,7 @@ const TYPE_OPTIONS: SelectOption[] = HUB_EXCEPTION_TYPES.map((t) => ({ value: t,
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
     .row app-input, .row app-select { flex:1; min-width:180px; }
-    .mono { font-family:monospace; font-size:12px; }
+    .mono { font-family:monospace; font-size:15px; }
   `]
 })
 export class HubExceptions implements OnInit {

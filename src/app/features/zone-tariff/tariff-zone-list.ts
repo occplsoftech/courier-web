@@ -95,9 +95,9 @@ const DIRECTION_OPTS: SelectOption[] = [{ value: 'TO', label: 'Delivered here (t
   `,
   styles: [`
     .test { display:grid; grid-template-columns:minmax(0,200px) minmax(0,240px) auto; gap:12px 16px; align-items:end; }
-    .answer { font:400 14px var(--font-sans); margin:12px 0 0; }
+    .answer { font:400 17px var(--font-sans); margin:12px 0 0; }
     .filters { display:grid; grid-template-columns:repeat(2,minmax(0,280px)); gap:16px; margin:16px 0; }
-    .zn { font:600 14px var(--font-sans); } .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .zn { font:600 17px var(--font-sans); } .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

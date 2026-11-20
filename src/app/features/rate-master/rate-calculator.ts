@@ -44,7 +44,7 @@ type CalcTab = 'freight' | 'rate' | 'pincode';
     .page { display:flex; flex-direction:column; gap:20px; }
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; }
     .tabs { display:flex; gap:4px; border-bottom:1px solid var(--surface-border); margin-bottom:16px; }
-    .tab { border:0; background:transparent; padding:10px 4px; margin-right:16px; font:600 13px var(--font-sans);
+    .tab { border:0; background:transparent; padding:10px 4px; margin-right:16px; font:600 16px var(--font-sans);
       color:var(--content-muted); cursor:pointer; border-bottom:2px solid transparent; }
     .tab--active { color:var(--brand-600); border-bottom-color:var(--brand-600); }
   `]

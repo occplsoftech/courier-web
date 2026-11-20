@@ -50,7 +50,7 @@ export type ChargeAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'delete
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
+    .cs { font:600 17px var(--font-sans); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

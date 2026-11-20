@@ -86,9 +86,9 @@ const STATUS_OPTIONS: SelectOption[] = [
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .filters { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px; }
-    .dfld { display:flex; flex-direction:column; gap:4px; font:500 13px var(--font-sans); }
+    .dfld { display:flex; flex-direction:column; gap:4px; font:500 16px var(--font-sans); }
     .dfld input { padding:8px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .cs { font:600 14px var(--font-sans); }
+    .cs { font:600 17px var(--font-sans); }
     .tbl--right { text-align:right; }
     .acts { display:flex; gap:6px; }
     .head-acts { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }

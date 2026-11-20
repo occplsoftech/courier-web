@@ -65,17 +65,17 @@ import { ShipmentService } from './shipment.service';
   `,
   styles: [`
     mat-dialog-content { min-width:min(560px, 86vw); max-height:70vh; }
-    .sub { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
+    .sub { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
     .opts { display:flex; flex-direction:column; gap:8px; }
     .opt { display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--surface-border); border-radius:12px; cursor:pointer; background:var(--surface); }
     .opt.on { border-color:var(--brand-600); box-shadow:0 0 0 2px color-mix(in srgb, var(--brand-600) 25%, transparent); }
-    .opt__main { flex:1; min-width:0; font:500 14px var(--font-sans); display:flex; flex-direction:column; gap:2px; }
-    .opt__main small { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .opt__cost { font:700 15px var(--font-sans); white-space:nowrap; }
-    .un { margin:12px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); } .un ul { margin:6px 0 0; padding-left:18px; }
-    .hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:12px 0 0; }
-    .err { margin:8px 0 0; padding:10px 12px; border-radius:10px; background:var(--danger-bg, #fdecee); color:var(--danger, #b3123a); font:500 13px var(--font-sans); }
-    .ok { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--success-bg, #e3f5ee); color:var(--success, #0b7a55); font:600 13px var(--font-sans); }
+    .opt__main { flex:1; min-width:0; font:500 17px var(--font-sans); display:flex; flex-direction:column; gap:2px; }
+    .opt__main small { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .opt__cost { font:700 18px var(--font-sans); white-space:nowrap; }
+    .un { margin:12px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); } .un ul { margin:6px 0 0; padding-left:18px; }
+    .hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:12px 0 0; }
+    .err { margin:8px 0 0; padding:10px 12px; border-radius:10px; background:var(--danger-bg, #fdecee); color:var(--danger, #b3123a); font:500 16px var(--font-sans); }
+    .ok { margin:12px 0 0; padding:10px 12px; border-radius:10px; background:var(--success-bg, #e3f5ee); color:var(--success, #0b7a55); font:600 16px var(--font-sans); }
   `]
 })
 export class ShipmentForwardDialog implements OnInit {

@@ -56,7 +56,7 @@ const WRITERS = [AppRole.SUPER_ADMIN];
   `,
   styles: [`
     .fbadge { display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px; margin-left:2px;
-      background:var(--brand-600); color:#fff; border-radius:999px; font:700 11px var(--font-sans); }
+      background:var(--brand-600); color:#fff; border-radius:999px; font:700 14px var(--font-sans); }
   `]
 })
 export class PlanList implements OnInit {

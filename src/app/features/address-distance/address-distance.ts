@@ -97,14 +97,14 @@ import { AddressDistanceService } from './address-distance.service';
     .resolve { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .resolve__bar { display:flex; justify-content:flex-end; }
-    .resolve__err { font:500 13px var(--font-sans); color:var(--danger); padding:10px 12px;
+    .resolve__err { font:500 16px var(--font-sans); color:var(--danger); padding:10px 12px;
       background:var(--danger-50, rgba(239,68,68,.06)); border-radius:var(--r-field); }
     .result { margin-top:8px; padding:16px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); }
     .kv { display:grid; grid-template-columns:1fr auto; gap:8px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
     .tbl th { text-align:left; padding:10px 12px; color:var(--content-muted); font-weight:600; border-bottom:1px solid var(--surface-border); }
     .tbl td { padding:10px 12px; border-bottom:1px solid var(--surface-border); }
     .tbl__actions { display:flex; gap:4px; justify-content:flex-end; }

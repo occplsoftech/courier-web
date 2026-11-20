@@ -106,15 +106,15 @@ import { FreightFactorFormDialog } from './components/freight-factor-form-dialog
     .page { display:flex; flex-direction:column; gap:20px; }
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
     .tbl th { text-align:left; padding:10px 12px; color:var(--content-muted); font-weight:600; border-bottom:1px solid var(--surface-border); }
     .tbl td { padding:10px 12px; border-bottom:1px solid var(--surface-border); }
     .tbl__actions { display:flex; gap:4px; justify-content:flex-end; }
     .tbl__row--edit td { background:var(--surface); padding:6px 12px; }
     .tbl__input { width:100%; height:34px; padding:0 8px; background:var(--surface-2, var(--surface));
-      border:1px solid var(--surface-border); border-radius:var(--r-field); font:400 13px var(--font-sans); color:var(--content-fg); }
+      border:1px solid var(--surface-border); border-radius:var(--r-field); font:400 16px var(--font-sans); color:var(--content-fg); }
     .tbl__input:focus { outline:0; border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
-    .tbl__err { color:var(--danger); font:500 13px var(--font-sans); padding:8px 12px; }
+    .tbl__err { color:var(--danger); font:500 16px var(--font-sans); padding:8px 12px; }
   `]
 })
 export class FreightFactorPage {

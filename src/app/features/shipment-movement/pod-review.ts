@@ -169,34 +169,34 @@ import { SelectOption } from '@shared/components/ui-select/ui-select';
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
     .page__actions { display:flex; align-items:center; gap:10px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
     .tbl__row--actionable { cursor:pointer; }
     .tbl__row--actionable:hover { background:var(--surface-muted); }
     .pod-thumb--sm { border:0; background:none; padding:0; cursor:pointer; width:40px; height:40px; border-radius:8px; overflow:hidden; }
     .pod-thumb--sm img { width:100%; height:100%; object-fit:cover; display:block; }
-    .status-badge { display:inline-block; padding:2px 10px; border-radius:999px; font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; }
+    .status-badge { display:inline-block; padding:2px 10px; border-radius:999px; font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; }
     .status-badge--PASS { background:var(--success-bg, #e6f6ec); color:var(--success, #1a7f4a); }
     .status-badge--PENDING { background:var(--warning-bg, #fff4e0); color:var(--warning, #a15c00); }
     .status-badge--FAIL { background:var(--danger-bg); color:var(--danger); }
     .status-badge--none { background:var(--surface-muted); color:var(--content-muted); }
     .sh { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .sh strong { display:block; font:600 15px var(--font-sans); }
+    .sh strong { display:block; font:600 18px var(--font-sans); }
     .sh__meta { margin-top:14px; }
     .pods { display:flex; gap:16px; flex-wrap:wrap; }
     .pod-thumb { display:flex; flex-direction:column; align-items:center; gap:6px; width:160px;
       border:1px solid var(--surface-border); border-radius:var(--r-field); padding:10px; cursor:pointer;
-      background:none; text-decoration:none; color:var(--content-fg); font:600 12px var(--font-sans); }
+      background:none; text-decoration:none; color:var(--content-fg); font:600 15px var(--font-sans); }
     .pod-thumb img { width:100%; height:140px; object-fit:cover; border-radius:calc(var(--r-field) - 4px); }
     .pod-thumb--empty { color:var(--content-muted); height:170px; justify-content:center; }
     .ai-result__grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px 16px; margin:0; }
-    .ai-result__grid dt { font:600 11px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
-    .ai-result__grid dd { margin:2px 0 0; font:500 13px var(--font-sans); }
-    .ai-result__reasons { margin:12px 0 0; padding-left:18px; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .ai-result__grid dt { font:600 14px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
+    .ai-result__grid dd { margin:2px 0 0; font:500 16px var(--font-sans); }
+    .ai-result__reasons { margin:12px 0 0; padding-left:18px; font:400 16px var(--font-sans); color:var(--content-muted); }
     .df { display:flex; flex-direction:column; gap:16px; }
     .df__bar { display:flex; justify-content:flex-end; gap:10px; }
   `]

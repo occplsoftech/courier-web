@@ -64,26 +64,26 @@ import { PermissionToggle } from './module-permission-card';
   `,
   styles: [`
     .mx { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-lg, 12px); background:var(--surface); }
-    .mx__table { border-collapse:collapse; width:100%; font:500 13px var(--font-sans); }
+    .mx__table { border-collapse:collapse; width:100%; font:500 16px var(--font-sans); }
     .mx__table th, .mx__table td { border-bottom:1px solid var(--surface-border); }
     thead th { position:sticky; top:0; background:var(--surface-muted); z-index:1; }
     .mx__sno { position:sticky; left:0; z-index:2; background:var(--surface-muted); text-align:center;
-      padding:10px 8px; color:var(--content-muted); font:600 12px var(--font-sans); width:40px; }
+      padding:10px 8px; color:var(--content-muted); font:600 15px var(--font-sans); width:40px; }
     .mx__corner { position:sticky; left:40px; z-index:2; background:var(--surface-muted); text-align:left;
-      padding:10px 14px; font:600 12px var(--font-sans); color:var(--content-muted); min-width:150px; }
-    .mx__col { padding:10px 8px; font:600 11px var(--font-sans); color:var(--content-muted); text-align:center;
+      padding:10px 14px; font:600 15px var(--font-sans); color:var(--content-muted); min-width:150px; }
+    .mx__col { padding:10px 8px; font:600 14px var(--font-sans); color:var(--content-muted); text-align:center;
       white-space:nowrap; min-width:74px; }
     .mx__row { position:sticky; left:40px; background:var(--surface); text-align:left; padding:8px 14px;
       display:flex; flex-direction:column; gap:1px; z-index:1; }
-    .mx__mod { font:600 13px var(--font-sans); color:var(--content-fg); white-space:nowrap; }
-    .mx__sub { font:600 11px var(--font-sans); color:var(--content-muted); }
+    .mx__mod { font:600 16px var(--font-sans); color:var(--content-fg); white-space:nowrap; }
+    .mx__sub { font:600 14px var(--font-sans); color:var(--content-muted); }
     tbody .mx__sno { background:var(--surface); }
     tbody tr:hover .mx__row, tbody tr:hover .mx__cell, tbody tr:hover .mx__sno { background:var(--surface-muted); }
     .mx__cell { text-align:center; padding:4px; }
     .mx__na { color:var(--surface-border); }
     .mx__ok { color:var(--success); font-size:20px; width:20px; height:20px; }
     .mx__off { color:var(--danger); font-size:20px; width:20px; height:20px; }
-    .mx__empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:32px; }
+    .mx__empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:32px; }
   `]
 })
 export class PermissionMatrix {

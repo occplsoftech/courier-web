@@ -96,18 +96,18 @@ interface Bar { label: string; count: number; pct: number; }
     .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:16px; }
     .grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
     app-card { display:block; margin-bottom:16px; } .grid2 app-card { margin-bottom:0; }
-    .bar { display:grid; grid-template-columns:110px 1fr 36px; align-items:center; gap:12px; padding:6px 0; font:500 14px var(--font-sans); }
+    .bar { display:grid; grid-template-columns:110px 1fr 36px; align-items:center; gap:12px; padding:6px 0; font:500 17px var(--font-sans); }
     .bar__t { height:10px; background:var(--surface-muted); border-radius:999px; overflow:hidden; }
     .bar__f { display:block; height:100%; background:var(--brand-600); border-radius:999px; min-width:2px; }
     .bar__f--alt { background:var(--info, var(--brand-400)); }
     .bar__n { text-align:right; font-weight:700; }
     .t a { color:var(--brand-700); font-weight:600; text-decoration:none; } .t a:hover { text-decoration:underline; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:12px; margin:0; }
-    .tw { overflow-x:auto; } .t { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .t th { text-align:left; font:600 12px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--surface-border); }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:12px; margin:0; }
+    .tw { overflow-x:auto; } .t { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .t th { text-align:left; font:600 15px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--surface-border); }
     .t td { padding:10px; border-bottom:1px solid var(--surface-border); vertical-align:top; } .t .n { text-align:right; }
     .due { color:var(--danger); font-weight:700; }
-    .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
     @media (max-width:860px){ .grid2 { grid-template-columns:1fr; } }
   `]
 })

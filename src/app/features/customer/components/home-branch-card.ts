@@ -46,9 +46,9 @@ import { CustomerService } from '../customer.service';
   `,
   styles: [`
     .hb { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
-    .hb__pick { display:flex; flex-direction:column; gap:4px; font:600 13px var(--font-sans); min-width:260px; flex:1; max-width:420px; }
-    .hb__pick select { height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
-    .hint { font:400 13px var(--font-sans); color:var(--content-muted); margin:10px 0 0; }
+    .hb__pick { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); min-width:260px; flex:1; max-width:420px; }
+    .hb__pick select { height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
+    .hint { font:400 16px var(--font-sans); color:var(--content-muted); margin:10px 0 0; }
   `]
 })
 export class HomeBranchCard implements OnInit {

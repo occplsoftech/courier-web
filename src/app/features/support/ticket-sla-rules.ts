@@ -84,11 +84,11 @@ function minutesLabel(m: number): string {
   `,
   styles: [`
     .tbl { width:100%; border-collapse:collapse; }
-    .tbl th { text-align:left; font:600 12px var(--font-sans); color:var(--content-muted); text-transform:uppercase;
+    .tbl th { text-align:left; font:600 15px var(--font-sans); color:var(--content-muted); text-transform:uppercase;
       letter-spacing:.03em; padding:8px 10px; border-bottom:1px solid var(--surface-border); }
     .tbl td { padding:10px; border-bottom:1px solid var(--surface-border); vertical-align:middle; }
     .tbl__i { width:90px; height:36px; padding:0 10px; border:0; border-radius:var(--r-field);
-      background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); font:400 14px var(--font-sans); color:var(--content-fg); }
+      background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); font:400 17px var(--font-sans); color:var(--content-fg); }
     .row-actions { display:flex; gap:6px; align-items:center; }
   `]
 })

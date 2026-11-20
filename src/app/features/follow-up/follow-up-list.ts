@@ -96,7 +96,7 @@ function statusTone(s: FollowUpStatus): 'success' | 'warning' | 'danger' | 'info
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .filters { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
     .filters > * { min-width:180px; flex:1 1 180px; }
-    .chk { display:flex; align-items:center; gap:8px; font:500 13px var(--font-sans); color:var(--content-fg); flex:0 0 auto; min-width:auto; }
+    .chk { display:flex; align-items:center; gap:8px; font:500 16px var(--font-sans); color:var(--content-fg); flex:0 0 auto; min-width:auto; }
     .overdue { color:var(--danger); font-weight:600; }
   `]
 })

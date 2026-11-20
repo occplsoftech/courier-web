@@ -119,23 +119,23 @@ type ViewMode = 'tree' | 'matrix';
     .asg__spacer { flex:1; }
     .asg__seg { display:inline-flex; border:1px solid var(--surface-border); border-radius:9px; overflow:hidden; }
     .asg__seg button { display:inline-flex; align-items:center; gap:6px; border:0; background:var(--surface); cursor:pointer;
-      padding:8px 14px; font:600 13px var(--font-sans); color:var(--content-muted); }
+      padding:8px 14px; font:600 16px var(--font-sans); color:var(--content-muted); }
     .asg__seg button.on { background:var(--brand-50); color:var(--brand-700); }
     .asg__seg button mat-icon { font-size:17px; width:17px; height:17px; }
     .asg__matrix-bar { display:flex; align-items:center; gap:4px; margin-bottom:12px; }
-    .asg__count { font:600 12px var(--font-sans); color:var(--content-muted); margin-right:auto; }
+    .asg__count { font:600 15px var(--font-sans); color:var(--content-muted); margin-right:auto; }
     .asg__foot { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:16px;
       margin-top:16px; padding:14px 20px; background:var(--surface); border:1px solid var(--surface-border);
       border-radius:var(--r-lg, 12px); box-shadow:var(--shadow-md, 0 -2px 12px rgba(0,0,0,.06)); flex-wrap:wrap; }
-    .asg__foot-info { display:flex; align-items:center; gap:8px; font:500 13px var(--font-sans); color:var(--content-muted); }
+    .asg__foot-info { display:flex; align-items:center; gap:8px; font:500 16px var(--font-sans); color:var(--content-muted); }
     .asg__foot-info mat-icon { font-size:18px; width:18px; height:18px; }
     .asg__foot-info .warn { color:var(--warning); }
     .asg__foot-actions { display:flex; gap:10px; }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border); color:var(--content-muted);
-      font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; }
+      font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; }
     .tag--brand { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .empty { display:flex; align-items:center; justify-content:center; gap:8px; font:400 14px var(--font-sans);
+    .empty { display:flex; align-items:center; justify-content:center; gap:8px; font:400 17px var(--font-sans);
       color:var(--content-muted); padding:32px; }
   `]
 })

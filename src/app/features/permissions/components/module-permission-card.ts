@@ -77,21 +77,21 @@ export interface PermissionToggle { codes: string[]; checked: boolean; }
     .mpc__icon { width:32px; height:32px; border-radius:9px; background:var(--brand-50); color:var(--brand-700);
       display:grid; place-items:center; flex:0 0 auto; }
     .mpc__icon mat-icon { font-size:19px; width:19px; height:19px; }
-    .mpc__title { font:600 14px var(--font-sans); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .mpc__count { font:600 12px var(--font-sans); color:var(--content-muted); background:var(--surface-muted);
+    .mpc__title { font:600 17px var(--font-sans); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mpc__count { font:600 15px var(--font-sans); color:var(--content-muted); background:var(--surface-muted);
       border:1px solid var(--surface-border); border-radius:999px; padding:2px 10px; flex:0 0 auto; }
     .mpc__list { list-style:none; margin:0; padding:4px 0 8px; border-top:1px solid var(--surface-border); }
     .mpc__row { display:flex; align-items:center; gap:12px; padding:8px 16px 8px 20px; }
     .mpc__row:hover { background:var(--surface-muted); }
     .mpc__row--off { opacity:.6; }
     .mpc__meta { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
-    .mpc__name { font:500 13px var(--font-sans); color:var(--content-fg); }
-    .mpc__code { font:600 11px var(--font-mono, ui-monospace); color:var(--content-muted); }
+    .mpc__name { font:500 16px var(--font-sans); color:var(--content-fg); }
+    .mpc__code { font:600 14px var(--font-mono, ui-monospace); color:var(--content-muted); }
     .mpc__flags { display:flex; align-items:center; gap:6px; flex:0 0 auto; }
     .lock { color:var(--warning); display:inline-flex; }
     .lock mat-icon { font-size:16px; width:16px; height:16px; }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border);
-      color:var(--content-muted); font:600 10px var(--font-sans); padding:2px 7px; border-radius:6px; white-space:nowrap; }
+      color:var(--content-muted); font:600 13px var(--font-sans); padding:2px 7px; border-radius:6px; white-space:nowrap; }
     .tag--action { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); min-width:64px; text-align:center; }
     .tag--off { color:var(--danger); background:var(--danger-bg); border-color:transparent; }
   `]

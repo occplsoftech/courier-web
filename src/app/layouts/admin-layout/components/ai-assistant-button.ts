@@ -73,9 +73,11 @@ const AI_LANGS: AiLangOption[] = [
     </div>
   `,
   styles: [`
+    /* Phones: icon only, so the header's controls fit beside the logo. */
+    @media (max-width: 560px) { .aib__label { display:none; } }
     .aib { position:relative; }
     .aib__trigger { position:relative; display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 16px 0 12px;
-      border-radius:999px; border:none; cursor:pointer; white-space:nowrap; font:700 13px var(--font-sans); color:#fff;
+      border-radius:999px; border:none; cursor:pointer; white-space:nowrap; font:700 16px var(--font-sans); color:#fff;
       background:linear-gradient(90deg,#6366f1,#a855f7,#ec4899,#6366f1); background-size:300% 100%;
       animation: aib-gradient 6s ease infinite; box-shadow:0 1px 8px rgba(147,51,234,.35); }
     .aib__trigger::before { content:''; position:absolute; inset:-2px; border-radius:999px; z-index:-1;
@@ -92,14 +94,14 @@ const AI_LANGS: AiLangOption[] = [
       background:var(--surface); border:0; border-radius:var(--r-card-lg);
       box-shadow:var(--shadow-clay-hover); padding:16px; display:flex; flex-direction:column; gap:10px; }
     .aib__head { display:flex; align-items:center; justify-content:space-between; }
-    .aib__title { font:700 14px var(--font-sans); color:var(--content-fg); }
+    .aib__title { font:700 17px var(--font-sans); color:var(--content-fg); }
     .aib__close { border:0; background:transparent; color:var(--content-muted); cursor:pointer; display:flex; padding:2px; border-radius:6px; }
     .aib__close:hover { background:var(--surface-muted); color:var(--content-fg); }
     .aib__close mat-icon { font-size:18px; width:18px; height:18px; }
 
     .aib__row { display:flex; align-items:center; gap:6px; }
     .aib__input { flex:1; height:38px; padding:0 12px; background:var(--surface-muted); border:0; box-shadow:var(--shadow-clay-inset);
-      border-radius:var(--r-field); font:400 13px var(--font-sans); color:var(--content-fg); min-width:0; }
+      border-radius:var(--r-field); font:400 16px var(--font-sans); color:var(--content-fg); min-width:0; }
     .aib__mic, .aib__send { flex:none; height:38px; width:38px; display:grid; place-items:center; border-radius:var(--r-field);
       border:0; background:var(--surface-muted); box-shadow:var(--shadow-clay-sm); color:var(--content-muted); cursor:pointer; }
     .aib__mic:hover:not(:disabled), .aib__send:hover:not(:disabled) { background:var(--surface-muted); color:var(--content-fg); }
@@ -112,15 +114,15 @@ const AI_LANGS: AiLangOption[] = [
     .aib__langs { display:inline-flex; gap:2px; padding:2px; border-radius:999px; background:var(--surface-muted);
       border:1px solid var(--surface-border); align-self:flex-start; }
     .aib__lang { height:24px; min-width:24px; padding:0 8px; border:0; border-radius:999px; background:transparent;
-      color:var(--content-muted); font:600 11px var(--font-sans); cursor:pointer; }
+      color:var(--content-muted); font:600 14px var(--font-sans); cursor:pointer; }
     .aib__lang:hover:not(:disabled) { color:var(--content-fg); }
     .aib__lang--active { background:var(--brand-600); color:#fff; }
     .aib__lang:disabled { opacity:.5; cursor:not-allowed; }
 
-    .aib__interim { margin:0; font:400 12px var(--font-sans); color:var(--brand-600); font-style:italic; }
-    .aib__feedback { margin:0; font:500 12px var(--font-sans); color:var(--danger); background:var(--danger-bg);
+    .aib__interim { margin:0; font:400 15px var(--font-sans); color:var(--brand-600); font-style:italic; }
+    .aib__feedback { margin:0; font:500 15px var(--font-sans); color:var(--danger); background:var(--danger-bg);
       border-radius:8px; padding:8px 10px; }
-    .aib__hint { margin:0; font:400 11px var(--font-sans); color:var(--content-muted); line-height:1.5; }
+    .aib__hint { margin:0; font:400 14px var(--font-sans); color:var(--content-muted); line-height:1.5; }
   `]
 })
 export class AiAssistantButton implements OnDestroy {

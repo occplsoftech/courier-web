@@ -97,12 +97,12 @@ const ICONS: Record<string, string> = {
     .dl__icon { width:36px; height:36px; border-radius:10px; background:var(--surface-muted); color:var(--content-muted); display:grid; place-items:center; flex:0 0 auto; }
     .dl__body { flex:1; min-width:0; }
     .dl__head { display:flex; align-items:center; gap:8px; }
-    .dl__head strong { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .chip { font:600 10px var(--font-sans); padding:2px 8px; border-radius:999px; background:var(--brand-50); color:var(--brand-700); }
-    .dl__meta { margin:2px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); }
+    .dl__head strong { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .chip { font:600 13px var(--font-sans); padding:2px 8px; border-radius:999px; background:var(--brand-50); color:var(--brand-700); }
+    .dl__meta { margin:2px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); }
     .dl__open { color:var(--content-muted); display:flex; flex:0 0 auto; }
     .dl__open:hover { color:var(--brand-600); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:760px){ .grid3 { grid-template-columns:1fr; } }
   `]
 })

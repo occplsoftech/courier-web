@@ -64,10 +64,10 @@ export type BranchAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'assign
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .cs { font:600 17px var(--font-sans); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border); color:var(--content-muted);
-      font:600 10px var(--font-sans); padding:2px 7px; border-radius:6px; margin-right:6px; }
+      font:600 13px var(--font-sans); padding:2px 7px; border-radius:6px; margin-right:6px; }
     .tag--ok { background:var(--success-bg); color:var(--success); border-color:transparent; }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }

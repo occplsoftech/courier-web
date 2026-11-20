@@ -43,11 +43,11 @@ interface SearchResult { label: string; route: string; icon: string; section: st
     </div>
   `,
   styles: [`
-    .gs { position:relative; display:flex; align-items:center; gap:8px; width:280px; height:42px; padding:0 12px;
+    .gs { position:relative; display:flex; align-items:center; gap:8px; width:clamp(170px, 14vw, 280px); height:42px; padding:0 12px;
       border:0; border-radius:var(--r-field); background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); transition:box-shadow .15s; }
     .gs--open { box-shadow:var(--shadow-clay-inset), 0 0 0 3px var(--brand-100); }
     .gs__icon { color:var(--content-muted); font-size:20px; width:20px; height:20px; }
-    .gs__input { flex:1; border:0; outline:0; background:transparent; font:500 14px var(--font-sans); color:var(--content-fg); }
+    .gs__input { flex:1; border:0; outline:0; background:transparent; font:500 17px var(--font-sans); color:var(--content-fg); }
     .gs__clear { display:grid; place-items:center; border:0; background:transparent; color:var(--content-muted); cursor:pointer; }
     .gs__clear mat-icon { font-size:18px; width:18px; height:18px; }
     .gs__panel { position:absolute; top:48px; left:0; right:0; padding:6px; z-index:40; max-height:360px; overflow-y:auto; }
@@ -55,9 +55,9 @@ interface SearchResult { label: string; route: string; icon: string; section: st
       background:transparent; cursor:pointer; text-align:left; }
     .gs__result:hover { background:var(--surface-muted); }
     .gs__result mat-icon { color:var(--content-muted); font-size:19px; width:19px; height:19px; }
-    .gs__result-label { flex:1; font:500 14px var(--font-sans); color:var(--content-fg); }
-    .gs__result-section { font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); }
-    .gs__none { margin:0; padding:12px 10px; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .gs__result-label { flex:1; font:500 17px var(--font-sans); color:var(--content-fg); }
+    .gs__result-section { font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); }
+    .gs__none { margin:0; padding:12px 10px; font:400 16px var(--font-sans); color:var(--content-muted); }
     @media (max-width: 900px) { .gs { width:200px; } }
     @media (max-width: 720px) { .gs { display:none; } }
   `]

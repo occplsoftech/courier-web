@@ -92,9 +92,9 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
   styles: [`
     .filters { display:grid; grid-template-columns:repeat(2,minmax(0,280px)); gap:16px; margin:0 0 16px; }
     .source { display:flex; justify-content:space-between; gap:16px; align-items:center; flex-wrap:wrap; padding:14px 16px; margin:0 0 16px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
-    .source__title { font:600 14px var(--font-sans); } .source p { margin:4px 0 0; max-width:640px; }
-    .source__opts { display:flex; gap:20px; font:500 14px var(--font-sans); } .source__opts label { display:inline-flex; gap:6px; align-items:center; cursor:pointer; }
-    .zn { font:600 14px var(--font-sans); } .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .source__title { font:600 17px var(--font-sans); } .source p { margin:4px 0 0; max-width:640px; }
+    .source__opts { display:flex; gap:20px; font:500 17px var(--font-sans); } .source__opts label { display:inline-flex; gap:6px; align-items:center; cursor:pointer; }
+    .zn { font:600 17px var(--font-sans); } .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

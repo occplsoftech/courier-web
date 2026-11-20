@@ -22,10 +22,11 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
     </nav>
   `,
   styles: [`
-    .bc { display:flex; align-items:center; gap:4px; }
-    .bc__link { color:var(--content-muted); text-decoration:none; font:500 14px var(--font-sans); }
+    .bc { display:flex; align-items:center; gap:4px; min-width:0; white-space:nowrap; }
+    .bc__link, .bc__cur { overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    .bc__link { color:var(--content-muted); text-decoration:none; font:500 17px var(--font-sans); }
     .bc__link:hover { color:var(--brand-600); }
-    .bc__cur { color:var(--content-fg); font:600 14px var(--font-sans); }
+    .bc__cur { color:var(--content-fg); font:600 17px var(--font-sans); }
     .bc__sep { font-size:16px; width:16px; height:16px; color:var(--content-muted); }
   `]
 })

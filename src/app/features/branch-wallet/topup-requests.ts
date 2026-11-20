@@ -108,16 +108,16 @@ const STATUS_OPTIONS: SelectOption[] = [
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .filters { display:flex; gap:16px; flex-wrap:wrap; }
     .filters app-select, .filters app-autocomplete { min-width:200px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .rowbtns { display:flex; justify-content:flex-end; gap:8px; }
-    .link-btn { border:none; background:none; padding:0; font:600 13px var(--font-sans); color:var(--brand-500); cursor:pointer; text-decoration:underline; }
-    .badge { display:inline-flex; padding:3px 10px; border-radius:999px; font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; }
+    .link-btn { border:none; background:none; padding:0; font:600 16px var(--font-sans); color:var(--brand-500); cursor:pointer; text-decoration:underline; }
+    .badge { display:inline-flex; padding:3px 10px; border-radius:999px; font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; }
     .badge--pending { background:var(--warning-bg); color:var(--warning); }
     .badge--approved { background:var(--success-bg); color:var(--success); }
     .badge--rejected { background:var(--danger-bg); color:var(--danger); }

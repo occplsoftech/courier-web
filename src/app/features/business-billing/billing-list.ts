@@ -105,18 +105,18 @@ const STATUS_OPTS: SelectOption[] = (Object.keys(INVOICE_STATUS_LABELS) as Invoi
   styles: [`
     .sums { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
     .sum { background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); padding:14px 16px; display:flex; flex-direction:column; gap:4px; }
-    .sum span { font:500 13px var(--font-sans); color:var(--content-muted); } .sum strong { font:700 22px var(--font-sans); }
+    .sum span { font:500 16px var(--font-sans); color:var(--content-muted); } .sum strong { font:700 25px var(--font-sans); }
     .sum--due strong { color:var(--danger); }
     app-card { display:block; margin-bottom:16px; }
     .gen { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto; gap:16px; align-items:end; }
-    .hint { font:400 13px var(--font-sans); color:var(--content-muted); margin:12px 0 0; }
+    .hint { font:400 16px var(--font-sans); color:var(--content-muted); margin:12px 0 0; }
     .filters { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; margin:0 0 16px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; margin:0; }
-    .tw { overflow-x:auto; } .t { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .t th { text-align:left; font:600 12px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--surface-border); }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; margin:0; }
+    .tw { overflow-x:auto; } .t { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .t th { text-align:left; font:600 15px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--surface-border); }
     .t td { padding:10px; border-bottom:1px solid var(--surface-border); vertical-align:top; } .t .n { text-align:right; }
     .t tbody tr { cursor:pointer; } .t tbody tr:hover { background:var(--surface-muted); }
-    .sub { font:400 12px var(--font-sans); color:var(--content-muted); } .due { color:var(--danger); font-weight:700; }
+    .sub { font:400 15px var(--font-sans); color:var(--content-muted); } .due { color:var(--danger); font-weight:700; }
     @media (max-width:860px){ .sums, .filters, .gen { grid-template-columns:1fr; } }
   `]
 })

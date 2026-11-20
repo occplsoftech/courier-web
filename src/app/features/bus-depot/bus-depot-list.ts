@@ -71,7 +71,7 @@ const TYPE_OPTS: SelectOption[] = [
   `,
   styles: [`
     .filters { display:grid; grid-template-columns:repeat(3,minmax(0,280px)); gap:16px; margin:0 0 16px; }
-    .nm { font:600 14px var(--font-sans); } .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .nm { font:600 17px var(--font-sans); } .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

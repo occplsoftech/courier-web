@@ -63,11 +63,11 @@ import { Lookup } from '@features/users/user.service';
   styles: [`
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
     .page__actions { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
-    .dfld { display:flex; flex-direction:column; gap:4px; font:500 12px var(--font-sans); color:var(--content-muted); }
-    .dfld input { padding:7px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field); font:400 13px var(--font-sans); background:var(--surface); color:var(--content-fg); }
-    .cfld { display:flex; align-items:center; gap:6px; font:500 13px var(--font-sans); color:var(--content-fg); padding-bottom:8px; white-space:nowrap; }
+    .dfld { display:flex; flex-direction:column; gap:4px; font:500 15px var(--font-sans); color:var(--content-muted); }
+    .dfld input { padding:7px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field); font:400 16px var(--font-sans); background:var(--surface); color:var(--content-fg); }
+    .cfld { display:flex; align-items:center; gap:6px; font:500 16px var(--font-sans); color:var(--content-fg); padding-bottom:8px; white-space:nowrap; }
     .num { text-align:right; }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
   `]
 })
 export class DrsReport implements OnInit {

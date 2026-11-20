@@ -24,7 +24,7 @@ import { UiSelect, SelectOption } from '@shared/components/ui-select/ui-select';
       <app-button icon="person_add" [disabled]="partner.invalid" (pressed)="ref.close(partner.value)">Assign</app-button>
     </mat-dialog-actions>
   `,
-  styles: [`.sub { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:8px 0 0; } mat-dialog-content { min-width:340px; }`]
+  styles: [`.sub { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:8px 0 0; } mat-dialog-content { min-width:340px; }`]
 })
 export class PickupAssignDialog {
   protected readonly data = inject<{ pickup: PickupRequest; partners: SelectOption[]; suggested?: string }>(MAT_DIALOG_DATA);
@@ -52,7 +52,7 @@ export class PickupAssignDialog {
       <app-button icon="inventory_2" [disabled]="parcels.invalid || weight.invalid" (pressed)="ref.close({ parcels: +parcels.value, weight: +weight.value })">Confirm</app-button>
     </mat-dialog-actions>
   `,
-  styles: [`.sub { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .g { display:grid; grid-template-columns:1fr 1fr; gap:16px; } mat-dialog-content { min-width:360px; }`]
+  styles: [`.sub { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .g { display:grid; grid-template-columns:1fr 1fr; gap:16px; } mat-dialog-content { min-width:360px; }`]
 })
 export class PickupCompleteDialog {
   protected readonly data = inject<{ pickup: PickupRequest }>(MAT_DIALOG_DATA);

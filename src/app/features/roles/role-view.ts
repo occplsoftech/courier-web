@@ -106,7 +106,7 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
     .rv__tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .mono { font-family:var(--font-mono, var(--font-sans)); }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border); color:var(--content-muted);
-      font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; }
+      font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; }
     .tag--brand { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); }
     .rv__actions { display:flex; gap:10px; align-items:center; }
     .kebab { border:0; background:var(--surface); cursor:pointer; color:var(--content-muted); display:inline-flex;
@@ -116,13 +116,13 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
     .rv__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     .rv__grid > app-card:last-child { grid-column:1 / -1; }
     .kv { display:grid; grid-template-columns:150px 1fr; gap:10px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; }
     .chip { background:var(--brand-50); color:var(--brand-700); border:1px solid var(--brand-100);
-      font:600 11px var(--font-sans); padding:3px 9px; border-radius:999px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
-    .empty-inline { font:400 13px var(--font-sans); color:var(--content-muted); }
+      font:600 14px var(--font-sans); padding:3px 9px; border-radius:999px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty-inline { font:400 16px var(--font-sans); color:var(--content-muted); }
     @media (max-width:860px){ .rv__grid{ grid-template-columns:1fr; } }
   `]
 })

@@ -112,16 +112,16 @@ import { CompanyService } from './company.service';
   styles: [`
     .page__actions { display:flex; flex-wrap:wrap; gap:8px; }
     .tiles { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); margin-top:16px; }
-    .quota { margin:12px 0 0; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .quota { margin:12px 0 0; font:400 16px var(--font-sans); color:var(--content-muted); }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:16px; }
     .span-2 { grid-column:1 / -1; }
     .kv { display:flex; flex-direction:column; gap:2px; margin:0; }
     .kv__row { display:flex; justify-content:space-between; gap:16px; padding:10px 0;
       border-bottom:1px solid var(--surface-border); }
     .kv__row:last-child { border-bottom:0; }
-    dt { font:500 13px var(--font-sans); color:var(--content-muted); margin:0; }
-    dd { font:600 13px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; word-break:break-word; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    dt { font:500 16px var(--font-sans); color:var(--content-muted); margin:0; }
+    dd { font:600 16px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; word-break:break-word; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:900px){ .grid{ grid-template-columns:1fr; } .span-2{ grid-column:auto; } }
   `]
 })

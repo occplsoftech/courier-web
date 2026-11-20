@@ -54,10 +54,10 @@ interface Entry {
     .tl__row--internal .tl__icon { background:linear-gradient(155deg, #fbbf24, var(--warning)); color:#fff; }
     .tl__body { display:flex; flex-direction:column; gap:4px; padding-top:6px; flex:1; }
     .tl__head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .tl__head strong { font:600 14px var(--font-sans); color:var(--content-fg); }
+    .tl__head strong { font:600 17px var(--font-sans); color:var(--content-fg); }
     .tl__badge { display:inline-flex; align-items:center; height:20px; padding:0 8px; border-radius:999px;
-      background:var(--warning-bg); color:var(--warning); font:700 11px var(--font-sans); text-transform:uppercase; }
-    .tl__text { margin:0; font:400 14px var(--font-sans); color:var(--content-fg); white-space:pre-wrap; }
+      background:var(--warning-bg); color:var(--warning); font:700 14px var(--font-sans); text-transform:uppercase; }
+    .tl__text { margin:0; font:400 17px var(--font-sans); color:var(--content-fg); white-space:pre-wrap; }
     .tl__row--internal .tl__text { background:var(--warning-bg); padding:8px 12px; border-radius:var(--r-field); }
   `]
 })

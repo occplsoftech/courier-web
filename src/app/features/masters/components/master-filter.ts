@@ -54,9 +54,9 @@ import { MasterDefinition, MasterField, MasterKey } from '../master.config';
   styles: [`
     .mf { display:flex; flex-direction:column; gap:16px; }
     .mf__field { display:flex; flex-direction:column; gap:6px; }
-    .mf__label { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .mf__label { font:500 16px var(--font-sans); color:var(--content-fg); }
     .mf__input { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); outline:0; }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); outline:0; }
     .mf__actions { display:flex; gap:8px; margin-top:4px; }
   `]
 })

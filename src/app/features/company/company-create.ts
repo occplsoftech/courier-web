@@ -135,7 +135,7 @@ const PAN = /^$|^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/;
   styles: [`
     form { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    .hint { display:flex; gap:8px; margin:14px 0 0; color:var(--content-muted); font-size:12px; line-height:1.55; }
+    .hint { display:flex; gap:8px; margin:14px 0 0; color:var(--content-muted); font-size:15px; line-height:1.55; }
     .hint mat-icon { font-size:18px; width:18px; height:18px; flex:none; }
     .actions { display:flex; justify-content:flex-end; gap:10px; }
     @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }

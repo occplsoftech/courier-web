@@ -45,7 +45,7 @@ export interface FreightFactorFormData {
     .ffd { padding:24px; width:480px; max-width:92vw; max-height:85vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px; }
     .ffd__form { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .ffd__hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:0; }
+    .ffd__hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:0; }
     .ffd__actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
     @media (max-width:520px){ .grid { grid-template-columns:1fr; } }
   `]

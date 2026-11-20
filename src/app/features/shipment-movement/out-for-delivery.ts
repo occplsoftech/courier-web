@@ -175,17 +175,17 @@ import { RouteIllustration } from '@shared/components/illustrations/route-illust
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px 20px; }
     .otp { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; padding:12px; background:var(--surface-muted); border-radius:var(--r-field); }
     .otp app-input { min-width:160px; }
-    .otp__ok { font:600 14px var(--font-sans); color:var(--success-600, #1a7f37); }
+    .otp__ok { font:600 17px var(--font-sans); color:var(--success-600, #1a7f37); }
     .ol { display:flex; flex-direction:column; gap:6px; }
-    .ol__row { display:flex; align-items:center; gap:8px; font:400 13px var(--font-sans); color:var(--success-600, #16a34a); }
+    .ol__row { display:flex; align-items:center; gap:8px; font:400 16px var(--font-sans); color:var(--success-600, #16a34a); }
     .ol__row--fail { color:var(--danger-600, #dc2626); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
   `]
 })

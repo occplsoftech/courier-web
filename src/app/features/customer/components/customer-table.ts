@@ -51,8 +51,8 @@ export type CustomerAction = 'view' | 'edit' | 'activate' | 'deactivate';
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .cs { font:600 17px var(--font-sans); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

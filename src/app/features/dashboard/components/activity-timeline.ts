@@ -57,9 +57,9 @@ const ICONS: Record<ActivityKind, string> = {
     .tl__item[data-kind="WALLET"] .tl__dot { background:var(--info-bg); color:var(--info); }
     .tl__item[data-kind="SYSTEM"] .tl__dot { background:var(--warning-bg); color:var(--warning); }
     .tl__body { flex:1; min-width:0; }
-    .tl__title { font:600 14px var(--font-sans); margin:0; }
+    .tl__title { font:600 17px var(--font-sans); margin:0; }
     .tl__meta { display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex:none; white-space:nowrap; }
-    .tl__amt { font:700 13px var(--font-sans); }
+    .tl__amt { font:700 16px var(--font-sans); }
   `]
 })
 export class ActivityTimeline {

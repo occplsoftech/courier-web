@@ -26,7 +26,7 @@ export interface SelectOption { value: string; label: string; }
   `,
   styles: [`
     .sel { display:flex; flex-direction:column; gap:6px; }
-    .sel__label { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .sel__label { font:500 16px var(--font-sans); color:var(--content-fg); }
     .sel__field { width:100%; }
     // Material's outline appearance, restyled into a clay "well" to match app-input —
     // ::ng-deep since the outline/wrapper are Material internals, not this component's own DOM.

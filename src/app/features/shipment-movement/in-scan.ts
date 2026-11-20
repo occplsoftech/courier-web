@@ -177,16 +177,16 @@ import { StatusBadge } from '@shared/components/status-badge/status-badge';
     .row app-input { flex:1; min-width:200px; }
     .row--sub { margin-top:12px; }
     .ol { display:flex; flex-direction:column; gap:6px; }
-    .ol__row { display:flex; align-items:center; gap:8px; font:400 13px var(--font-sans); color:var(--success-600, #16a34a); }
+    .ol__row { display:flex; align-items:center; gap:8px; font:400 16px var(--font-sans); color:var(--success-600, #16a34a); }
     .ol__row--fail { color:var(--danger-600, #dc2626); }
     .next { display:flex; flex-direction:column; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid var(--surface-border); }
     .next__btns { display:flex; gap:10px; flex-wrap:wrap; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .mh { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .mh strong { display:block; font:600 15px var(--font-sans); }
+    .mh strong { display:block; font:600 18px var(--font-sans); }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
     .df__bar { display:flex; justify-content:flex-end; margin-top:16px; }

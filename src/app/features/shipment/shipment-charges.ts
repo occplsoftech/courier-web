@@ -52,9 +52,9 @@ import { ShipmentService } from './shipment.service';
     </div>
   `,
   styles: [`
-    .empty{ font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty{ font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     .commission{ display:flex; flex-direction:column; gap:10px; }
-    .commission__row{ display:flex; align-items:center; justify-content:space-between; font:400 14px var(--font-sans); color:var(--content-fg); }
+    .commission__row{ display:flex; align-items:center; justify-content:space-between; font:400 17px var(--font-sans); color:var(--content-fg); }
     .commission__row strong{ font-weight:600; }
     .commission__row--total{ border-top:1px solid var(--surface-border); padding-top:10px; margin-top:2px; }
     .commission__row--total strong{ color:var(--brand-600); }

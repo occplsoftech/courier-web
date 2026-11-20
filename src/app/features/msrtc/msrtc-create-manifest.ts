@@ -90,10 +90,10 @@ import { Shipment } from '@core/models/shipment.model';
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
     .df { display:flex; flex-direction:column; gap:16px; }
     .df__bar { display:flex; justify-content:flex-end; align-items:center; gap:14px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { margin-top:8px; overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); max-height:360px; overflow-y:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; position:sticky; top:0; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; position:sticky; top:0; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl tbody tr { cursor:pointer; }
     .tbl tbody tr:hover { background:var(--surface-muted); }

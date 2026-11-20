@@ -103,15 +103,15 @@ import { MasterField, MasterFieldOption } from '../master.config';
   styles: [`
     .fld { display:flex; flex-direction:column; gap:6px; }
     .fld--toggle { padding-top:22px; }
-    .fld__label { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .fld__label { font:500 16px var(--font-sans); color:var(--content-fg); }
     .fld__label i { color:var(--danger); margin-left:2px; font-style:normal; }
     .fld__plain, .fld__area { width:100%; padding:0 12px; height:42px; background:var(--surface);
       border:1px solid var(--surface-border); border-radius:var(--r-field);
-      font:400 14px var(--font-sans); color:var(--content-fg); outline:0; }
-    .fld__area { height:auto; padding:10px 12px; resize:vertical; font:400 14px var(--font-sans); }
+      font:400 17px var(--font-sans); color:var(--content-fg); outline:0; }
+    .fld__area { height:auto; padding:10px 12px; resize:vertical; font:400 17px var(--font-sans); }
     .fld__plain:focus, .fld__area:focus { border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
-    .fld__hint { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .fld__err { font:500 12px var(--font-sans); color:var(--danger); }
+    .fld__hint { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .fld__err { font:500 15px var(--font-sans); color:var(--danger); }
   `]
 })
 export class MasterFieldControl {

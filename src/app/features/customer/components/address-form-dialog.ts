@@ -92,8 +92,8 @@ function toOptions(rows: GeographyOption[]): SelectOption[] {
     .flags { display:flex; flex-direction:column; gap:14px; }
     .flag { display:flex; align-items:center; gap:12px; cursor:pointer; }
     .flag span { display:flex; flex-direction:column; }
-    .flag strong { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .flag em { font:400 12px var(--font-sans); color:var(--content-muted); font-style:normal; }
+    .flag strong { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .flag em { font:400 15px var(--font-sans); color:var(--content-muted); font-style:normal; }
     .afd__actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
     @media (max-width:600px){ .grid { grid-template-columns:1fr; } }
   `]

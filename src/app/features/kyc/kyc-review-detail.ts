@@ -32,7 +32,7 @@ import { KYC_TYPE_LABELS, KycSlot, KycSubjectType, KycView } from './kyc.models'
       </app-card>
     </div>
   `,
-  styles: [`.back { font:600 14px var(--font-sans); color:var(--brand-700); text-decoration:none; } .err { color:var(--danger); }`]
+  styles: [`.back { font:600 17px var(--font-sans); color:var(--brand-700); text-decoration:none; } .err { color:var(--danger); }`]
 })
 export class KycReviewDetail implements OnInit {
   readonly type = input.required<KycSubjectType>();

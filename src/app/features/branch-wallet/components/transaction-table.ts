@@ -41,10 +41,10 @@ import { WalletTransaction, formatMoney, prettyToken } from '@core/models/wallet
     </app-table>
   `,
   styles: [`
-    .tc { font:600 13px var(--font-sans); }
-    .tc__sub { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
-    .amt { font:700 14px var(--font-mono, ui-monospace); white-space:nowrap; }
+    .tc { font:600 16px var(--font-sans); }
+    .tc__sub { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .amt { font:700 17px var(--font-mono, ui-monospace); white-space:nowrap; }
     .amt--cr { color:var(--success); }
     .amt--dr { color:var(--danger); }
     .dash { color:var(--content-muted); }

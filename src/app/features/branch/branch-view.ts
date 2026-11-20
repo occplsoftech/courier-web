@@ -142,10 +142,10 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
     </div>
   `,
   styles: [`
-    .bv__hint { margin:0 0 10px; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .bv__hint { margin:0 0 10px; font:400 16px var(--font-sans); color:var(--content-muted); }
     .bv__pl { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .bv__input { flex:1; min-width:220px; padding:10px 12px; border:1px solid var(--surface-border); border-radius:var(--r-field);
-      background:var(--surface); color:var(--content-fg); font:400 14px var(--font-sans); }
+      background:var(--surface); color:var(--content-fg); font:400 17px var(--font-sans); }
     .bv__banner { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:20px 24px; margin-bottom:16px; }
     .bv__actions { display:flex; gap:10px; align-items:center; flex:0 0 auto; }
     .kebab { border:1px solid var(--surface-border); background:var(--surface); cursor:pointer; color:var(--content-muted);
@@ -155,14 +155,14 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
     .bv__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     .kv { display:grid; grid-template-columns:160px 1fr; gap:10px 16px; margin:0; }
     .kv--tight { margin-top:14px; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .caps { display:flex; flex-wrap:wrap; gap:6px; }
-    .cap { font:600 11px var(--font-sans); padding:3px 10px; border-radius:999px; background:var(--surface-muted);
+    .cap { font:600 14px var(--font-sans); padding:3px 10px; border-radius:999px; background:var(--surface-muted);
       color:var(--content-muted); border:1px solid var(--surface-border); }
     .cap--on { background:var(--success-bg); color:var(--success); border-color:transparent; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:860px){ .bv__grid { grid-template-columns:1fr; } }
   `]
 })

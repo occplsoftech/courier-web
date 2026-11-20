@@ -49,11 +49,11 @@ import { RecentShipment } from '../models/dashboard.model';
     </app-card>
   `,
   styles: [`
-    .rs__link { font:600 13px var(--font-sans); color:var(--brand-600); text-decoration:none; }
+    .rs__link { font:600 16px var(--font-sans); color:var(--brand-600); text-decoration:none; }
     .rs-empty { display:flex; flex-direction:column; align-items:center; gap:6px; padding:28px 0; color:var(--content-muted); text-align:center; }
     .rs-empty mat-icon { font-size:40px; width:40px; height:40px; opacity:.45; }
     .rs__scroll { overflow-x:auto; border-radius:18px; background:var(--surface-muted); padding:4px; }
-    .rs { width:100%; border-collapse:separate; border-spacing:0 4px; font:500 13px var(--font-sans); }
+    .rs { width:100%; border-collapse:separate; border-spacing:0 4px; font:500 16px var(--font-sans); }
     .rs th { text-align:left; padding:8px 12px; color:var(--content-muted); font-weight:600; white-space:nowrap; }
     .rs td { padding:10px 12px; background:var(--surface); white-space:nowrap; }
     .rs tr td:first-child { border-radius:14px 0 0 14px; }

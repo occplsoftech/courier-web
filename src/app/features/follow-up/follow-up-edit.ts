@@ -62,11 +62,11 @@ function toDateInput(iso: string): string { return iso ? iso.substring(0, 10) : 
     .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:20px; }
     .fld { display:flex; flex-direction:column; gap:6px; }
     .fld--wide { grid-column:1 / -1; }
-    .fld__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .fld__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .ta { border:0; outline:0; padding:12px 14px; background:var(--surface-muted); border-radius:var(--r-field);
-      box-shadow:var(--shadow-clay-inset); font:400 14px var(--font-sans); color:var(--content-fg); resize:vertical; }
+      box-shadow:var(--shadow-clay-inset); font:400 17px var(--font-sans); color:var(--content-fg); resize:vertical; }
     .actions { display:flex; justify-content:flex-end; gap:12px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:720px) { .grid { grid-template-columns:1fr; } }
   `]
 })

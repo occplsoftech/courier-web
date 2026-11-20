@@ -117,10 +117,10 @@ export const KYC_MAX_BYTES = 5 * 1024 * 1024;
   styles: [`
     .kyc { display:flex; flex-direction:column; gap:10px; }
     .kyc__head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-    .kyc__head h2 { margin:0; font:700 20px var(--font-display); }
-    h3 { margin:14px 0 2px; font:700 13px var(--font-sans); letter-spacing:.08em; text-transform:uppercase; color:var(--content-muted); }
-    .muted { color:var(--content-muted); } .small { font-size:12px; margin:0; }
-    .badge { display:inline-flex; align-items:center; gap:6px; padding:3px 12px; border-radius:999px; font:700 12px var(--font-sans);
+    .kyc__head h2 { margin:0; font:700 23px var(--font-display); }
+    h3 { margin:14px 0 2px; font:700 16px var(--font-sans); letter-spacing:.08em; text-transform:uppercase; color:var(--content-muted); }
+    .muted { color:var(--content-muted); } .small { font-size:15px; margin:0; }
+    .badge { display:inline-flex; align-items:center; gap:6px; padding:3px 12px; border-radius:999px; font:700 15px var(--font-sans);
       background:var(--neutral-bg); color:var(--neutral); white-space:nowrap; }
     .badge mat-icon { font-size:16px; width:16px; height:16px; }
     .badge--ok { background:var(--success-bg); color:var(--success); }
@@ -132,15 +132,15 @@ export const KYC_MAX_BYTES = 5 * 1024 * 1024;
     .row:first-child { border-top:0; }
     .row__icon { color:var(--content-muted); } .row__icon.ok { color:var(--success); } .row__icon.bad { color:var(--danger); }
     .row__icon.wait { color:var(--warning); }
-    .review { font:600 12px var(--font-sans); color:var(--warning); }
+    .review { font:600 15px var(--font-sans); color:var(--warning); }
     .review--ok { color:var(--success); } .review--bad { color:var(--danger); }
     .badge--info { background:var(--info-bg); color:var(--info); }
-    .row__main { flex:1; min-width:12rem; display:flex; flex-direction:column; gap:2px; font-size:14px; }
+    .row__main { flex:1; min-width:12rem; display:flex; flex-direction:column; gap:2px; font-size:17px; }
     .row__main em { font-style:normal; font-weight:500; }
     .row__actions { display:flex; gap:6px; flex-wrap:wrap; }
     .code { width:9rem; height:42px; padding:0 12px; border:1px solid var(--surface-border); border-radius:var(--r-field);
-      font:700 16px var(--font-sans); letter-spacing:.2em; background:var(--surface); color:var(--content-fg); }
-    .err { color:var(--danger); font:500 13px var(--font-sans); margin:0; }
+      font:700 19px var(--font-sans); letter-spacing:.2em; background:var(--surface); color:var(--content-fg); }
+    .err { color:var(--danger); font:500 16px var(--font-sans); margin:0; }
   `]
 })
 export class KycChecklist {

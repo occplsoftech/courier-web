@@ -33,7 +33,7 @@ import { Lookup, UserService } from './user.service';
       }
     </div>
   `,
-  styles: [`.empty{ font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }`]
+  styles: [`.empty{ font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }`]
 })
 export class UserEdit implements OnInit {
   private readonly service = inject(UserService);

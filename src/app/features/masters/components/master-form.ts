@@ -85,18 +85,18 @@ type PincodeLookupState =
     .mform { display:flex; flex-direction:column; gap:16px; }
     .mform__grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }
     .mform__actions { display:flex; justify-content:flex-end; gap:8px; }
-    .mform__lookup { grid-column:1 / -1; margin-top:-8px; font:400 12px var(--font-sans); }
+    .mform__lookup { grid-column:1 / -1; margin-top:-8px; font:400 15px var(--font-sans); }
     .mform__lookup--pending { color:var(--content-muted); }
     .mform__lookup--ok { color:var(--success, #2e7d32); }
     .mform__lookup--warn { color:var(--content-muted); }
     .mform__areas-wrap { overflow-x:auto; }
-    .mform__areas { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .mform__areas th { text-align:left; font:500 12px var(--font-sans); color:var(--content-muted);
+    .mform__areas { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .mform__areas th { text-align:left; font:500 15px var(--font-sans); color:var(--content-muted);
       text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
     .mform__areas td { padding:10px 12px; border-top:1px solid var(--surface-border); color:var(--content-fg); }
-    .mform__areas-badge { font:600 11px var(--font-sans); color:var(--brand-600, #4f46e5);
+    .mform__areas-badge { font:600 14px var(--font-sans); color:var(--brand-600, #4f46e5);
       background:var(--brand-100, #eef2ff); border-radius:999px; padding:2px 8px; }
-    .mform__areas-hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:10px 0 0; }
+    .mform__areas-hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:10px 0 0; }
   `]
 })
 export class MasterForm implements OnInit {

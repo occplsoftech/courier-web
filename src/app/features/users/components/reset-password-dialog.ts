@@ -37,7 +37,7 @@ export interface ResetPasswordData { userId: string; displayName: string; }
   `,
   styles: [`
     .rp { padding:24px; width:440px; max-width:92vw; display:flex; flex-direction:column; gap:14px; }
-    .rp__err { font:500 12px var(--font-sans); color:var(--danger); margin-top:-8px; }
+    .rp__err { font:500 15px var(--font-sans); color:var(--danger); margin-top:-8px; }
     .rp__actions { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
   `]
 })

@@ -104,20 +104,20 @@ const REASON: Record<UnserviceableRow['reason'], string> = {
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
     .filters { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin:6px 0 12px; }
-    .filters label { display:flex; flex-direction:column; gap:4px; font:600 13px var(--font-sans); }
+    .filters label { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); }
     .filters input[type=date] { height:38px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px;
-      background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
+      background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
     .seg { display:inline-flex; border:1px solid var(--surface-border); border-radius:999px; overflow:hidden; }
-    .seg button { border:0; background:transparent; padding:8px 14px; font:500 13px var(--font-sans); color:var(--content-fg); cursor:pointer; }
+    .seg button { border:0; background:transparent; padding:8px 14px; font:500 16px var(--font-sans); color:var(--content-fg); cursor:pointer; }
     .seg button.on { background:var(--primary, #1a56db); color:#fff; }
     .wrap { overflow-x:auto; border-radius:12px; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); background:var(--surface-card, #fff); min-width:900px; }
-    .tbl th { text-align:left; font:600 12px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); padding:10px 12px; }
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); background:var(--surface-card, #fff); min-width:900px; }
+    .tbl th { text-align:left; font:600 15px var(--font-sans); text-transform:uppercase; letter-spacing:.04em; color:var(--content-muted); padding:10px 12px; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--surface-border); vertical-align:top; }
     .num { text-align:right; white-space:nowrap; }
     .muted { color:var(--content-muted); text-align:center; padding:24px; }
-    .cs { font:600 14px var(--font-sans); font-variant-numeric:tabular-nums; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font:600 12px var(--font-sans); }
+    .cs { font:600 17px var(--font-sans); font-variant-numeric:tabular-nums; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font:600 15px var(--font-sans); }
     .pill.ok { background:var(--success-bg, #dcfce7); color:var(--success, #15803d); }
     .pill.off { background:var(--danger-bg, #fee2e2); color:var(--danger, #b91c1c); }
     .act { text-align:right; white-space:nowrap; }

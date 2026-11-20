@@ -74,14 +74,14 @@ import {
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; align-items:center; }
     .grid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; }
     .fld { display:flex; flex-direction:column; gap:6px; }
-    .fld__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .fld__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .fld__l i { color:var(--danger); margin-left:2px; font-style:normal; }
     .fld__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .fld__i:focus { outline:0; border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
     .dform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .dform__note { font:500 13px var(--font-sans); color:var(--danger); }
+    .dform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .dform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid, .grid3 { grid-template-columns:1fr; } }
   `]

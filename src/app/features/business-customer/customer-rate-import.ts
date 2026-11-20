@@ -74,17 +74,17 @@ import { BusinessCustomerService, RateImportPreview } from './business-customer.
   styles: [`
     .pick { display:grid; grid-template-columns:minmax(0,360px) 1fr; gap:20px; align-items:end; }
     .file { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-    .fname { font:500 13px var(--font-sans); color:var(--content-muted); }
+    .fname { font:500 16px var(--font-sans); color:var(--content-muted); }
     .scroll { overflow-x:auto; border:1px solid var(--surface-border); border-radius:10px; }
-    table { width:100%; min-width:760px; border-collapse:collapse; font:400 13px var(--font-sans); }
+    table { width:100%; min-width:760px; border-collapse:collapse; font:400 16px var(--font-sans); }
     th, td { padding:10px 12px; text-align:left; vertical-align:top; border-bottom:1px solid var(--surface-border); }
     th { background:var(--surface-muted); color:var(--content-muted); font-weight:600; }
     tbody tr:last-child td { border-bottom:0; }
     td.wrap { overflow-wrap:anywhere; }
     tr.err td { background:var(--danger-bg, #fdecee); }
     td.msg { color:var(--danger, #b3123a); }
-    .warn { margin:14px 0 0; padding:10px 14px; border-radius:10px; background:#fff4e0; color:#8a5300; font:500 13px var(--font-sans); }
-    .okmsg { margin:0 0 14px; font:500 14px var(--font-sans); }
+    .warn { margin:14px 0 0; padding:10px 14px; border-radius:10px; background:#fff4e0; color:#8a5300; font:500 16px var(--font-sans); }
+    .okmsg { margin:0 0 14px; font:500 17px var(--font-sans); }
     .actions { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
     @media (max-width:760px){ .pick { grid-template-columns:1fr; } }
   `]

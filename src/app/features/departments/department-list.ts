@@ -100,19 +100,19 @@ const WRITERS = [AppRole.COMPANY_ADMIN];
   `,
   styles: [`
     .tbl__wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 12px; font:600 12px var(--font-sans); color:var(--content-muted);
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 12px; font:600 15px var(--font-sans); color:var(--content-muted);
       border-bottom:1px solid var(--surface-border); white-space:nowrap; }
     .tbl td { padding:10px 12px; border-bottom:1px solid var(--surface-border); vertical-align:top; }
-    .tbl .name { font:600 14px var(--font-sans); color:var(--content-fg); }
+    .tbl .name { font:600 17px var(--font-sans); color:var(--content-fg); }
     .tbl .mono { font-family:var(--font-mono, var(--font-sans)); }
     .tbl .muted { color:var(--content-muted); }
     .chips { display:flex; flex-wrap:wrap; gap:6px; }
-    .chip { padding:2px 8px; background:var(--surface-muted); border-radius:999px; font:500 12px var(--font-sans); }
+    .chip { padding:2px 8px; background:var(--surface-muted); border-radius:999px; font:500 15px var(--font-sans); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
   `]
 })
 export class DepartmentList implements OnInit {

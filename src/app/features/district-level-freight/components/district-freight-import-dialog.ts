@@ -80,16 +80,16 @@ type Stage = 'pick' | 'previewing' | 'previewed' | 'importing' | 'imported';
     .picker { display:flex; }
     .picker__btn { display:flex; align-items:center; gap:8px; height:44px; padding:0 16px;
       border:1px dashed var(--surface-border); border-radius:var(--r-field); background:var(--surface);
-      color:var(--content-fg); font:500 14px var(--font-sans); cursor:pointer; }
+      color:var(--content-fg); font:500 17px var(--font-sans); cursor:pointer; }
     .picker__btn:hover { border-color:var(--brand-500); }
     .summary { display:flex; gap:8px; flex-wrap:wrap; }
     .chip { display:inline-flex; align-items:center; height:26px; padding:0 10px; border-radius:999px;
-      background:var(--surface-muted); font:600 12px var(--font-sans); color:var(--content-fg); }
+      background:var(--surface-muted); font:600 15px var(--font-sans); color:var(--content-fg); }
     .chip--ok { background:var(--success-bg); color:var(--success); }
     .chip--err { background:var(--danger-bg); color:var(--danger); }
     .rows { max-height:320px; overflow:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .rtbl { width:100%; table-layout:fixed; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .rtbl th { position:sticky; top:0; text-align:left; padding:8px 10px; background:var(--surface-muted); font:600 12px var(--font-sans); }
+    .rtbl { width:100%; table-layout:fixed; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .rtbl th { position:sticky; top:0; text-align:left; padding:8px 10px; background:var(--surface-muted); font:600 15px var(--font-sans); }
     .rtbl td { padding:6px 10px; border-top:1px solid var(--surface-border); word-break:break-word; }
     .rtbl tr.err td { background:var(--danger-bg); color:var(--danger); }
     .imp__actions { display:flex; justify-content:flex-end; gap:10px; }

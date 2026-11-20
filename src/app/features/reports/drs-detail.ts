@@ -77,15 +77,15 @@ import { ShipmentStatusBadge } from '../shipment/components/shipment-status-badg
   `,
   styles: [`
     .page__head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl tfoot td { font-weight:600; border-top:2px solid var(--surface-border); }
     .tbl--right { text-align:right; }
     .tbl--address { white-space:normal; min-width:200px; }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
   `]
 })
 export class DrsDetailPage implements OnInit {

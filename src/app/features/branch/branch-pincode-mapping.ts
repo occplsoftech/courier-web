@@ -105,17 +105,17 @@ import { BranchService } from './branch.service';
       border:1px solid var(--surface-border); border-radius:var(--r-field); }
     .pick__row { border-top:1px solid var(--surface-border); }
     .pick__row:first-child { border-top:0; }
-    .pick__label { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font:400 14px var(--font-sans); }
+    .pick__label { display:flex; align-items:center; gap:10px; padding:10px 14px; cursor:pointer; font:400 17px var(--font-sans); }
     .pick__code { font-weight:600; color:var(--content-fg); }
     .pick__name { color:var(--content-muted); }
-    .pick__empty { color:var(--content-muted); font:400 14px var(--font-sans); margin:12px 0 0; }
+    .pick__empty { color:var(--content-muted); font:400 17px var(--font-sans); margin:12px 0 0; }
     .chips { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
     .chip { display:inline-flex; align-items:center; gap:6px; background:var(--brand-100, #eef2ff);
-      color:var(--brand-700, #4338ca); border-radius:999px; padding:4px 6px 4px 12px; font:600 12px var(--font-sans); }
+      color:var(--brand-700, #4338ca); border-radius:999px; padding:4px 6px 4px 12px; font:600 15px var(--font-sans); }
     .chip button { border:0; background:transparent; cursor:pointer; color:inherit; font:inherit; line-height:1; padding:2px; }
     .tbl__wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .tbl th { text-align:left; font:500 12px var(--font-sans); color:var(--content-muted);
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .tbl th { text-align:left; font:500 15px var(--font-sans); color:var(--content-muted);
       text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--surface-border); color:var(--content-fg); }
     .tbl__code { font-weight:600; }

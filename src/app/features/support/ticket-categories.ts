@@ -85,11 +85,11 @@ import { StatusBadge } from '@shared/components/status-badge/status-badge';
     .row { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:var(--r-field);
       background:var(--surface-muted); cursor:pointer; }
     .row--active { box-shadow:0 0 0 2px var(--brand-400); }
-    .row__name { flex:1; font:500 14px var(--font-sans); color:var(--content-fg); }
+    .row__name { flex:1; font:500 17px var(--font-sans); color:var(--content-fg); }
     .row__actions { display:flex; gap:4px; }
     .add { display:flex; gap:10px; align-items:center; }
     .add__i { flex:1; height:42px; padding:0 14px; border:0; border-radius:var(--r-field);
-      background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); font:400 14px var(--font-sans); color:var(--content-fg); }
+      background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); font:400 17px var(--font-sans); color:var(--content-fg); }
     @media (max-width:820px) { .cols { grid-template-columns:1fr; } }
   `]
 })

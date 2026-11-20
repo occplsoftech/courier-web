@@ -156,24 +156,24 @@ function effectiveRangeValid(group: AbstractControl): ValidationErrors | null {
     .grid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; }
     .grid4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px 20px; }
     .stat { display:flex; flex-direction:column; gap:6px; justify-content:center; }
-    .stat__l { font:500 13px var(--font-sans); color:var(--content-fg); }
-    .stat__v { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .stat__h { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .stat__l { font:500 16px var(--font-sans); color:var(--content-fg); }
+    .stat__v { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .stat__h { font:400 15px var(--font-sans); color:var(--content-muted); }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .fld { display:flex; flex-direction:column; gap:6px; }
-    .fld__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .fld__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .fld__l i { color:var(--danger); margin-left:2px; font-style:normal; }
     .fld__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .fld__i:focus { outline:0; border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
-    .fld__hint { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .fld__err { font:500 12px var(--font-sans); color:var(--danger); margin:-8px 0 0; }
+    .fld__hint { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .fld__err { font:500 15px var(--font-sans); color:var(--danger); margin:-8px 0 0; }
     .hint { margin:-8px 0 8px; }
     .slabs { margin-top:16px; padding-top:16px; border-top:1px solid var(--surface-border); }
-    .empty { font:400 13px var(--font-sans); color:var(--content-muted); }
+    .empty { font:400 16px var(--font-sans); color:var(--content-muted); }
     .rform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .rform__note { font:500 13px var(--font-sans); color:var(--danger); }
+    .rform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .rform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid, .grid3, .grid4 { grid-template-columns:1fr; } }
   `]

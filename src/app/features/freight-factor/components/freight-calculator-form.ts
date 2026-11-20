@@ -64,13 +64,13 @@ import { FreightFactorService } from '../freight-factor.service';
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .grid--3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .calc__bar { display:flex; justify-content:flex-end; }
-    .calc__err { font:500 13px var(--font-sans); color:var(--danger); padding:10px 12px;
+    .calc__err { font:500 16px var(--font-sans); color:var(--danger); padding:10px 12px;
       background:var(--danger-50, rgba(239,68,68,.06)); border-radius:var(--r-field); }
     .result { margin-top:8px; padding:16px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); }
     .kv { display:grid; grid-template-columns:1fr auto; gap:8px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
-    .kv .total { font-weight:700; font-size:16px; color:var(--brand-600); border-top:1px solid var(--surface-border); padding-top:8px; margin-top:4px; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
+    .kv .total { font-weight:700; font-size:19px; color:var(--brand-600); border-top:1px solid var(--surface-border); padding-top:8px; margin-top:4px; }
     .mono { font-family:var(--font-mono, ui-monospace); }
     @media (max-width:700px){ .grid--3 { grid-template-columns:1fr; } .grid { grid-template-columns:1fr; } }
   `]

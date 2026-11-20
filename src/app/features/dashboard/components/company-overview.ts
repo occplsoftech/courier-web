@@ -163,12 +163,12 @@ const money = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
       transition:transform .15s ease; }
     .co-pipeline__stage:hover { transform:translateY(-2px); }
     .co-pipeline__badge { display:grid; place-items:center; width:40px; height:40px; border-radius:50%;
-      font:700 15px var(--font-sans); color:#fff; box-shadow:var(--shadow-clay-sm); flex-shrink:0; }
+      font:700 18px var(--font-sans); color:#fff; box-shadow:var(--shadow-clay-sm); flex-shrink:0; }
     .co-pipeline__badge[data-tone="brand"]   { background:linear-gradient(155deg, var(--brand-400),   var(--brand-600)); }
     .co-pipeline__badge[data-tone="info"]    { background:linear-gradient(155deg, #60a5fa, var(--info)); }
     .co-pipeline__badge[data-tone="warning"] { background:linear-gradient(155deg, #fbbf24, var(--warning)); }
     .co-pipeline__badge[data-tone="success"] { background:linear-gradient(155deg, #4ade80, var(--success)); }
-    .co-pipeline__label { font:600 10.5px var(--font-sans); color:var(--content-muted); text-align:center;
+    .co-pipeline__label { font:600 13.5px var(--font-sans); color:var(--content-muted); text-align:center;
       max-width:64px; }
     .co-pipeline__connector { flex:1; min-width:16px; max-width:56px; height:3px; border-radius:2px; margin:0 -2px 26px;
       background:var(--surface-border); }
@@ -194,9 +194,9 @@ const money = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
     .co-actions__icon[data-tone="brand"]   { background:linear-gradient(155deg, var(--brand-400), var(--brand-600)); }
     .co-actions__icon[data-tone="info"]    { background:linear-gradient(155deg, #60a5fa, var(--info)); }
     .co-actions__body { flex:1; min-width:0; }
-    .co-actions__count { font:700 18px var(--font-sans); margin:0; }
+    .co-actions__count { font:700 21px var(--font-sans); margin:0; }
     .co-actions__btn { flex-shrink:0; display:inline-flex; align-items:center; gap:2px; padding:6px 8px 6px 14px;
-      border-radius:var(--r-pill); font:600 12px var(--font-sans); text-decoration:none; color:#fff; }
+      border-radius:var(--r-pill); font:600 15px var(--font-sans); text-decoration:none; color:#fff; }
     .co-actions__btn mat-icon { font-size:16px; width:16px; height:16px; }
     .co-actions__btn[data-tone="warning"] { background:linear-gradient(155deg, #fbbf24, var(--warning)); }
     .co-actions__btn[data-tone="danger"]  { background:linear-gradient(155deg, #f87171, var(--danger)); }
@@ -208,17 +208,17 @@ const money = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
     .co-wallet__icon { display:grid; place-items:center; width:52px; height:52px; border-radius:18px;
       flex-shrink:0; background:linear-gradient(155deg, #4ade80, var(--success)); box-shadow:var(--shadow-clay-sm); }
     .co-wallet__icon mat-icon { font-size:24px; color:#fff; }
-    .co-wallet__value { font:700 30px var(--font-sans); margin:0; letter-spacing:-.02em; color:var(--success); }
+    .co-wallet__value { font:700 33px var(--font-sans); margin:0; letter-spacing:-.02em; color:var(--success); }
     .co-wallet__warn { display:flex; align-items:center; gap:6px; margin-top:12px; padding:8px 12px;
-      border-radius:12px; background:var(--warning-bg); color:var(--warning); font:600 13px var(--font-sans); }
+      border-radius:12px; background:var(--warning-bg); color:var(--warning); font:600 16px var(--font-sans); }
     .co-wallet__warn mat-icon { font-size:18px; width:18px; height:18px; }
-    .co-link { display:inline-flex; align-items:center; font:600 13px var(--font-sans); color:var(--success);
+    .co-link { display:inline-flex; align-items:center; font:600 16px var(--font-sans); color:var(--success);
       text-decoration:none; }
     .co-link mat-icon { font-size:18px; width:18px; height:18px; }
 
     /* --- Tables: ranked rows, avatars, hover highlight --- */
-    .co-table { width:100%; border-collapse:collapse; font:500 13px var(--font-sans); }
-    .co-table th { text-align:left; color:var(--content-muted); font-weight:600; font-size:11px;
+    .co-table { width:100%; border-collapse:collapse; font:500 16px var(--font-sans); }
+    .co-table th { text-align:left; color:var(--content-muted); font-weight:600; font-size:14px;
       text-transform:uppercase; letter-spacing:.04em; padding:0 8px 8px; }
     .co-table tbody tr { transition:background .1s ease; }
     .co-table tbody tr:hover { background:var(--surface-muted); }
@@ -226,12 +226,12 @@ const money = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
     .co-table__name { font-weight:600; }
     .co-table__money { font-weight:700; color:var(--success); text-align:right; }
     .co-rank { display:grid; place-items:center; width:24px; height:24px; border-radius:50%;
-      font:700 11px var(--font-sans); color:#fff; background:var(--content-muted); }
+      font:700 14px var(--font-sans); color:#fff; background:var(--content-muted); }
     .co-rank[data-rank="1"] { background:linear-gradient(155deg, #fcd34d, #d97706); }
     .co-rank[data-rank="2"] { background:linear-gradient(155deg, #cbd5e1, #64748b); }
     .co-rank[data-rank="3"] { background:linear-gradient(155deg, #fdba74, #c2410c); }
     .co-avatar { display:grid; place-items:center; width:28px; height:28px; border-radius:50%;
-      font:700 11px var(--font-sans); color:var(--brand-700); background:var(--brand-100); }
+      font:700 14px var(--font-sans); color:var(--brand-700); background:var(--brand-100); }
   `]
 })
 export class CompanyOverview {

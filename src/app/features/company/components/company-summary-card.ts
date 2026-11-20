@@ -45,13 +45,13 @@ import { CompanyProfile } from '@core/models/company.model';
       display:grid; place-items:center; background:var(--brand-50, var(--surface-muted));
       border:1px solid var(--surface-border); }
     .sum__mark img { width:100%; height:100%; object-fit:contain; }
-    .sum__initials { font:700 26px var(--font-sans); color:var(--brand-600); }
+    .sum__initials { font:700 29px var(--font-sans); color:var(--brand-600); }
     .sum__id { min-width:0; }
     .sum__name-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .sum__name { font:700 22px var(--font-sans); color:var(--content-fg); margin:0; }
-    .sum__legal { font:400 14px var(--font-sans); color:var(--content-muted); margin:4px 0 0; }
+    .sum__name { font:700 25px var(--font-sans); color:var(--content-fg); margin:0; }
+    .sum__legal { font:400 17px var(--font-sans); color:var(--content-muted); margin:4px 0 0; }
     .sum__facts { display:flex; gap:18px; flex-wrap:wrap; margin-top:12px; }
-    .fact { display:inline-flex; align-items:center; gap:6px; font:500 13px var(--font-sans); color:var(--content-muted); }
+    .fact { display:inline-flex; align-items:center; gap:6px; font:500 16px var(--font-sans); color:var(--content-muted); }
     .fact mat-icon { font-size:16px; width:16px; height:16px; color:var(--content-muted); }
     @media (max-width:640px){ .sum{ flex-direction:column; align-items:flex-start; } }
   `]

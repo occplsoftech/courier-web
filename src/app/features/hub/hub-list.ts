@@ -40,7 +40,7 @@ import { HubService } from './hub.service';
       <app-pagination [page]="page()" (pageChange)="onPage($event)" />
     </div>
   `,
-  styles: [`.cs{font:600 14px var(--font-sans)}`]
+  styles: [`.cs{font:600 17px var(--font-sans)}`]
 })
 export class HubList implements OnInit {
   private readonly service = inject(HubService);

@@ -89,10 +89,10 @@ const BRANCH_STAFFING = [AppRole.COMPANY_ADMIN, AppRole.BRANCH_MANAGER];
   `,
   styles: [`
     .fbadge { display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px; margin-left:2px;
-      background:var(--brand-600); color:#fff; border-radius:999px; font:700 11px var(--font-sans); }
+      background:var(--brand-600); color:#fff; border-radius:999px; font:700 14px var(--font-sans); }
     .tabs { display:flex; gap:4px; border-bottom:1px solid var(--border-default, #e2e8f0); margin-bottom:12px; }
     .tabs__item { padding:10px 4px; margin-right:20px; border:none; background:none; cursor:pointer;
-      font:600 14px var(--font-sans); color:var(--text-secondary, #64748b); border-bottom:2px solid transparent; }
+      font:600 17px var(--font-sans); color:var(--text-secondary, #64748b); border-bottom:2px solid transparent; }
     .tabs__item--active { color:var(--brand-600); border-bottom-color:var(--brand-600); }
   `]
 })
