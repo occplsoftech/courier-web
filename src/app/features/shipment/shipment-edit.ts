@@ -137,7 +137,7 @@ const TYPE_OPTIONS: SelectOption[] = SHIPMENT_TYPES.map((t) => ({ value: t, labe
           </app-card>
 
           <app-card title="Items">
-            <app-item-entry-grid [initial]="hydrateItems()" [defaultWeightKg]="defaultChargeableWeightKg()" (itemsChange)="onItems($event)" (weightChange)="weight.set($event)" />
+            <app-item-entry-grid [initial]="hydrateItems()" (itemsChange)="onItems($event)" (weightChange)="weight.set($event)" />
           </app-card>
 
           <app-card title="Remarks">
@@ -223,7 +223,6 @@ export class ShipmentEdit implements OnInit {
   readonly weight = signal({ actual: 0, volumetric: 0, chargeable: 0 });
   /** Company Settings → Shipment → default chargeable weight, for any new row added
    *  while editing. */
-  protected readonly defaultChargeableWeightKg = signal<number | null>(null);
   /** Company Settings → Shipment → default appointment delivery charge, prefilled onto
    *  `appointmentDeliveryCharge` when the checkbox is checked. */
   protected readonly defaultAppointmentDeliveryCharge = signal<number>(1000);
@@ -281,10 +280,7 @@ export class ShipmentEdit implements OnInit {
     this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
     this.masters.options('payment-modes').subscribe((o) => this.paymentModeOptions.set(o));
     this.settings.get().subscribe((d) => {
-      const shipment = (d as { shipment?: { defaultChargeableWeightKg?: number; defaultAppointmentDeliveryCharge?: number } })?.shipment;
-      if (shipment?.defaultChargeableWeightKg != null) {
-        this.defaultChargeableWeightKg.set(Number(shipment.defaultChargeableWeightKg));
-      }
+      const shipment = (d as { shipment?: { defaultAppointmentDeliveryCharge?: number } })?.shipment;
       if (shipment?.defaultAppointmentDeliveryCharge != null) {
         this.defaultAppointmentDeliveryCharge.set(Number(shipment.defaultAppointmentDeliveryCharge));
       }

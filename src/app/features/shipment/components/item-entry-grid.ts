@@ -19,17 +19,14 @@ export interface ItemRow {
 
 const VOLUMETRIC_DIVISOR = 5000;
 
-/** Used only until the company's own `defaultChargeableWeightKg` (Company Settings →
- *  Shipment) loads — see the `defaultWeightKg` input below. */
-const FALLBACK_DEFAULT_WEIGHT_KG = 15;
-
-function emptyRow(weightKg: number = FALLBACK_DEFAULT_WEIGHT_KG): ItemRow {
+/** A new row starts with no weight: the desk types the real weight, nothing is assumed. */
+function emptyRow(): ItemRow {
   // itemName defaults to a real value, not '' — toRequests() below filters out any row
   // with a blank name (it can't book a nameless package), and an unedited default row
   // is exactly the "one implicit package" case CreateShipmentRequest's own docs describe.
   // An empty string here silently dropped every never-touched default row from the
   // request instead.
-  return { itemName: 'Package', quantity: 1, weight: weightKg, lengthCm: null, widthCm: null,
+  return { itemName: 'Package', quantity: 1, weight: null, lengthCm: null, widthCm: null,
     heightCm: null, declaredValue: null, fragile: false, dangerousGoods: false };
 }
 
@@ -113,11 +110,6 @@ export class ItemEntryGrid {
   /** Prefill for edit mode. */
   readonly initial = input<ShipmentItemRequest[] | null>(null);
 
-  /** Company Settings → Shipment → default chargeable weight. Arrives after this
-   *  component's fields already initialised with `FALLBACK_DEFAULT_WEIGHT_KG`, so it
-   *  is applied via `effect()`, not read at construction time. */
-  readonly defaultWeightKg = input<number | null>(null);
-
   readonly itemsChange = output<ShipmentItemRequest[]>();
   readonly weightChange = output<{ actual: number; volumetric: number; chargeable: number }>();
   readonly packagesChange = output<number>();
@@ -141,19 +133,9 @@ export class ItemEntryGrid {
       return sum + v * (r.quantity || 1);
     }, 0));
 
-  // Mirrors the backend's real pricing floor (CompanySettings.defaultChargeableWeightKg,
-  // enforced authoritatively in ShipmentServiceImpl/PricingEngineImpl) so the live preview
-  // matches what booking actually charges: a 10kg parcel previews (and prices) at the
-  // company's 15kg minimum, a 16kg one previews at its own 16kg. Only floors once the real
-  // setting has loaded — `defaultWeightKg() == null` means "not loaded yet", not "no floor",
-  // so it must not fall back to FALLBACK_DEFAULT_WEIGHT_KG (a prefill constant, not a floor).
-  protected readonly chargeableWeight = computed(() => {
-    const raw = Math.max(this.actualWeight(), this.volumetricWeight());
-    const floor = this.defaultWeightKg();
-    return floor == null ? raw : Math.max(raw, floor);
-  });
-
-  private seededDefaultWeight = false;
+  // Whichever is higher, actual or volumetric (L×W×H) — the backend prices the same way,
+  // with no company-wide minimum.
+  protected readonly chargeableWeight = computed(() => Math.max(this.actualWeight(), this.volumetricWeight()));
 
   constructor() {
     effect(() => {
@@ -164,21 +146,6 @@ export class ItemEntryGrid {
           lengthCm: i.lengthCm ?? null, widthCm: i.widthCm ?? null, heightCm: i.heightCm ?? null,
           declaredValue: i.declaredValue ?? null, fragile: !!i.fragile, dangerousGoods: !!i.dangerousGoods
         })));
-      }
-    });
-
-    // Re-seeds the still-pristine first row once the company's own default weight
-    // arrives — `rows` is initialised eagerly with FALLBACK_DEFAULT_WEIGHT_KG (see
-    // above), before `defaultWeightKg()` can resolve to the real, parent-bound value.
-    // Runs at most once (`seededDefaultWeight`), and never in edit mode (`initial`).
-    effect(() => {
-      const def = this.defaultWeightKg();
-      if (def == null || this.seededDefaultWeight || this.initial()?.length) return;
-      this.seededDefaultWeight = true;
-      const current = this.rows();
-      if (current.length === 1 && current[0].itemName === 'Package'
-          && current[0].weight === FALLBACK_DEFAULT_WEIGHT_KG) {
-        this.rows.set([emptyRow(def)]);
       }
     });
 
@@ -205,7 +172,7 @@ export class ItemEntryGrid {
   }
 
   protected add(): void {
-    this.rows.set([...this.rows(), emptyRow(this.defaultWeightKg() ?? FALLBACK_DEFAULT_WEIGHT_KG)]);
+    this.rows.set([...this.rows(), emptyRow()]);
   }
   protected remove(index: number): void {
     if (this.rows().length === 1) return;

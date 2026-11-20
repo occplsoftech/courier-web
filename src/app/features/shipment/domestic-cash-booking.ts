@@ -9,7 +9,6 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { MasterDataService } from '@features/masters/master-data.service';
 import { MASTER_DEFINITIONS } from '@features/masters/master.config';
-import { SettingsService } from '@features/settings/settings.service';
 import { SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { CreateShipmentRequest, ShipmentItemRequest } from '@core/models/shipment.model';
@@ -521,7 +520,6 @@ export class DomesticCashBooking implements OnInit {
   private readonly breadcrumb = inject(BreadcrumbService);
   private readonly notify = inject(NotificationService);
   private readonly masters = inject(MasterDataService);
-  private readonly settings = inject(SettingsService);
   private readonly shipments = inject(ShipmentService);
   private readonly freight = inject(FreightCalculationService);
   private readonly router = inject(Router);
@@ -579,14 +577,12 @@ export class DomesticCashBooking implements OnInit {
   protected readonly numPieces = signal<number | null>(null);
   protected readonly docWeightGrams = signal<number | null>(null);
   protected readonly rows = signal<SizeRow[]>([{ length: null, width: null, height: null, weightGrams: null, pieces: 1 }]);
-  private readonly minChargeableKg = signal<number | null>(null);
   protected readonly weights = computed(() => {
     const doc = this.itemType() === 'DOCUMENT';
     const actual = doc ? (this.docWeightGrams() ?? 0) / 1000 : actualKg(this.rows());
     const volumetric = doc ? 0 : volumetricKg(this.rows());
-    const floor = this.minChargeableKg();
-    const raw = Math.max(actual, volumetric);
-    return { actual: round3(actual), volumetric: round3(volumetric), chargeable: round3(floor != null && raw > 0 ? Math.max(raw, floor) : raw) };
+    // Chargeable weight: whichever is higher, actual or volumetric (L×W×H / 5000). No minimum.
+    return { actual: round3(actual), volumetric: round3(volumetric), chargeable: round3(Math.max(actual, volumetric)) };
   });
 
   // Step 3
@@ -663,10 +659,6 @@ export class DomesticCashBooking implements OnInit {
       const mine = list.find((b) => b.id === this.branchId);
       if (mine?.gstPercentage != null) this.gstPercent.set(mine.gstPercentage);
       if (mine?.postalCode && !this.fromPincode()) this.lookup('from', mine.postalCode);
-    });
-    this.settings.get().subscribe((s) => {
-      const kg = (s as { shipment?: { defaultChargeableWeightKg?: number } })?.shipment?.defaultChargeableWeightKg;
-      if (kg != null) this.minChargeableKg.set(Number(kg));
     });
   }
 
