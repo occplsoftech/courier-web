@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { DomesticCashBooking, actualKg, volumetricKg } from './domestic-cash-booking';
 
 describe('DomesticCashBooking', () => {
@@ -88,5 +88,47 @@ describe('DomesticCashBooking', () => {
     expect(c['roving']('b', 'b', 'a')).toBe(0);
     expect(c['roving']('b', 'a', 'a')).toBe(-1);
     expect(c['roving'](null, 'a', 'a')).toBe(0);
+  });
+
+  describe('Credit Shipment', () => {
+    const makeCredit = () => {
+      TestBed.overrideProvider(ActivatedRoute, { useValue: { snapshot: { data: { credit: true } } } });
+      return TestBed.createComponent(DomesticCashBooking).componentInstance as unknown as Record<string, any>;
+    };
+
+    it('has no payment step and asks for the client first', () => {
+      const c = makeCredit();
+      expect(c['steps']).toEqual(['Serviceability Check', 'Package Details', 'Mode of Dispatch', 'Shipment Details']);
+      expect(c['stepError'](0)).toBe('Select the credit client first.');
+    });
+
+    it('books for the client, To Be Billed', () => {
+      const c = makeCredit();
+      c['client'].set({ id: 'cust-9', displayName: 'Sai Pharma', addresses: [] });
+      c['paymentModeId'].set('pm-tbb');
+      c['modeId'].set('svc-srf');
+      c['toInfo'].set({ state: 'ok', areaId: 'area-1' });
+      c['numPieces'].set(1);
+      c['rows'].set([{ length: null, width: null, height: null, weightGrams: 900, pieces: 1 }]);
+      c['d'].set({ packageDescription: 'Medicines', packageValue: '18000', pickupName: 'Sai Pharma', pickupAddress: 'MIDC', pickupContact: '9890011122',
+        pickupAltContact: '', pickupEmail: '', deliveryName: 'City Care', deliveryAddress: 'Bandra', deliveryContact: '9819012345', deliveryAltContact: '', deliveryEmail: '' });
+      expect(c['buildRequest']()).toMatchObject({ businessCustomerId: 'cust-9', paymentModeId: 'pm-tbb', serviceTypeId: 'svc-srf' });
+    });
+
+    it('Continue Inscan keeps the client and sender but clears the shipment', () => {
+      const c = makeCredit();
+      c['client'].set({ id: 'cust-9', displayName: 'Sai Pharma', addresses: [] });
+      c['toPincode'].set('400001');
+      c['active'].set(3);
+      c['booked'].set({ id: 's1', number: 'PNQ-1' });
+      c['d'].update((d: any) => ({ ...d, pickupName: 'Sai Pharma', deliveryName: 'City Care' }));
+      c['continueInscan']();
+      expect(c['client']().id).toBe('cust-9');
+      expect(c['d']().pickupName).toBe('Sai Pharma');
+      expect(c['d']().deliveryName).toBe('');
+      expect(c['toPincode']()).toBe('');
+      expect(c['active']()).toBe(0);
+      expect(c['booked']()).toBeNull();
+    });
   });
 });
