@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet, UpperCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -12,7 +12,6 @@ import { MASTER_DEFINITIONS } from '@features/masters/master.config';
 import { SettingsService } from '@features/settings/settings.service';
 import { SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiButton } from '@shared/components/ui-button/ui-button';
-import { DialogService } from '@shared/components/ui-dialog/dialog.service';
 import { CreateShipmentRequest, ShipmentItemRequest } from '@core/models/shipment.model';
 import { ShipmentService } from './shipment.service';
 import { FreightCalculationService } from './freight-calculation.service';
@@ -62,7 +61,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DecimalPipe, NgTemplateOutlet, UpperCasePipe, MatIconModule, UiButton],
   template: `
-    <div class="page">
+    <div class="page" (keydown)="onKey($event)">
       <header class="page__head">
         <div>
           <h1 class="text-h1">Domestic (CASH) Shipment</h1>
@@ -70,11 +69,11 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
         </div>
       </header>
 
-      <div class="viewbar" role="radiogroup" aria-label="Page view">
-        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'steps'" [attr.aria-checked]="view() === 'steps'" (click)="setView('steps')">
+      <div class="viewbar" role="radiogroup" aria-label="Page view" data-nav-skip>
+        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'steps'" [attr.aria-checked]="view() === 'steps'" [attr.tabindex]="view() === 'steps' ? 0 : -1" (click)="setView('steps')">
           <mat-icon>view_carousel</mat-icon> Step by step
         </button>
-        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'single'" [attr.aria-checked]="view() === 'single'" (click)="setView('single')">
+        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'single'" [attr.aria-checked]="view() === 'single'" [attr.tabindex]="view() === 'single' ? 0 : -1" (click)="setView('single')">
           <mat-icon>view_agenda</mat-icon> Single page
         </button>
       </div>
@@ -124,7 +123,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
           }
 
           <div class="nav">
-            <app-button variant="text" icon="arrow_back" [disabled]="active() === 0 || busy()" (pressed)="back()">Back</app-button>
+            <app-button data-nav-skip variant="text" icon="arrow_back" [disabled]="active() === 0 || busy()" (pressed)="back()">Back</app-button>
             <span class="nav__sp"></span>
             <app-button [loading]="busy()" (pressed)="next()">{{ active() === steps.length - 1 ? 'Finish and Preview' : 'Next' }}</app-button>
           </div>
@@ -138,7 +137,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
             <ng-container [ngTemplateOutlet]="tService" />
           </section>
           <section class="card">
-            <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!stepError(1)">@if (!stepError(1)) { <mat-icon>check</mat-icon> } @else { 2 }</span>Packages
+            <h2 class="sec" data-sec="packages"><span class="sec__num" [class.sec__num--done]="!stepError(1)">@if (!stepError(1)) { <mat-icon>check</mat-icon> } @else { 2 }</span>Packages
               @if (numPieces()) { <span class="sec__aside">{{ numPieces() }} piece{{ numPieces() === 1 ? '' : 's' }}</span> }</h2>
             @if (itemType()) { <ng-container [ngTemplateOutlet]="tPackages" /> } @else { <p class="muted">Choose Document or Parcel first.</p> }
           </section>
@@ -161,7 +160,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
             <h2 class="sec">Booking Summary</h2>
             <div class="sum">
               <div class="sum__row"><span>Route</span><span>{{ fromInfo().city || fromPincode() || '—' }} → {{ toInfo().city || toPincode() || '—' }}</span></div>
-              <div class="sum__row"><span>Type</span><span>{{ itemType() === 'DOCUMENT' ? 'Document' : itemType() === 'PARCEL' ? 'Parcel' : '—' }}</span></div>
+              <div class="sum__row"><span>Type</span><span>{{ itemType() === 'DOCUMENT' ? 'Document' : itemType() === 'PARCEL' ? 'Non-Document (Parcel)' : '—' }}</span></div>
               <div class="sum__row"><span>Chargeable</span><span>{{ weights().chargeable ? (weights().chargeable | number: '1.3-3') + ' kg' : '—' }}</span></div>
               <div class="sum__row"><span>Mode</span><span>{{ chosen() ? chosen()!.label + (chosen()!.days != null ? ' · ' + chosen()!.days + ' days' : '') : '—' }}</span></div>
               @if (chosen(); as m) {
@@ -185,7 +184,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
       <ng-template #tService>
               <div class="seg" role="radiogroup" aria-label="Type">
                 @for (t of itemTypes; track t.value) {
-                  <button type="button" class="seg__opt" role="radio" [attr.aria-checked]="itemType() === t.value"
+                  <button type="button" class="seg__opt" role="radio" [attr.aria-checked]="itemType() === t.value" [attr.tabindex]="roving(itemType(), t.value, itemTypes[0].value)"
                           [class.seg__opt--on]="itemType() === t.value" (click)="setItemType(t.value)">
                     <mat-icon>{{ t.icon }}</mat-icon> {{ t.label }}
                   </button>
@@ -227,12 +226,12 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                       <label class="f"><span class="f__l">Width (cm)</span><input class="f__i" type="number" min="0" [value]="r.width ?? ''" (input)="setRow(i, 'width', $event)" /></label>
                       <label class="f"><span class="f__l">Height (cm)</span><input class="f__i" type="number" min="0" [value]="r.height ?? ''" (input)="setRow(i, 'height', $event)" /></label>
                       <label class="f"><span class="f__l">Weight (grams)</span><input class="f__i" type="number" min="0" [value]="r.weightGrams ?? ''" (input)="setRow(i, 'weightGrams', $event)" /></label>
-                      <label class="f"><span class="f__l">Pieces of Same Size</span><input class="f__i" type="number" min="1" [value]="r.pieces" (input)="setRow(i, 'pieces', $event)" /></label>
-                      <button type="button" class="icon-btn" [disabled]="rows().length === 1" (click)="removeRow(i)" aria-label="Remove this size"><mat-icon>delete</mat-icon></button>
+                      <label class="f"><span class="f__l">Pieces of Same Size</span><input class="f__i" type="number" min="1" [value]="r.pieces || ''" (input)="setRow(i, 'pieces', $event)" (keydown.enter)="fillRemainder(i)" (blur)="fillRemainder(i)" /></label>
+                       <button type="button" class="icon-btn" data-nav-skip [disabled]="rows().length === 1" (click)="removeRow(i)" aria-label="Remove this size"><mat-icon>delete</mat-icon></button>
                     </div>
                   }
                 </div>
-                <app-button variant="stroked" icon="add" (pressed)="addRow()">Add Package</app-button>
+                <app-button data-nav-skip variant="stroked" icon="add" (pressed)="addRow()">Add Package</app-button>
               }
               <div class="weights">
                 <span>Actual: <strong>{{ weights().actual | number: '1.3-3' }} kg</strong></span>
@@ -242,14 +241,14 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
       </ng-template>
 
       <ng-template #tModes>
-              @if (ratesLoading()) {
+              @if (ratesLoading() && !modes().length) {
                 <p class="muted">Getting rates for every mode…</p>
               } @else if (!modes().length) {
                 <p class="muted">No delivery mode is set up for this company yet.</p>
               } @else {
                 <div class="modes" role="radiogroup" aria-label="Delivery mode">
                   @for (m of modes(); track m.serviceTypeId) {
-                    <button type="button" class="mode" role="radio" [attr.aria-checked]="modeId() === m.serviceTypeId"
+                    <button type="button" class="mode" role="radio" [attr.aria-checked]="modeId() === m.serviceTypeId" [attr.tabindex]="roving(modeId(), m.serviceTypeId, firstModeId())"
                             [class.mode--on]="modeId() === m.serviceTypeId" [disabled]="m.total === null" (click)="modeId.set(m.serviceTypeId)">
                       <span class="mode__radio"></span>
                       <span class="mode__name">{{ m.label | uppercase }}</span>
@@ -292,7 +291,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
       <ng-template #tPay>
               <div class="pay" role="radiogroup" aria-label="Payment method">
                 @for (p of paymentOptions(); track p.value) {
-                  <button type="button" class="mode mode--row" role="radio" [attr.aria-checked]="paymentModeId() === p.value"
+                  <button type="button" class="mode mode--row" role="radio" [attr.aria-checked]="paymentModeId() === p.value" [attr.tabindex]="roving(paymentModeId(), p.value + '', paymentOptions()[0]?.value + '')"
                           [class.mode--on]="paymentModeId() === p.value" (click)="paymentModeId.set(p.value + '')">
                     <span class="mode__radio"></span><span class="mode__name">{{ p.label }}</span>
                   </button>
@@ -300,8 +299,22 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
               </div>
       </ng-template>
 
+      @if (weightAsk()) {
+        <div class="ovl" (click)="answerWeight(false)" (keydown.escape)="answerWeight(false)">
+          <div class="inv inv--sm" role="alertdialog" aria-modal="true" aria-labelledby="wt-title" (click)="$event.stopPropagation()">
+            <h2 id="wt-title" class="inv__title">Confirm Weight</h2>
+            <p class="wt__msg">Are you sure you want to ship actual weight <strong>{{ weights().actual | number: '1.2-2' }} kg</strong>?</p>
+            <div class="nav">
+              <app-button data-nav-skip variant="text" (pressed)="answerWeight(false)">No</app-button>
+              <span class="nav__sp"></span>
+              <app-button data-autofocus icon="check" (pressed)="answerWeight(true)">Yes</app-button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (previewOpen()) {
-        <div class="ovl" (click)="previewOpen.set(false)">
+        <div class="ovl" (click)="previewOpen.set(false)" (keydown.escape)="previewOpen.set(false)">
           <div class="inv" role="dialog" aria-modal="true" aria-labelledby="inv-title" (click)="$event.stopPropagation()">
             <h2 id="inv-title" class="inv__title">Invoice Preview</h2>
             <div class="inv__grid">
@@ -310,7 +323,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
             </div>
             <table class="inv__t">
               <tbody>
-                <tr><td>Type</td><td>{{ itemType() === 'DOCUMENT' ? 'Document' : 'Parcel' }}</td></tr>
+                <tr><td>Type</td><td>{{ itemType() === 'DOCUMENT' ? 'Document' : 'Non-Document (Parcel)' }}</td></tr>
                 @if (awbNumber()) { <tr><td>AWB Number</td><td>{{ awbNumber() }}</td></tr> }
                 @if (referenceId()) { <tr><td>Reference ID</td><td>{{ referenceId() }}</td></tr> }
                 <tr><td>Pieces</td><td>{{ numPieces() }}</td></tr>
@@ -330,9 +343,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
             </table>
             <p class="text-caption">The final amount is worked out again when the shipment is booked.</p>
             <div class="nav">
-              <app-button variant="text" [disabled]="busy()" (pressed)="previewOpen.set(false)">Close</app-button>
+              <app-button data-nav-skip variant="text" [disabled]="busy()" (pressed)="previewOpen.set(false)">Close</app-button>
               <span class="nav__sp"></span>
-              <app-button icon="check" [loading]="busy()" (pressed)="confirm()">Confirm</app-button>
+              <app-button data-autofocus icon="check" [loading]="busy()" (pressed)="confirm()">Confirm</app-button>
             </div>
           </div>
         </div>
@@ -421,6 +434,8 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     .nav__sp { flex: 1; }
     .ovl { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: grid; place-items: center; z-index: 1000; padding: 16px; }
     .inv { background: var(--surface); border-radius: 12px; padding: 24px; width: min(640px, 100%); max-height: 90vh; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+    .inv--sm { width: min(440px, 100%); }
+    .wt__msg { margin: 0; font: 400 15px var(--font-sans); color: var(--content-fg); }
     .inv__title { margin: 0; font: 600 20px var(--font-sans); color: var(--content-fg); }
     .inv__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font: 400 13px var(--font-sans); color: var(--content-fg); }
     .inv__grid h4 { margin: 0 0 4px; font: 600 12px var(--font-sans); color: var(--content-muted); text-transform: uppercase; }
@@ -447,7 +462,6 @@ export class DomesticCashBooking implements OnInit {
   private readonly notify = inject(NotificationService);
   private readonly masters = inject(MasterDataService);
   private readonly settings = inject(SettingsService);
-  private readonly dialogs = inject(DialogService);
   private readonly shipments = inject(ShipmentService);
   private readonly freight = inject(FreightCalculationService);
   private readonly router = inject(Router);
@@ -455,7 +469,7 @@ export class DomesticCashBooking implements OnInit {
   protected readonly steps = STEPS;
   protected readonly itemTypes = [
     { value: 'DOCUMENT' as const, label: 'Document', icon: 'description' },
-    { value: 'PARCEL' as const, label: 'Parcel', icon: 'inventory_2' }
+    { value: 'PARCEL' as const, label: 'Non-Document (Parcel)', icon: 'inventory_2' }
   ];
   protected readonly sides = [
     { key: 'pickup', title: 'Pickup Details' },
@@ -465,6 +479,9 @@ export class DomesticCashBooking implements OnInit {
   private readonly branchId = this.auth.user()?.branchId ?? null;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly cdr = inject(ChangeDetectorRef);
+  protected readonly weightAsk = signal(false);
 
   /** Step-by-step wizard or everything on one page; remembered per browser. */
   protected readonly view = signal<'steps' | 'single'>(readView());
@@ -473,7 +490,7 @@ export class DomesticCashBooking implements OnInit {
   protected readonly previewOpen = signal(false);
 
   // Step 1
-  protected readonly itemType = signal<'DOCUMENT' | 'PARCEL' | null>(null);
+  protected readonly itemType = signal<'DOCUMENT' | 'PARCEL' | null>('PARCEL');
   protected readonly awbNumber = signal('');
   protected readonly referenceId = signal('');
   protected readonly fromPincode = signal('');
@@ -504,6 +521,7 @@ export class DomesticCashBooking implements OnInit {
   protected readonly modes = signal<ModeRate[]>([]);
   protected readonly ratesLoading = signal(false);
   protected readonly modeId = signal<string | null>(null);
+  protected readonly firstModeId = computed(() => this.modes().find((m) => m.total !== null)?.serviceTypeId ?? null);
   protected readonly chosen = computed(() => this.modes().find((m) => m.serviceTypeId === this.modeId()) ?? null);
 
   // Step 4
@@ -524,8 +542,7 @@ export class DomesticCashBooking implements OnInit {
     effect(() => {
       if (this.view() !== 'single') return;
       const ready = !this.stepError(0) && !this.stepError(1);
-      const key = [ready, this.toPincode(), this.toInfo().areaId, this.weights().chargeable, this.itemType(), this.numPieces(),
-        this.serviceOptions().length].join('|');
+      const key = this.ratesKeyNow(ready);
       if (!ready || key === this.ratesKey) return;
       clearTimeout(timer);
       timer = setTimeout(() => { this.ratesKey = key; this.loadRates(); }, 400);
@@ -534,6 +551,11 @@ export class DomesticCashBooking implements OnInit {
   }
 
   private ratesKey = '';
+  /** What the rates depend on; a change re-prices every mode. */
+  private ratesKeyNow(ready = true): string {
+    return [ready, this.toPincode(), this.toInfo().areaId, this.weights().chargeable, this.itemType(), this.numPieces(),
+      this.serviceOptions().length].join('|');
+  }
   private ratesSeq = 0;
 
   protected setView(v: 'steps' | 'single'): void {
@@ -542,6 +564,7 @@ export class DomesticCashBooking implements OnInit {
   }
 
   ngOnInit(): void {
+    this.focusLater();
     this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Domestic (CASH) Shipment' }]);
     this.masters.options('service-types').subscribe((o) => this.serviceOptions.set(o));
     this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
@@ -627,7 +650,18 @@ export class DomesticCashBooking implements OnInit {
 
   protected setRow(i: number, key: keyof SizeRow, e: Event): void {
     const n = this.num(e);
-    this.rows.update((rs) => rs.map((r, j) => j === i ? { ...r, [key]: key === 'pieces' ? Math.max(1, Math.floor(n ?? 1)) : n } : r));
+    this.rows.update((rs) => rs.map((r, j) => j === i ? { ...r, [key]: key === 'pieces' ? (n == null ? 0 : Math.max(1, Math.floor(n))) : n } : r));
+  }
+
+  /** Last row's pieces committed (Enter or leaving the box) and fewer than the total covered:
+   *  open a row for the rest, so Enter flows straight into it. Not on every keystroke — clearing
+   *  the box to retype it must not add a row. */
+  protected fillRemainder(i: number): void {
+    const total = this.rows().reduce((s, r) => s + r.pieces, 0);
+    const wanted = this.numPieces() ?? 0;
+    if (i === this.rows().length - 1 && total < wanted) {
+      this.rows.update((rs) => [...rs, { length: null, width: null, height: null, weightGrams: null, pieces: wanted - total }]);
+    }
   }
 
   protected addRow(): void {
@@ -651,7 +685,113 @@ export class DomesticCashBooking implements OnInit {
 
   // ---------- navigation ----------
   protected back(): void {
-    if (this.active() > 0) this.active.update((s) => s - 1);
+    if (this.active() > 0) this.goTo(this.active() - 1);
+  }
+
+  /** Moves to a step and puts the cursor in its first field. */
+  private goTo(step: number): void {
+    this.active.set(step);
+    this.focusLater();
+  }
+
+  protected answerWeight(ok: boolean): void {
+    this.weightAsk.set(false);
+    if (ok) { this.goTo(2); this.loadRates(); } else { this.focusLater(); }
+  }
+
+  private openPreview(): void {
+    this.previewOpen.set(true);
+    this.focusLater('[data-autofocus]');
+  }
+
+  // ---------- keyboard: Enter works like Tab, arrows move inside a choice group ----------
+  /** 0 for the option that takes Tab focus in its group (the chosen one, else the first), -1 for the rest. */
+  protected roving(selected: string | null, value: string, first: string | null): number {
+    return (selected ?? first) === value ? 0 : -1;
+  }
+
+  protected onKey(e: KeyboardEvent): void {
+    const t = e.target as HTMLElement;
+    const radio = t.closest<HTMLElement>('[role="radio"]');
+    const arrows = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'];
+    if (radio && arrows.includes(e.key)) {
+      const group = radio.closest('[role="radiogroup"]');
+      const opts = group ? Array.from(group.querySelectorAll<HTMLButtonElement>('[role="radio"]:not(:disabled)')) : [];
+      const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1;
+      const nextOpt = opts[(opts.indexOf(radio as HTMLButtonElement) + step + opts.length) % opts.length];
+      e.preventDefault();
+      nextOpt?.click();
+      nextOpt?.focus();
+      return;
+    }
+    if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey || e.isComposing) return;
+    if (radio) {
+      e.preventDefault();
+      radio.click();
+      const group = radio.closest('[role="radiogroup"]') ?? radio;
+      setTimeout(() => this.focusNext(group));
+      return;
+    }
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) {
+      e.preventDefault();
+      this.cdr.detectChanges(); // a size row the last keystroke opened must exist before the cursor moves on
+      if (this.leavingPackagesForRates(t)) return;
+      this.focusNext(t);
+    }
+    // a focused button keeps its own Enter (Next, Preview & Book, Yes, Confirm)
+  }
+
+  /** Single page: Enter on the last package field while the rates are not shown yet — fetch them now
+   *  and put the cursor on the delivery modes when they arrive, instead of skipping past that section. */
+  private awaitModes = false;
+  private leavingPackagesForRates(from: HTMLElement): boolean {
+    if (this.view() !== 'single' || this.chosen() || this.stepError(0) || this.stepError(1)) return false;
+    const section = this.host.nativeElement.querySelector('[data-sec="packages"]')?.closest('.card');
+    if (!section?.contains(from)) return false;
+    const next = this.navStops().find((el) => from.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (next && section.contains(next)) return false; // still inside Packages
+    if (this.modes().length && !this.ratesLoading()) { this.focusModes(); return true; }
+    this.awaitModes = true;
+    this.ratesKey = this.ratesKeyNow(); // the debounced refresh then sees nothing new to fetch
+    this.loadRates();
+    return true;
+  }
+
+  private focusModes(): void {
+    setTimeout(() => {
+      this.cdr.detectChanges();
+      const opt = this.host.nativeElement.querySelector<HTMLElement>('[aria-label="Delivery mode"] [role="radio"][tabindex="0"]');
+      if (opt) { opt.focus(); return; }
+      const desc = this.host.nativeElement.querySelector<HTMLElement>('textarea');
+      desc?.focus();
+    });
+  }
+
+  /** Every place the cursor can stop, in page order: editable fields, the chosen option of each group, and the main buttons. */
+  private navStops(root: ParentNode = this.host.nativeElement): HTMLElement[] {
+    return Array.from(root.querySelectorAll<HTMLElement>('input, textarea, button')).filter((el) =>
+      !(el as HTMLInputElement).disabled && !(el as HTMLInputElement).readOnly && el.tabIndex !== -1 &&
+      !el.closest('[data-nav-skip]') && el.offsetParent !== null);
+  }
+
+  private focusNext(from: Element): void {
+    const next = this.navStops().find((el) => !from.contains(el) && (from.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
+    if (!next) return;
+    next.focus();
+    if (next instanceof HTMLInputElement) { try { next.select(); } catch { /* some input types cannot select */ } }
+  }
+
+  /** After the view updates: focus the element matching `selector`, else the first stop in the current step or page. */
+  private focusLater(selector?: string): void {
+    setTimeout(() => {
+      this.cdr.detectChanges();
+      const root = this.host.nativeElement;
+      const target = selector
+        ? root.querySelector<HTMLElement>(`${selector} button`) ?? root.querySelector<HTMLElement>(selector)
+        : null;
+      const scope = root.querySelector('.wiz .card') ?? root.querySelector('.sp__main') ?? root;
+      (target ?? this.navStops(scope)[0])?.focus();
+    });
   }
 
   protected next(): void {
@@ -660,7 +800,7 @@ export class DomesticCashBooking implements OnInit {
     switch (this.active()) {
       case 0: {
         const awb = this.awbNumber().trim();
-        if (!awb) { this.active.set(1); return; }
+        if (!awb) { this.goTo(1); return; }
         this.busy.set(true);
         this.shipments.list({ page: 0, size: 5, search: awb }).pipe(catchError(() => of(null))).subscribe((page) => {
           this.busy.set(false);
@@ -668,23 +808,20 @@ export class DomesticCashBooking implements OnInit {
             this.notify.error('AWB number already exists. Please use a different AWB number.');
             return;
           }
-          this.active.set(1);
+          this.goTo(1);
         });
         return;
       }
       case 1:
         this.ratesKey = '';
-        this.dialogs.confirm({
-          title: 'Confirm Weight',
-          message: `Are you sure you want to ship actual weight ${this.weights().actual.toFixed(2)} kg?`,
-          confirmLabel: 'Yes'
-        }).subscribe((ok) => { if (ok) { this.active.set(2); this.loadRates(); } });
+        this.weightAsk.set(true);
+        this.focusLater('[data-autofocus]');
         return;
       case 4:
-        this.previewOpen.set(true);
+        this.openPreview();
         return;
       default:
-        this.active.update((s) => s + 1);
+        this.goTo(this.active() + 1);
     }
   }
 
@@ -768,6 +905,9 @@ export class DomesticCashBooking implements OnInit {
     forkJoin(calls).subscribe((rates) => {
       if (seq !== this.ratesSeq) return; // a newer request is on its way
       this.ratesLoading.set(false);
+      // Step by step: the rates arrive after the step opened, so put the cursor on them now.
+      if (this.view() === 'steps' && this.active() === 2) this.focusLater();
+      if (this.awaitModes) { this.awaitModes = false; this.focusModes(); }
       // Priced modes first, cheapest first; the rest show why they cannot be used.
       this.modes.set([...rates].sort((a, b) => (a.total === null ? 1 : 0) - (b.total === null ? 1 : 0) || a.estimate - b.estimate));
       if (!this.chosen()) this.modeId.set(null);
@@ -814,7 +954,7 @@ export class DomesticCashBooking implements OnInit {
     }
     if (this.ratesLoading()) { this.notify.error('Rates are still updating — try again in a moment.'); return; }
     const awb = this.awbNumber().trim();
-    if (!awb) { this.previewOpen.set(true); return; }
+    if (!awb) { this.openPreview(); return; }
     this.busy.set(true);
     this.shipments.list({ page: 0, size: 5, search: awb }).pipe(catchError(() => of(null))).subscribe((page) => {
       this.busy.set(false);
@@ -822,7 +962,7 @@ export class DomesticCashBooking implements OnInit {
         this.notify.error('AWB number already exists. Please use a different AWB number.');
         return;
       }
-      this.previewOpen.set(true);
+      this.openPreview();
     });
   }
 

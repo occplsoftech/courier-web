@@ -58,4 +58,35 @@ describe('DomesticCashBooking', () => {
       serviceTypeId: 'svc-air', paymentModeId: 'pm-paid', declaredValue: 4500, numberOfPackages: 3, remarks: 'Ref: REF-9' });
     expect(body.items.map((i: any) => [i.quantity, i.weight])).toEqual([[2, 1.6], [1, 0.5]]);
   });
+
+  it('starts on Non-Document (Parcel)', () => {
+    const c = make();
+    expect(c['itemType']()).toBe('PARCEL');
+    expect(c['itemTypes'][1].label).toBe('Non-Document (Parcel)');
+  });
+
+  it('opens a row for the remaining pieces only when the last row is committed', () => {
+    const c = make();
+    c['numPieces'].set(3);
+    c['rows'].set([{ length: 10, width: 10, height: 10, weightGrams: 400, pieces: 2 }]);
+    c['fillRemainder'](0);
+    expect(c['rows']().map((r: any) => r.pieces)).toEqual([2, 1]);
+    c['fillRemainder'](0); // not the last row any more
+    expect(c['rows']().length).toBe(2);
+  });
+
+  it('lets the pieces box be cleared while typing instead of forcing 1 back in', () => {
+    const c = make();
+    c['setRow'](0, 'pieces', { target: { value: '' } } as unknown as Event);
+    expect(c['rows']()[0].pieces).toBe(0);
+    c['setRow'](0, 'pieces', { target: { value: '2' } } as unknown as Event);
+    expect(c['rows']()[0].pieces).toBe(2);
+  });
+
+  it('gives Tab focus to the chosen option of a group, or the first when none is chosen', () => {
+    const c = make();
+    expect(c['roving']('b', 'b', 'a')).toBe(0);
+    expect(c['roving']('b', 'a', 'a')).toBe(-1);
+    expect(c['roving'](null, 'a', 'a')).toBe(0);
+  });
 });
