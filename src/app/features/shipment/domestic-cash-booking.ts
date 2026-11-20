@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet, UpperCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
@@ -14,6 +14,9 @@ import { SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { CreateShipmentRequest, ShipmentItemRequest } from '@core/models/shipment.model';
 import { ShipmentService } from './shipment.service';
+import { CustomerService } from '@features/customer/customer.service';
+import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
+import { CustomerResponse } from '@core/models/customer.model';
 import { FreightCalculationService } from './freight-calculation.service';
 
 const VOLUMETRIC_DIVISOR = 5000;
@@ -64,8 +67,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     <div class="page" (keydown)="onKey($event)">
       <header class="page__head">
         <div>
-          <h1 class="text-h1">Domestic (CASH) Shipment</h1>
-          <p class="text-caption">{{ view() === 'steps' ? 'Book step by step: check the pincodes, enter the packages, pick the mode, fill the addresses, take payment.' : 'Every section on one page; the summary on the right prices it as you go.' }}</p>
+          <h1 class="text-h1">{{ credit ? 'Credit Shipment' : 'Domestic (CASH) Shipment' }}</h1>
+          <p class="text-caption">{{ credit ? 'Pick the credit client, then book: priced from their rate card and billed to them, with no payment at the counter.'
+            : view() === 'steps' ? 'Book step by step: check the pincodes, enter the packages, pick the mode, fill the addresses, take payment.' : 'Every section on one page; the summary on the right prices it as you go.' }}</p>
         </div>
       </header>
 
@@ -77,6 +81,31 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
           <mat-icon>view_agenda</mat-icon> Single page
         </button>
       </div>
+
+      @if (credit) {
+        <section class="card client" [class.client--set]="!!client()">
+          <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!!client()">@if (client()) { <mat-icon>check</mat-icon> } @else { <mat-icon>business</mat-icon> }</span>Credit Client
+            @if (client(); as cl) { <span class="sec__aside">{{ cl.customerCode }} · billed as To Be Billed</span> }</h2>
+          <div class="cb">
+            <input class="f__i cb__i" role="combobox" aria-label="Credit client" aria-autocomplete="list" [attr.aria-expanded]="clientListOpen()"
+                   aria-controls="client-list" placeholder="Type the client's name or code…" autocomplete="off"
+                   [value]="clientQuery()" (input)="onClientQuery($event)" (focus)="clientListOpen.set(true)" (blur)="closeClientList()"
+                   (keydown)="onClientKey($event)" data-client-input />
+            @if (clientListOpen() && clientMatches().length) {
+              <ul class="cb__list" id="client-list" role="listbox">
+                @for (o of clientMatches(); track o.value; let k = $index) {
+                  <li role="option" class="cb__opt" [class.cb__opt--hi]="k === clientHi()" [attr.aria-selected]="k === clientHi()"
+                      (mousedown)="$event.preventDefault(); pickClient(o.value + '')">{{ o.label }}</li>
+                }
+              </ul>
+            }
+            @if (clientListOpen() && clientQuery() && !clientMatches().length) { <p class="f__err">No business customer matches “{{ clientQuery() }}”.</p> }
+          </div>
+          @if (client(); as cl) {
+            <p class="client__meta">{{ cl.displayName }} · {{ cl.mobile }}@if (cl.billingCity) { · {{ cl.billingCity }} }</p>
+          }
+        </section>
+      }
 
       @if (view() === 'steps') {
       <div class="wiz">
@@ -125,7 +154,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
           <div class="nav">
             <app-button data-nav-skip variant="text" icon="arrow_back" [disabled]="active() === 0 || busy()" (pressed)="back()">Back</app-button>
             <span class="nav__sp"></span>
-            <app-button [loading]="busy()" (pressed)="next()">{{ active() === steps.length - 1 ? 'Finish and Preview' : 'Next' }}</app-button>
+            <app-button [loading]="busy()" (pressed)="next()">{{ active() === steps.length - 1 ? (credit ? 'Generate AWB' : 'Finish and Preview') : 'Next' }}</app-button>
           </div>
         </section>
       </div>
@@ -172,11 +201,18 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
               <div class="sum__tot"><span>Total</span><span>{{ chosen() ? '₹' + (chosen()!.estimate | number: '1.0-0') : '—' }}</span></div>
             </div>
           </section>
-          <section class="card">
-            <h2 class="sec">Payment</h2>
-            <ng-container [ngTemplateOutlet]="tPay" />
-          </section>
-          <app-button icon="check" [loading]="busy()" (pressed)="previewAll()">Preview &amp; Book</app-button>
+          @if (credit) {
+            <section class="card">
+              <h2 class="sec">Billing</h2>
+              <p class="client__meta">{{ client() ? 'Billed to ' + client()!.displayName + ' (To Be Billed). Nothing is collected at the counter.' : 'Pick the credit client at the top.' }}</p>
+            </section>
+          } @else {
+            <section class="card">
+              <h2 class="sec">Payment</h2>
+              <ng-container [ngTemplateOutlet]="tPay" />
+            </section>
+          }
+          <app-button icon="check" [loading]="busy()" (pressed)="previewAll()">{{ credit ? 'Generate AWB' : 'Preview &amp; Book' }}</app-button>
         </aside>
       </div>
       }
@@ -313,6 +349,21 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
         </div>
       }
 
+      @if (booked(); as b) {
+        <div class="ovl">
+          <div class="inv inv--sm" role="alertdialog" aria-modal="true" aria-labelledby="awb-title">
+            <h2 id="awb-title" class="inv__title">Air Way Bill Generated</h2>
+            <p class="wt__msg">AWB Number: <strong class="awb">{{ b.number }}</strong></p>
+            <p class="client__meta">Booked for {{ client()?.displayName }}.</p>
+            <div class="nav">
+              <app-button data-nav-skip variant="text" (pressed)="finishInscan()">Finish Inscan</app-button>
+              <span class="nav__sp"></span>
+              <app-button data-autofocus icon="add" (pressed)="continueInscan()">Continue Inscan</app-button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (previewOpen()) {
         <div class="ovl" (click)="previewOpen.set(false)" (keydown.escape)="previewOpen.set(false)">
           <div class="inv" role="dialog" aria-modal="true" aria-labelledby="inv-title" (click)="$event.stopPropagation()">
@@ -353,6 +404,15 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     </div>
   `,
   styles: [`
+    .client { margin-bottom: 4px; gap: 10px; }
+    .client--set { border-color: var(--occpl-color-success); }
+    .client__meta { margin: 0; font: 400 13px var(--font-sans); color: var(--content-muted); }
+    .cb { position: relative; max-width: 560px; }
+    .cb__list { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none;
+      background: var(--surface); border: 1px solid var(--surface-border); border-radius: 10px; box-shadow: var(--occpl-shadow-sm, 0 6px 20px rgba(0,0,0,.12)); max-height: 280px; overflow: auto; }
+    .cb__opt { padding: 9px 12px; border-radius: 8px; cursor: pointer; font: 400 14px var(--font-sans); color: var(--content-fg); }
+    .cb__opt--hi { background: var(--brand-50); color: var(--brand-700); }
+    .awb { font-size: 20px; letter-spacing: .02em; }
     .viewbar { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--surface-border); align-self: flex-start; }
     .viewbar__opt { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: pointer; padding: 8px 16px; border-radius: 999px;
       font: 500 13px var(--font-sans); color: var(--content-muted); }
@@ -466,7 +526,23 @@ export class DomesticCashBooking implements OnInit {
   private readonly freight = inject(FreightCalculationService);
   private readonly router = inject(Router);
 
-  protected readonly steps = STEPS;
+  private readonly route = inject(ActivatedRoute);
+  private readonly customers = inject(CustomerService);
+  private readonly businessCustomers = inject(BusinessCustomerService);
+  /** Credit Shipment: same booking, for a business customer picked first, priced from their rate card and billed to them. */
+  protected readonly credit = !!this.route.snapshot.data['credit'];
+  protected readonly steps: readonly string[] = this.credit ? STEPS.slice(0, 4) : STEPS;
+  protected readonly client = signal<CustomerResponse | null>(null);
+  private readonly clientOptions = signal<SelectOption[]>([]);
+  protected readonly clientQuery = signal('');
+  protected readonly clientListOpen = signal(false);
+  protected readonly clientHi = signal(0);
+  protected readonly clientMatches = computed(() => {
+    const q = this.clientQuery().trim().toLowerCase();
+    const all = this.clientOptions();
+    return (q ? all.filter((o) => o.label.toLowerCase().includes(q)) : all).slice(0, 8);
+  });
+  protected readonly booked = signal<{ id: string; number: string } | null>(null);
   protected readonly itemTypes = [
     { value: 'DOCUMENT' as const, label: 'Document', icon: 'description' },
     { value: 'PARCEL' as const, label: 'Non-Document (Parcel)', icon: 'inventory_2' }
@@ -554,7 +630,7 @@ export class DomesticCashBooking implements OnInit {
   /** What the rates depend on; a change re-prices every mode. */
   private ratesKeyNow(ready = true): string {
     return [ready, this.toPincode(), this.toInfo().areaId, this.weights().chargeable, this.itemType(), this.numPieces(),
-      this.serviceOptions().length].join('|');
+      this.serviceOptions().length, this.client()?.id].join('|');
   }
   private ratesSeq = 0;
 
@@ -565,14 +641,22 @@ export class DomesticCashBooking implements OnInit {
 
   ngOnInit(): void {
     this.focusLater();
-    this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Domestic (CASH) Shipment' }]);
+    this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: this.credit ? 'Credit Shipment' : 'Domestic (CASH) Shipment' }]);
+    if (this.credit) {
+      this.businessCustomers.businessCustomers().subscribe({
+        next: (p) => this.clientOptions.set(p.content.map((c) => ({ value: c.id, label: `${c.displayName} (${c.customerCode})` }))),
+        error: () => this.notify.error('Could not load the credit clients.')
+      });
+    }
     this.masters.options('service-types').subscribe((o) => this.serviceOptions.set(o));
     this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
     this.masters.serviceTypeDirectory().subscribe((rows) => this.deliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays]))));
     this.masters.options('payment-modes').subscribe((o) => {
       this.paymentOptions.set(o);
-      // Cash counter: Paid is the default, as on the earlier portal.
-      const paid = o.find((opt) => /\(PAID\)$/i.test(opt.label)) ?? o.find((opt) => /cash/i.test(opt.label));
+      // Cash counter: Paid is the default, as on the earlier portal. Credit: always To Be Billed.
+      const paid = this.credit
+        ? o.find((opt) => /\(TBB\)$/i.test(opt.label)) ?? o.find((opt) => /credit|to be billed/i.test(opt.label))
+        : o.find((opt) => /\(PAID\)$/i.test(opt.label)) ?? o.find((opt) => /cash/i.test(opt.label));
       if (paid && !this.paymentModeId()) this.paymentModeId.set(String(paid.value));
     });
     this.masters.branchDirectory().subscribe((list) => {
@@ -789,6 +873,7 @@ export class DomesticCashBooking implements OnInit {
       const target = selector
         ? root.querySelector<HTMLElement>(`${selector} button`) ?? root.querySelector<HTMLElement>(selector)
         : null;
+      if (!target && this.credit && !this.client()) { root.querySelector<HTMLElement>('[data-client-input]')?.focus(); return; }
       const scope = root.querySelector('.wiz .card') ?? root.querySelector('.sp__main') ?? root;
       (target ?? this.navStops(scope)[0])?.focus();
     });
@@ -813,14 +898,13 @@ export class DomesticCashBooking implements OnInit {
         return;
       }
       case 1:
+        if (this.active() === this.steps.length - 1) break;
         this.ratesKey = '';
         this.weightAsk.set(true);
         this.focusLater('[data-autofocus]');
         return;
-      case 4:
-        this.openPreview();
-        return;
       default:
+        if (this.active() === this.steps.length - 1) { this.finish(); return; }
         this.goTo(this.active() + 1);
     }
   }
@@ -829,6 +913,7 @@ export class DomesticCashBooking implements OnInit {
   stepError(step: number): string | null {
     switch (step) {
       case 0:
+        if (this.credit && !this.client()) return 'Select the credit client first.';
         if (!this.itemType()) return 'Please select an Item Type.';
         if (!PINCODE.test(this.fromPincode())) return 'Enter the 6-digit consignor (sender) pincode.';
         if (!PINCODE.test(this.toPincode())) return 'Enter the 6-digit consignee (receiver) pincode.';
@@ -861,7 +946,8 @@ export class DomesticCashBooking implements OnInit {
         return bad ? `${bad[1]} must be exactly 10 digits.` : null;
       }
       case 4:
-        return this.paymentModeId() ? null : 'Please select a payment method.';
+        if (this.paymentModeId()) return null;
+        return this.credit ? 'The payment-mode list has no To Be Billed (TBB) mode — add it under Masters.' : 'Please select a payment method.';
       default:
         return null;
     }
@@ -886,7 +972,8 @@ export class DomesticCashBooking implements OnInit {
       const days = this.deliveryDays().get(String(svc.value)) ?? null;
       return this.freight.calculate({
         bookingBranchId: this.branchId!, destinationPincode: this.toPincode(), destinationAreaId: areaId,
-        chargeableWeight: this.weights().chargeable, businessCustomerId: null, declaredValue: null,
+        chargeableWeight: this.weights().chargeable, businessCustomerId: this.client()?.id ?? null,
+        declaredValue: Number(this.d()['packageValue']) || null,
         serviceTypeId: String(svc.value), packageTypeId: this.packageTypeId(),
         numberOfPackages: this.numPieces() || 1, bookingDate: null
       }).pipe(
@@ -941,20 +1028,20 @@ export class DomesticCashBooking implements OnInit {
       receiverName: d['deliveryName'].trim(), receiverAddress: d['deliveryAddress'].trim(), receiverContact: d['deliveryContact'],
       serviceTypeId: this.modeId()!, packageTypeId: this.packageTypeId(), paymentModeId: this.paymentModeId()!,
       declaredValue: value, numberOfPackages: this.numPieces() || 1, items,
-      remarks: extra || null, deliveryType: 'DOOR'
+      remarks: extra || null, deliveryType: 'DOOR', businessCustomerId: this.client()?.id ?? null
     };
   }
 
   /** Single page: check every section, then the AWB number, then open the invoice preview. */
   protected previewAll(): void {
-    const names = ['Serviceability', 'Packages', 'Mode of Dispatch', 'Pickup & Delivery', 'Payment'];
+    const names = ['Serviceability', 'Packages', 'Mode of Dispatch', 'Pickup & Delivery', this.credit ? 'Billing' : 'Payment'];
     for (let i = 0; i < names.length; i++) {
       const error = this.stepError(i);
       if (error) { this.notify.error(`${names[i]}: ${error}`); return; }
     }
     if (this.ratesLoading()) { this.notify.error('Rates are still updating — try again in a moment.'); return; }
     const awb = this.awbNumber().trim();
-    if (!awb) { this.openPreview(); return; }
+    if (!awb) { this.finish(); return; }
     this.busy.set(true);
     this.shipments.list({ page: 0, size: 5, search: awb }).pipe(catchError(() => of(null))).subscribe((page) => {
       this.busy.set(false);
@@ -962,8 +1049,93 @@ export class DomesticCashBooking implements OnInit {
         this.notify.error('AWB number already exists. Please use a different AWB number.');
         return;
       }
-      this.openPreview();
+      this.finish();
     });
+  }
+
+  /** Cash: the invoice preview, then Confirm. Credit: book straight away, as the earlier portal's Generate AWB did. */
+  private finish(): void {
+    if (this.credit) {
+      const error = this.stepError(4);
+      if (error) { this.notify.error(error); return; }
+      this.confirm();
+    } else {
+      this.openPreview();
+    }
+  }
+
+  // ---------- credit client ----------
+  protected onClientQuery(e: Event): void {
+    this.clientQuery.set(this.val(e));
+    this.clientHi.set(0);
+    this.clientListOpen.set(true);
+  }
+
+  protected closeClientList(): void {
+    setTimeout(() => this.clientListOpen.set(false), 120);
+  }
+
+  /** Arrows move through the matches; Enter picks the highlighted one and the page's Enter then moves on. */
+  protected onClientKey(e: KeyboardEvent): void {
+    const n = this.clientMatches().length;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.clientListOpen.set(true);
+      if (n) this.clientHi.set((this.clientHi() + (e.key === 'ArrowDown' ? 1 : -1) + n) % n);
+    } else if (e.key === 'Enter') {
+      const o = this.clientMatches()[this.clientHi()];
+      if (this.clientListOpen() && o && o.value !== this.client()?.id) this.pickClient(String(o.value));
+      else if (!this.client()) { e.preventDefault(); e.stopPropagation(); }
+    } else if (e.key === 'Escape') {
+      this.clientListOpen.set(false);
+    }
+  }
+
+  /** Loads the client and fills the sender from it: name, mobile, default pickup address and billing pincode. */
+  protected pickClient(id: string): void {
+    const label = this.clientOptions().find((o) => o.value === id)?.label ?? '';
+    this.clientQuery.set(label);
+    this.clientListOpen.set(false);
+    this.customers.get(id).subscribe({
+      next: (cust) => {
+        this.client.set(cust);
+        this.modes.set([]);
+        this.modeId.set(null);
+        const pickup = cust.addresses.filter((a) => a.status === 'ACTIVE' && a.addressUsage !== 'DELIVERY');
+        const addr = pickup.find((a) => a.isDefaultPickup) ?? pickup[0];
+        const address = addr ? [addr.addressLine1, addr.addressLine2, addr.landmark].filter(Boolean).join(', ')
+          : [cust.billingAddressLine1, cust.billingAddressLine2].filter(Boolean).join(', ');
+        this.d.update((d) => ({ ...d, pickupName: cust.companyName || cust.displayName, pickupAddress: address,
+          pickupContact: (cust.mobile ?? '').replace(/\D/g, '').slice(-10), pickupEmail: cust.email ?? '' }));
+        if (cust.billingPincode && PINCODE.test(cust.billingPincode)) this.lookup('from', cust.billingPincode);
+      },
+      error: () => this.notify.error('Could not load that client.')
+    });
+  }
+
+  /** Book the next shipment for the same client: clears the shipment, keeps the client and the sender. */
+  protected continueInscan(): void {
+    this.booked.set(null);
+    this.awbNumber.set('');
+    this.referenceId.set('');
+    this.toPincode.set('');
+    this.toInfo.set({ state: 'idle' });
+    this.numPieces.set(null);
+    this.docWeightGrams.set(null);
+    this.rows.set([{ length: null, width: null, height: null, weightGrams: null, pieces: 1 }]);
+    this.modes.set([]);
+    this.modeId.set(null);
+    this.ratesKey = '';
+    this.d.update((d) => ({ ...d, packageDescription: '', packageValue: '', deliveryName: '', deliveryAddress: '',
+      deliveryContact: '', deliveryAltContact: '', deliveryEmail: '' }));
+    this.active.set(0);
+    this.focusLater();
+  }
+
+  protected finishInscan(): void {
+    const b = this.booked();
+    this.booked.set(null);
+    if (b) this.router.navigate(['/shipments', b.id]);
   }
 
   protected confirm(): void {
@@ -972,6 +1144,11 @@ export class DomesticCashBooking implements OnInit {
       next: (s) => {
         this.busy.set(false);
         this.previewOpen.set(false);
+        if (this.credit) {
+          this.booked.set({ id: s.id, number: s.shipmentNumber });
+          this.focusLater('[data-autofocus]');
+          return;
+        }
         this.notify.success(`Shipment booked. AWB: ${s.shipmentNumber}`);
         this.router.navigate(['/shipments', s.id]);
       },

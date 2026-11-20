@@ -580,6 +580,11 @@ export const routes: Routes = [
         path: 'shipments/domestic-cash', title: 'Domestic (CASH) Shipment', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS },
         loadComponent: () => import('@features/shipment/domestic-cash-booking').then((m) => m.DomesticCashBooking)
       },
+      // Credit Shipment: the same page for a business customer picked first, billed to them (To Be Billed).
+      {
+        path: 'shipments/credit', title: 'Credit Shipment', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS, credit: true },
+        loadComponent: () => import('@features/shipment/domestic-cash-booking').then((m) => m.DomesticCashBooking)
+      },
       // Business Customer Booking: the same booking screen, but the customer is chosen first
       // (route data businessBooking) and fills the consignor + payment mode.
       {
