@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe, UpperCasePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { DecimalPipe, NgTemplateOutlet, UpperCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,6 +42,8 @@ export function volumetricKg(rows: SizeRow[]): number {
     ? s + (r.length * r.width * r.height) / VOLUMETRIC_DIVISOR * (r.pieces || 0) : s, 0);
 }
 
+const VIEW_KEY = 'cs.domesticBooking.view';
+
 const STEPS = ['Serviceability Check', 'Package Details', 'Mode of Dispatch', 'Shipment Details', 'Payment'] as const;
 const PHONE = /^\d{10}$/;
 const PINCODE = /^\d{6}$/;
@@ -58,16 +60,26 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
   selector: 'app-domestic-cash-booking',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, UpperCasePipe, MatIconModule, UiButton],
+  imports: [DecimalPipe, NgTemplateOutlet, UpperCasePipe, MatIconModule, UiButton],
   template: `
     <div class="page">
       <header class="page__head">
         <div>
           <h1 class="text-h1">Domestic (CASH) Shipment</h1>
-          <p class="text-caption">Book step by step: check the pincodes, enter the packages, pick the mode, fill the addresses, take payment.</p>
+          <p class="text-caption">{{ view() === 'steps' ? 'Book step by step: check the pincodes, enter the packages, pick the mode, fill the addresses, take payment.' : 'Every section on one page; the summary on the right prices it as you go.' }}</p>
         </div>
       </header>
 
+      <div class="viewbar" role="radiogroup" aria-label="Page view">
+        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'steps'" [attr.aria-checked]="view() === 'steps'" (click)="setView('steps')">
+          <mat-icon>view_carousel</mat-icon> Step by step
+        </button>
+        <button type="button" role="radio" class="viewbar__opt" [class.viewbar__opt--on]="view() === 'single'" [attr.aria-checked]="view() === 'single'" (click)="setView('single')">
+          <mat-icon>view_agenda</mat-icon> Single page
+        </button>
+      </div>
+
+      @if (view() === 'steps') {
       <div class="wiz">
         <ol class="steps" aria-label="Booking steps">
           @for (label of steps; track label; let i = $index) {
@@ -84,6 +96,93 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
           @switch (active()) {
             @case (0) {
               <h2 class="card__title">What are you shipping?</h2>
+              <ng-container [ngTemplateOutlet]="tService" />
+            }
+            @case (1) {
+              <h2 class="card__title">Package Details</h2>
+              <ng-container [ngTemplateOutlet]="tPackages" />
+            }
+            @case (2) {
+              <h2 class="card__title">Select Delivery Mode</h2>
+              <p class="text-caption">{{ fromInfo().city || fromPincode() }} → {{ toInfo().city || toPincode() }} · chargeable {{ weights().chargeable | number: '1.3-3' }} kg</p>
+              <ng-container [ngTemplateOutlet]="tModes" />
+            }
+            @case (3) {
+              @if (chosen(); as m) {
+                <div class="chosen">
+                  <span>Selected Mode of Shipment: <strong>{{ m.label }}</strong></span>
+                  <span>Rate: <strong>₹ {{ m.estimate | number: '1.0-0' }}</strong></span>
+                  <span>Time to Deliver: <strong>{{ m.days != null ? m.days + ' days' : 'N/A' }}</strong></span>
+                </div>
+              }
+              <ng-container [ngTemplateOutlet]="tDetails" />
+            }
+            @case (4) {
+              <h2 class="card__title">Payment Method</h2>
+              <ng-container [ngTemplateOutlet]="tPay" />
+            }
+          }
+
+          <div class="nav">
+            <app-button variant="text" icon="arrow_back" [disabled]="active() === 0 || busy()" (pressed)="back()">Back</app-button>
+            <span class="nav__sp"></span>
+            <app-button [loading]="busy()" (pressed)="next()">{{ active() === steps.length - 1 ? 'Finish and Preview' : 'Next' }}</app-button>
+          </div>
+        </section>
+      </div>
+      } @else {
+      <div class="sp">
+        <div class="sp__main">
+          <section class="card">
+            <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!stepError(0)">@if (!stepError(0)) { <mat-icon>check</mat-icon> } @else { 1 }</span>Serviceability</h2>
+            <ng-container [ngTemplateOutlet]="tService" />
+          </section>
+          <section class="card">
+            <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!stepError(1)">@if (!stepError(1)) { <mat-icon>check</mat-icon> } @else { 2 }</span>Packages
+              @if (numPieces()) { <span class="sec__aside">{{ numPieces() }} piece{{ numPieces() === 1 ? '' : 's' }}</span> }</h2>
+            @if (itemType()) { <ng-container [ngTemplateOutlet]="tPackages" /> } @else { <p class="muted">Choose Document or Parcel first.</p> }
+          </section>
+          <section class="card">
+            <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!!chosen()">@if (chosen()) { <mat-icon>check</mat-icon> } @else { 3 }</span>Mode of Dispatch</h2>
+            @if (stepError(0) || stepError(1)) {
+              <p class="muted">Rates show here once the pincodes and packages are filled in.</p>
+            } @else {
+              <ng-container [ngTemplateOutlet]="tModes" />
+            }
+          </section>
+          <section class="card">
+            <h2 class="sec"><span class="sec__num" [class.sec__num--done]="!stepError(3)">@if (!stepError(3)) { <mat-icon>check</mat-icon> } @else { 4 }</span>Pickup &amp; Delivery</h2>
+            <ng-container [ngTemplateOutlet]="tDetails" />
+          </section>
+        </div>
+
+        <aside class="sp__side">
+          <section class="card">
+            <h2 class="sec">Booking Summary</h2>
+            <div class="sum">
+              <div class="sum__row"><span>Route</span><span>{{ fromInfo().city || fromPincode() || '—' }} → {{ toInfo().city || toPincode() || '—' }}</span></div>
+              <div class="sum__row"><span>Type</span><span>{{ itemType() === 'DOCUMENT' ? 'Document' : itemType() === 'PARCEL' ? 'Parcel' : '—' }}</span></div>
+              <div class="sum__row"><span>Chargeable</span><span>{{ weights().chargeable ? (weights().chargeable | number: '1.3-3') + ' kg' : '—' }}</span></div>
+              <div class="sum__row"><span>Mode</span><span>{{ chosen() ? chosen()!.label + (chosen()!.days != null ? ' · ' + chosen()!.days + ' days' : '') : '—' }}</span></div>
+              @if (chosen(); as m) {
+                <div class="sum__row"><span>Freight</span><span>₹{{ m.freight | number: '1.2-2' }}</span></div>
+                @if (m.oda) { <div class="sum__row"><span>ODA</span><span>₹{{ m.oda | number: '1.2-2' }}</span></div> }
+                @if (m.extras) { <div class="sum__row"><span>Other Charges</span><span>₹{{ m.extras | number: '1.2-2' }}</span></div> }
+                <div class="sum__row"><span>GST {{ gstPercent() }}%</span><span>₹{{ m.gst | number: '1.2-2' }}</span></div>
+              }
+              <div class="sum__tot"><span>Total</span><span>{{ chosen() ? '₹' + (chosen()!.estimate | number: '1.0-0') : '—' }}</span></div>
+            </div>
+          </section>
+          <section class="card">
+            <h2 class="sec">Payment</h2>
+            <ng-container [ngTemplateOutlet]="tPay" />
+          </section>
+          <app-button icon="check" [loading]="busy()" (pressed)="previewAll()">Preview &amp; Book</app-button>
+        </aside>
+      </div>
+      }
+
+      <ng-template #tService>
               <div class="seg" role="radiogroup" aria-label="Type">
                 @for (t of itemTypes; track t.value) {
                   <button type="button" class="seg__opt" role="radio" [attr.aria-checked]="itemType() === t.value"
@@ -112,10 +211,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                   @if (toInfo().state === 'error') { <span class="f__err">{{ toInfo().message }}</span> }
                 </label>
               </div>
-            }
+      </ng-template>
 
-            @case (1) {
-              <h2 class="card__title">Package Details</h2>
+      <ng-template #tPackages>
               <label class="f f--narrow"><span class="f__l">Number of Pieces</span>
                 <input class="f__i" type="number" min="1" [value]="numPieces() ?? ''" (input)="setNumPieces($event)" /></label>
               @if (itemType() === 'DOCUMENT') {
@@ -141,11 +239,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 @if (itemType() === 'PARCEL') { <span>Volumetric: <strong>{{ weights().volumetric | number: '1.3-3' }} kg</strong></span> }
                 <span>Chargeable: <strong>{{ weights().chargeable | number: '1.3-3' }} kg</strong></span>
               </div>
-            }
+      </ng-template>
 
-            @case (2) {
-              <h2 class="card__title">Select Delivery Mode</h2>
-              <p class="text-caption">{{ fromInfo().city || fromPincode() }} → {{ toInfo().city || toPincode() }} · chargeable {{ weights().chargeable | number: '1.3-3' }} kg</p>
+      <ng-template #tModes>
               @if (ratesLoading()) {
                 <p class="muted">Getting rates for every mode…</p>
               } @else if (!modes().length) {
@@ -161,23 +257,16 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                         <span class="mode__err">{{ m.error }}</span>
                       } @else {
                         <span class="mode__meta">Rate: <strong>₹ {{ m.estimate | number: '1.0-0' }}</strong></span>
-                        <span class="mode__meta">Chargeable Weight: {{ weights().chargeable | number: '1.3-3' }} kg</span>
+                        <span class="mode__meta mode__meta--cw">Chargeable Weight: {{ weights().chargeable | number: '1.3-3' }} kg</span>
                         <span class="mode__meta">Time to Deliver: {{ m.days != null ? m.days + ' day' + (m.days === 1 ? '' : 's') : 'N/A' }}</span>
                       }
                     </button>
                   }
                 </div>
               }
-            }
+      </ng-template>
 
-            @case (3) {
-              @if (chosen(); as m) {
-                <div class="chosen">
-                  <span>Selected Mode of Shipment: <strong>{{ m.label }}</strong></span>
-                  <span>Rate: <strong>₹ {{ m.estimate | number: '1.0-0' }}</strong></span>
-                  <span>Time to Deliver: <strong>{{ m.days != null ? m.days + ' days' : 'N/A' }}</strong></span>
-                </div>
-              }
+      <ng-template #tDetails>
               <label class="f"><span class="f__l">Package Description</span>
                 <textarea class="f__i f__ta" rows="4" [value]="d()['packageDescription']" (input)="setD('packageDescription', $event)"></textarea></label>
               <label class="f f--narrow"><span class="f__l">Package Value (₹)</span>
@@ -198,10 +287,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                   </div>
                 }
               </div>
-            }
+      </ng-template>
 
-            @case (4) {
-              <h2 class="card__title">Payment Method</h2>
+      <ng-template #tPay>
               <div class="pay" role="radiogroup" aria-label="Payment method">
                 @for (p of paymentOptions(); track p.value) {
                   <button type="button" class="mode mode--row" role="radio" [attr.aria-checked]="paymentModeId() === p.value"
@@ -210,16 +298,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                   </button>
                 }
               </div>
-            }
-          }
-
-          <div class="nav">
-            <app-button variant="text" icon="arrow_back" [disabled]="active() === 0 || busy()" (pressed)="back()">Back</app-button>
-            <span class="nav__sp"></span>
-            <app-button [loading]="busy()" (pressed)="next()">{{ active() === steps.length - 1 ? 'Finish and Preview' : 'Next' }}</app-button>
-          </div>
-        </section>
-      </div>
+      </ng-template>
 
       @if (previewOpen()) {
         <div class="ovl" (click)="previewOpen.set(false)">
@@ -261,6 +340,28 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     </div>
   `,
   styles: [`
+    .viewbar { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--surface-border); align-self: flex-start; }
+    .viewbar__opt { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: pointer; padding: 8px 16px; border-radius: 999px;
+      font: 500 13px var(--font-sans); color: var(--content-muted); }
+    .viewbar__opt mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    .viewbar__opt--on { background: var(--brand-600); color: #fff; }
+    .sp { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+    .sp__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .sp__side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .sp .mode__meta--cw { display: none; }
+    .sp__side app-button { display: block; }
+    .sp__side ::ng-deep .app-btn { width: 100%; height: 50px; justify-content: center; }
+    .sp .modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+    .sec { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 16px var(--font-sans); color: var(--content-fg); }
+    .sec__num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--font-sans); background: var(--brand-600); color: #fff; flex-shrink: 0; }
+    .sec__num mat-icon { font-size: 16px; width: 16px; height: 16px; }
+    .sec__num--done { background: var(--occpl-color-success); }
+    .sec__aside { margin-left: auto; font: 400 13px var(--font-sans); color: var(--content-muted); }
+    .sum { display: flex; flex-direction: column; }
+    .sum__row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--surface-border); font: 400 13px var(--font-sans); color: var(--content-fg); }
+    .sum__row span:first-child { color: var(--content-muted); }
+    .sum__row span:last-child { text-align: right; }
+    .sum__tot { display: flex; justify-content: space-between; padding-top: 10px; font: 700 22px var(--font-sans); color: var(--content-fg); }
     .wiz { width: 100%; max-width: 960px; margin: 0 auto; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; }
     .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); }
     .step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
@@ -328,6 +429,10 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     .inv__t td { padding: 7px 0; border-bottom: 1px solid var(--surface-border); }
     .inv__t td:last-child { text-align: right; }
     .inv__total td { font: 700 16px var(--font-sans); border-bottom: 0; }
+    @media (max-width: 1100px) {
+      .sp { grid-template-columns: 1fr; }
+      .sp__side { position: static; }
+    }
     @media (max-width: 720px) {
       .grid2, .inv__grid { grid-template-columns: 1fr; }
       .row { grid-template-columns: 1fr 1fr; }
@@ -359,6 +464,10 @@ export class DomesticCashBooking implements OnInit {
 
   private readonly branchId = this.auth.user()?.branchId ?? null;
 
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Step-by-step wizard or everything on one page; remembered per browser. */
+  protected readonly view = signal<'steps' | 'single'>(readView());
   protected readonly active = signal(0);
   protected readonly busy = signal(false);
   protected readonly previewOpen = signal(false);
@@ -408,6 +517,29 @@ export class DomesticCashBooking implements OnInit {
   protected readonly paymentOptions = signal<SelectOption[]>([]);
   protected readonly paymentModeId = signal<string | null>(null);
   protected readonly paymentLabel = computed(() => this.paymentOptions().find((o) => o.value === this.paymentModeId())?.label ?? '—');
+
+  constructor() {
+    // Single page: re-price every mode whenever what prices it changes (debounced).
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    effect(() => {
+      if (this.view() !== 'single') return;
+      const ready = !this.stepError(0) && !this.stepError(1);
+      const key = [ready, this.toPincode(), this.toInfo().areaId, this.weights().chargeable, this.itemType(), this.numPieces(),
+        this.serviceOptions().length].join('|');
+      if (!ready || key === this.ratesKey) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => { this.ratesKey = key; this.loadRates(); }, 400);
+    });
+    this.destroyRef.onDestroy(() => clearTimeout(timer));
+  }
+
+  private ratesKey = '';
+  private ratesSeq = 0;
+
+  protected setView(v: 'steps' | 'single'): void {
+    this.view.set(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage unavailable: the choice lasts this visit only */ }
+  }
 
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Domestic (CASH) Shipment' }]);
@@ -541,6 +673,7 @@ export class DomesticCashBooking implements OnInit {
         return;
       }
       case 1:
+        this.ratesKey = '';
         this.dialogs.confirm({
           title: 'Confirm Weight',
           message: `Are you sure you want to ship actual weight ${this.weights().actual.toFixed(2)} kg?`,
@@ -610,6 +743,7 @@ export class DomesticCashBooking implements OnInit {
     const areaId = this.toInfo().areaId;
     if (!services.length || !areaId || !this.branchId) { this.modes.set([]); return; }
     this.ratesLoading.set(true);
+    const seq = ++this.ratesSeq;
     const calls: Observable<ModeRate>[] = services.map((svc) => {
       const label = svc.label.replace(/\s*\(.*\)$/, '');
       const days = this.deliveryDays().get(String(svc.value)) ?? null;
@@ -632,6 +766,7 @@ export class DomesticCashBooking implements OnInit {
       );
     });
     forkJoin(calls).subscribe((rates) => {
+      if (seq !== this.ratesSeq) return; // a newer request is on its way
       this.ratesLoading.set(false);
       // Priced modes first, cheapest first; the rest show why they cannot be used.
       this.modes.set([...rates].sort((a, b) => (a.total === null ? 1 : 0) - (b.total === null ? 1 : 0) || a.estimate - b.estimate));
@@ -670,6 +805,27 @@ export class DomesticCashBooking implements OnInit {
     };
   }
 
+  /** Single page: check every section, then the AWB number, then open the invoice preview. */
+  protected previewAll(): void {
+    const names = ['Serviceability', 'Packages', 'Mode of Dispatch', 'Pickup & Delivery', 'Payment'];
+    for (let i = 0; i < names.length; i++) {
+      const error = this.stepError(i);
+      if (error) { this.notify.error(`${names[i]}: ${error}`); return; }
+    }
+    if (this.ratesLoading()) { this.notify.error('Rates are still updating — try again in a moment.'); return; }
+    const awb = this.awbNumber().trim();
+    if (!awb) { this.previewOpen.set(true); return; }
+    this.busy.set(true);
+    this.shipments.list({ page: 0, size: 5, search: awb }).pipe(catchError(() => of(null))).subscribe((page) => {
+      this.busy.set(false);
+      if (page?.content.some((s) => s.shipmentNumber?.toUpperCase() === awb.toUpperCase())) {
+        this.notify.error('AWB number already exists. Please use a different AWB number.');
+        return;
+      }
+      this.previewOpen.set(true);
+    });
+  }
+
   protected confirm(): void {
     this.busy.set(true);
     this.shipments.create(this.buildRequest()).subscribe({
@@ -688,4 +844,8 @@ export class DomesticCashBooking implements OnInit {
       }
     });
   }
+}
+
+function readView(): 'steps' | 'single' {
+  try { return localStorage.getItem(VIEW_KEY) === 'single' ? 'single' : 'steps'; } catch { return 'steps'; }
 }
