@@ -34,7 +34,7 @@ import { RateService } from './rate.service';
       }
     </div>
   `,
-  styles: [`.empty{ font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }`]
+  styles: [`.empty{ font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }`]
 })
 export class RateEdit implements OnInit {
   private readonly service = inject(RateService);

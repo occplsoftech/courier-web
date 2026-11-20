@@ -46,9 +46,9 @@ const STATUSES: SelectOption[] = ([
   styles: [`
     .cf { display:flex; flex-direction:column; gap:16px; }
     .fld { display:flex; flex-direction:column; gap:6px; }
-    .fld__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .fld__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .fld__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .cf__bar { display:flex; justify-content:space-between; gap:10px; margin-top:8px; }
   `]
 })

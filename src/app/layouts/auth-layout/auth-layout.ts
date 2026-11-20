@@ -34,9 +34,9 @@ import { RouterOutlet } from '@angular/router';
     .auth__logo-img { height:56px; width:auto; border-radius:12px; background:#fff; padding:6px 14px; box-shadow:var(--shadow-clay-sm); }
     .auth__illustration { margin:8px 0; display:grid; place-items:center; }
     .auth__hero-img { width:100%; max-width:520px; height:auto; filter:drop-shadow(0 20px 30px rgba(0,0,0,.35)); }
-    .auth__pitch h2 { font:700 34px/1.15 var(--font-display); letter-spacing:-.02em; color:var(--sidebar-fg-strong); max-width:16ch; }
+    .auth__pitch h2 { font:700 37px/1.15 var(--font-display); letter-spacing:-.02em; color:var(--sidebar-fg-strong); max-width:16ch; }
     .auth__pitch p { color:var(--sidebar-fg); max-width:44ch; line-height:1.6; }
-    .auth__foot { font-size:13px; color:var(--sidebar-section); }
+    .auth__foot { font-size:16px; color:var(--sidebar-section); }
     .auth__panel { display:grid; place-items:center; padding:32px; }
     @media (max-width: 900px) { .auth { grid-template-columns:1fr; } .auth__brand { display:none; } }
   `]

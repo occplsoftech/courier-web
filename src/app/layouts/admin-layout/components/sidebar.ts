@@ -84,11 +84,11 @@ import { NavigationService } from '@core/navigation/navigation.service';
     .sb--collapsed { width:var(--sidebar-w-collapsed); }
     .sb__brand { display:flex; align-items:center; gap:12px; padding:4px 6px 18px; }
     .sb__logo { width:38px; height:38px; border-radius:50%; background:#fff; color:var(--brand-700);
-      display:grid; place-items:center; font:800 13px var(--font-display); flex-shrink:0; }
-    .sb__brand-name { color:var(--sidebar-fg-strong); font:700 16px var(--font-display); }
+      display:grid; place-items:center; font:800 16px var(--font-display); flex-shrink:0; }
+    .sb__brand-name { color:var(--sidebar-fg-strong); font:700 19px var(--font-display); }
     .sb__list, .sb__children { list-style:none; margin:0; padding:0; }
     .sb__item { display:flex; align-items:center; gap:12px; min-height:42px; padding:0 14px; border-radius:999px;
-      color:var(--sidebar-fg); text-decoration:none; font:600 14px var(--font-sans); transition:background .12s, color .12s; margin:2px 0;
+      color:var(--sidebar-fg); text-decoration:none; font:600 17px var(--font-sans); transition:background .12s, color .12s; margin:2px 0;
       width:100%; border:0; background:transparent; cursor:pointer; text-align:left; }
     .sb__item:hover { background:var(--sidebar-hover); color:var(--sidebar-fg-strong); }
     .sb__item:focus-visible { outline:2px solid #fff; outline-offset:-2px; }
@@ -105,7 +105,7 @@ import { NavigationService } from '@core/navigation/navigation.service';
     .sb__item--child { padding-left:16px; min-height:38px; font-weight:500; }
     .sb__dot { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.55; flex-shrink:0; margin:0 7px; }
     .sb__item--child.sb__item--active .sb__dot { opacity:1; }
-    .sb__badge { background:#fff; color:var(--brand-700); font:700 11px var(--font-sans); padding:1px 8px; border-radius:999px; }
+    .sb__badge { background:#fff; color:var(--brand-700); font:700 14px var(--font-sans); padding:1px 8px; border-radius:999px; }
     .sb__item--active .sb__badge { background:var(--brand-600); color:#fff; }
     .sb::-webkit-scrollbar-thumb { background:rgb(255 255 255 / 35%); }
 

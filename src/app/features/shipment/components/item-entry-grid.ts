@@ -84,10 +84,10 @@ function emptyRow(): ItemRow {
     .ieg { display:flex; flex-direction:column; gap:12px; }
     .ieg__table { border:1px solid var(--surface-border); border-radius:var(--r-field); overflow:auto; }
     .ieg__head, .ieg__row { display:grid; grid-template-columns:1.6fr .7fr 1fr 1fr 1fr 1fr 1fr 40px; gap:8px; align-items:center; padding:8px 10px; min-width:640px; }
-    .ieg__head { background:var(--surface-muted); font:600 12px var(--font-sans); color:var(--content-muted); }
+    .ieg__head { background:var(--surface-muted); font:600 15px var(--font-sans); color:var(--content-muted); }
     .ieg__row { border-top:1px solid var(--surface-border); }
     .ieg__i { height:36px; padding:0 8px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:8px; font:400 13px var(--font-sans); color:var(--content-fg); width:100%; min-width:0; }
+      border-radius:8px; font:400 16px var(--font-sans); color:var(--content-fg); width:100%; min-width:0; }
     .ieg__i--n { text-align:right; }
     .ieg__i:focus { outline:0; border-color:var(--brand-500); }
     .ieg__del { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:flex; padding:6px; border-radius:8px; }
@@ -96,12 +96,12 @@ function emptyRow(): ItemRow {
     .ieg__toolbar { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
     .ieg__add { align-self:flex-start; display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px;
       border:1px dashed var(--surface-border); border-radius:var(--r-field); background:transparent; color:var(--brand-600);
-      font:600 13px var(--font-sans); cursor:pointer; }
+      font:600 16px var(--font-sans); cursor:pointer; }
     .ieg__add:hover { background:var(--brand-50); }
     .ieg__extra { display:flex; gap:16px; flex-wrap:wrap; }
     .ieg__extra:empty { display:none; }
     .ieg__summary { display:flex; gap:24px; flex-wrap:wrap; padding:12px 16px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 13px var(--font-sans); color:var(--content-muted); }
+      border-radius:var(--r-field); font:400 16px var(--font-sans); color:var(--content-muted); }
     .ieg__summary strong { color:var(--content-fg); font-weight:700; }
     .ieg__summary-main strong { color:var(--brand-600); }
   `]

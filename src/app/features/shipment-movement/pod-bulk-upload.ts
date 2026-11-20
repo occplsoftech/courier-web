@@ -105,21 +105,21 @@ import { PinIllustration } from '@shared/components/illustrations/pin-illustrati
     .drop mat-icon { font-size:32px; width:32px; height:32px; color:var(--content-muted); }
     .pod__btn { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:var(--r-field);
       border:1px solid var(--surface-border); background:var(--surface); cursor:pointer;
-      font:600 13px var(--font-sans); color:var(--content-fg); }
+      font:600 16px var(--font-sans); color:var(--content-fg); }
     .picked { list-style:none; margin:16px 0 0; padding:0; display:flex; flex-direction:column; gap:6px; }
     .picked li { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:var(--r-field); background:var(--surface-muted); }
     .picked li mat-icon { font-size:18px; width:18px; height:18px; color:var(--content-muted); }
-    .picked__name { flex:1; font:500 13px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .picked__name { flex:1; font:500 16px var(--font-sans); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .picked__remove { border:none; background:none; cursor:pointer; display:flex; color:var(--content-muted); }
     .picked__remove mat-icon { font-size:16px; width:16px; height:16px; }
     .df__bar { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
     .result-summary { margin:0 0 12px; }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); }
-    .tbl__msg { color:var(--content-muted); font-size:12px; max-width:280px; white-space:normal; }
+    .tbl__msg { color:var(--content-muted); font-size:15px; max-width:280px; white-space:normal; }
     .tbl__wrap { overflow-x:auto; }
-    .chip { display:inline-block; padding:2px 10px; border-radius:999px; font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.02em; }
+    .chip { display:inline-block; padding:2px 10px; border-radius:999px; font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.02em; }
     .chip--matched { background:color-mix(in srgb, var(--success) 15%, transparent); color:var(--success); }
     .chip--no_match, .chip--error { background:color-mix(in srgb, var(--danger) 15%, transparent); color:var(--danger); }
     .chip--ambiguous, .chip--invalid_status { background:color-mix(in srgb, var(--warning) 18%, transparent); color:var(--warning); }

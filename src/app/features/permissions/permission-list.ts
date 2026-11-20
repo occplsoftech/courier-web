@@ -69,14 +69,14 @@ const ASSIGNERS = [AppRole.COMPANY_ADMIN];
     </div>
   `,
   styles: [`
-    .code { font:600 12px var(--font-mono, ui-monospace); background:var(--surface-muted); border:1px solid var(--surface-border);
+    .code { font:600 15px var(--font-mono, ui-monospace); background:var(--surface-muted); border:1px solid var(--surface-border);
       padding:2px 8px; border-radius:6px; }
     .desc { color:var(--content-muted); max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border); color:var(--content-muted);
-      font:600 10px var(--font-sans); padding:2px 7px; border-radius:6px; margin-right:6px; }
+      font:600 13px var(--font-sans); padding:2px 7px; border-radius:6px; margin-right:6px; }
     .tag--gate { background:var(--warning-bg); color:var(--warning); border-color:transparent; }
     .fbadge { display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px; margin-left:2px;
-      background:var(--brand-600); color:#fff; border-radius:999px; font:700 11px var(--font-sans); }
+      background:var(--brand-600); color:#fff; border-radius:999px; font:700 14px var(--font-sans); }
   `]
 })
 export class PermissionList implements OnInit {

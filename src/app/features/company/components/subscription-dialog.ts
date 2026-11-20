@@ -102,10 +102,10 @@ export type SubscriptionDialogResult =
     .sub__head { display:flex; gap:14px; align-items:flex-start; }
     .sub__icon { color:var(--brand-500); font-size:28px; width:28px; height:28px; }
     .sub__row { display:grid; grid-template-columns:2fr 1fr; gap:12px; }
-    .sub__note { display:flex; gap:10px; margin:0; font:400 12px var(--font-sans);
+    .sub__note { display:flex; gap:10px; margin:0; font:400 15px var(--font-sans);
       color:var(--content-muted); line-height:1.55; }
     .sub__note mat-icon { font-size:18px; width:18px; height:18px; flex:none; }
-    .sub__hint { margin:-8px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); line-height:1.5; }
+    .sub__hint { margin:-8px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); line-height:1.5; }
     .sub__actions { display:flex; justify-content:flex-end; gap:10px; }
     @media (max-width:420px) { .sub { width:auto; padding:20px; } .sub__row { grid-template-columns:1fr; } }
   `]

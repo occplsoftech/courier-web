@@ -55,9 +55,9 @@ export type PlanAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'delete';
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
-    .mono { font:600 13px var(--font-mono, var(--font-sans)); color:var(--content-fg); }
-    .per { color:var(--content-muted); font-size:11px; margin-left:2px; }
+    .cs { font:600 17px var(--font-sans); }
+    .mono { font:600 16px var(--font-mono, var(--font-sans)); color:var(--content-fg); }
+    .per { color:var(--content-muted); font-size:14px; margin-left:2px; }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }

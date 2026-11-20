@@ -66,10 +66,10 @@ function label(value: string): string {
   `,
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
-    .fix { margin-left:8px; font:600 11px var(--font-sans); padding:2px 8px; border-radius:999px;
+    .fix { margin-left:8px; font:600 14px var(--font-sans); padding:2px 8px; border-radius:999px;
       background:var(--warning-bg); color:var(--warning); cursor:help; white-space:nowrap; }
     .sw { display:inline-flex; align-items:center; gap:8px; }
-    .sw__text { font:600 12px var(--font-sans); color:var(--content-muted); min-width:22px; }
+    .sw__text { font:600 15px var(--font-sans); color:var(--content-muted); min-width:22px; }
     .sw__text.on { color:var(--success); }
   `]
 })

@@ -42,16 +42,16 @@ import { HubSummaryRow } from '../models/dashboard.model';
     </app-card>
   `,
   styles: [`
-    .hs__link { font:600 13px var(--font-sans); color:var(--brand-600); text-decoration:none; }
+    .hs__link { font:600 16px var(--font-sans); color:var(--brand-600); text-decoration:none; }
     .hs-empty { display:flex; flex-direction:column; align-items:center; gap:6px; padding:24px 0; color:var(--content-muted); }
     .hs-empty mat-icon { font-size:34px; width:34px; height:34px; opacity:.45; }
     .hs { list-style:none; margin:0; padding:0; }
     .hs__item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--surface-border); }
     .hs__item:last-child { border-bottom:0; }
     .hs__code { display:grid; place-items:center; min-width:52px; height:30px; padding:0 8px; border-radius:8px;
-      background:var(--info-bg); color:var(--info); font:700 12px var(--font-sans); }
+      background:var(--info-bg); color:var(--info); font:700 15px var(--font-sans); }
     .hs__body { flex:1; min-width:0; }
-    .hs__name { font:600 14px var(--font-sans); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hs__name { font:600 17px var(--font-sans); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   `]
 })
 export class HubSummary {

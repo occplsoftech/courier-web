@@ -51,15 +51,15 @@ export type AddressAction = 'edit' | 'delete';
     }
   `,
   styles: [`
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
     .al { display:flex; flex-direction:column; gap:10px; }
     .al__row { display:flex; gap:14px; align-items:flex-start; padding:12px 14px; border:1px solid var(--surface-border); border-radius:var(--r-field); }
     .al__icon { width:36px; height:36px; border-radius:10px; background:var(--surface-muted); color:var(--content-muted); display:grid; place-items:center; flex:0 0 auto; }
     .al__body { flex:1; min-width:0; }
     .al__head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .al__head strong { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .al__lines { margin:4px 0 0; font:400 13px var(--font-sans); color:var(--content-muted); }
-    .chip { font:600 10px var(--font-sans); padding:2px 8px; border-radius:999px; }
+    .al__head strong { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .al__lines { margin:4px 0 0; font:400 16px var(--font-sans); color:var(--content-muted); }
+    .chip { font:600 13px var(--font-sans); padding:2px 8px; border-radius:999px; }
     .chip--usage { background:var(--surface-muted); color:var(--content-muted); }
     .chip--pickup { background:var(--brand-50); color:var(--brand-700); }
     .chip--delivery { background:var(--success-bg); color:var(--success); }

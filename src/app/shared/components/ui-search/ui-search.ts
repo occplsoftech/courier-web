@@ -25,12 +25,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   `,
   styles: [`
     .search-wrap { display:flex; flex-direction:column; gap:6px; width:100%; }
-    .search-wrap__label { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .search-wrap__label { font:500 16px var(--font-sans); color:var(--content-fg); }
     .search { display:flex; align-items:center; gap:8px; height:42px; padding:0 14px; width:100%;
       background:var(--surface-muted); border:0; border-radius:var(--r-field); box-sizing:border-box;
       box-shadow:var(--shadow-clay-inset); }
     .search__icon { color:var(--content-muted); font-size:20px; }
-    .search__input { border:0; outline:0; background:transparent; flex:1; font:400 14px var(--font-sans); color:var(--content-fg); }
+    .search__input { border:0; outline:0; background:transparent; flex:1; font:400 17px var(--font-sans); color:var(--content-fg); }
     .search__clear { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:flex; }
   `]
 })

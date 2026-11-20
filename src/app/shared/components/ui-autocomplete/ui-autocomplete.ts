@@ -32,7 +32,7 @@ const MAX_VISIBLE_OPTIONS = 10;
   `,
   styles: [`
     .ac { display:flex; flex-direction:column; gap:6px; }
-    .ac__label { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .ac__label { font:500 16px var(--font-sans); color:var(--content-fg); }
     .ac__field { width:100%; }
     .ac__field ::ng-deep .mdc-notched-outline > * { border-color:transparent !important; }
     .ac__field ::ng-deep .mat-mdc-text-field-wrapper {

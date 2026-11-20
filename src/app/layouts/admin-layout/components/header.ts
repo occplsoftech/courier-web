@@ -57,12 +57,17 @@ import { AiAssistantButton } from './ai-assistant-button';
     @media (max-width:1024px){ .hd{ padding:0 20px; margin:12px 16px 0; } }
     @media (max-width:640px){ .hd{ padding:0 14px; margin:10px 10px 0; gap:8px; } }
     .hd__left, .hd__right { display:flex; align-items:center; gap:8px; min-width:0; }
+    /* The left side (brand + breadcrumb) gives way; the right-hand controls keep their size. */
+    .hd__left { flex:1 1 auto; }
+    .hd__right { flex-shrink:0; }
+    @media (max-width: 560px) { .hd__right { flex-shrink:1; } }
+    app-breadcrumb { min-width:0; overflow:hidden; }
     .hd__brand { display:flex; align-items:center; gap:9px; }
     .hd__logo { width:32px; height:32px; border-radius:11px; background:var(--occpl-gradient-button); color:#fff;
-      display:grid; place-items:center; font:800 12px var(--font-display); flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-clay-sm); }
+      display:grid; place-items:center; font:800 15px var(--font-display); flex-shrink:0; overflow:hidden; box-shadow:var(--shadow-clay-sm); }
     .hd__logo--img { background:var(--surface-muted); box-shadow:none; }
     .hd__logo--img img { width:100%; height:100%; object-fit:contain; }
-    .hd__company { font:700 15px var(--font-display); color:var(--content-fg); white-space:nowrap; }
+    .hd__company { font:700 18px var(--font-display); color:var(--content-fg); white-space:nowrap; }
     .hd__divider { width:1px; height:24px; background:var(--surface-border); margin:0 4px; }
     .hd__icon-btn { position:relative; display:grid; place-items:center; width:40px; height:40px;
       border-radius:12px; border:0; background:transparent; color:var(--content-muted); cursor:pointer; transition:background .15s, box-shadow .15s; }

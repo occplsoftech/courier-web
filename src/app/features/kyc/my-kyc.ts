@@ -46,9 +46,9 @@ import { KycChannel, KycScope, KycSlot, KycView } from './kyc.models';
   `,
   styles: [`
     .tabs { display:inline-flex; gap:4px; padding:4px; border-radius:16px; background:var(--surface-muted); align-self:flex-start; }
-    .tabs button { border:0; background:transparent; padding:8px 18px; border-radius:12px; font:700 13px var(--font-sans); color:var(--content-muted); cursor:pointer; }
+    .tabs button { border:0; background:transparent; padding:8px 18px; border-radius:12px; font:700 16px var(--font-sans); color:var(--content-muted); cursor:pointer; }
     .tabs button.on { background:var(--surface); color:var(--brand-700); box-shadow:var(--shadow-clay-sm); }
-    .err { color:var(--danger); font:500 14px var(--font-sans); }
+    .err { color:var(--danger); font:500 17px var(--font-sans); }
   `]
 })
 export class MyKyc implements OnInit {

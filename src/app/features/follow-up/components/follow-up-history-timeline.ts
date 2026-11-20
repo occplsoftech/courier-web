@@ -41,11 +41,11 @@ function label(v: string): string { return v.replace(/_/g, ' ').replace(/\b\w/g,
       width:2px; background:var(--surface-border); }
     .tl__dot { flex:0 0 32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
       background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); z-index:1; }
-    .tl__dot i { font-size:16px; color:var(--brand-600); }
+    .tl__dot i { font-size:19px; color:var(--brand-600); }
     .tl__body { flex:1; padding-top:4px; }
-    .tl__title { margin:0; font:600 13px var(--font-sans); color:var(--content-fg); }
-    .tl__note { margin:4px 0 0; font:400 13px var(--font-sans); color:var(--content-fg); white-space:pre-wrap; }
-    .tl__meta { margin:4px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); }
+    .tl__title { margin:0; font:600 16px var(--font-sans); color:var(--content-fg); }
+    .tl__note { margin:4px 0 0; font:400 16px var(--font-sans); color:var(--content-fg); white-space:pre-wrap; }
+    .tl__meta { margin:4px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); }
   `]
 })
 export class FollowUpHistoryTimeline {

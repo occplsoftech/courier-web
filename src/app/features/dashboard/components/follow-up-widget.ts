@@ -42,11 +42,11 @@ function today(): string { return new Date().toISOString().substring(0, 10); }
     .fw__grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; }
     .fw__tile { display:flex; flex-direction:column; align-items:center; gap:4px; padding:16px 10px;
       border:0; border-radius:var(--r-field); background:var(--surface-muted); box-shadow:var(--shadow-clay-sm);
-      cursor:pointer; font:600 12px var(--font-sans); }
+      cursor:pointer; font:600 15px var(--font-sans); }
     .fw__tile:active { box-shadow:var(--shadow-clay-inset); }
-    .fw__tile i { font-size:22px; }
-    .fw__count { font:700 22px var(--font-sans); color:var(--content-fg); }
-    .fw__label { color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; font-size:11px; }
+    .fw__tile i { font-size:25px; }
+    .fw__count { font:700 25px var(--font-sans); color:var(--content-fg); }
+    .fw__label { color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; font-size:14px; }
     .fw__tile--danger i { color:var(--danger); }
     .fw__tile--warning i { color:var(--warning); }
     .fw__tile--info i { color:var(--info); }

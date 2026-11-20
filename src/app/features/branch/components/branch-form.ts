@@ -210,24 +210,24 @@ function emailish(control: AbstractControl): ValidationErrors | null {
     .bform { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .stat { display:flex; flex-direction:column; gap:6px; justify-content:center; }
-    .stat__l { font:500 13px var(--font-sans); color:var(--content-fg); }
-    .stat__v { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .stat__h { font:400 12px var(--font-sans); color:var(--content-muted); }
+    .stat__l { font:500 16px var(--font-sans); color:var(--content-fg); }
+    .stat__v { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .stat__h { font:400 15px var(--font-sans); color:var(--content-muted); }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .dt { display:flex; flex-direction:column; gap:6px; }
-    .dt__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .dt__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .dt__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .dt__i:focus { outline:0; border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
     .flags { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 20px; }
     .flag { display:flex; align-items:center; gap:12px; cursor:pointer; }
     .flag span { display:flex; flex-direction:column; }
-    .flag strong { font:600 14px var(--font-sans); color:var(--content-fg); }
-    .flag em { font:400 12px var(--font-sans); color:var(--content-muted); font-style:normal; }
+    .flag strong { font:600 17px var(--font-sans); color:var(--content-fg); }
+    .flag em { font:400 15px var(--font-sans); color:var(--content-muted); font-style:normal; }
     .bform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .bform__note { font:500 13px var(--font-sans); color:var(--danger); }
-    .bform__hint { margin:14px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); line-height:1.55; }
+    .bform__note { font:500 16px var(--font-sans); color:var(--danger); }
+    .bform__hint { margin:14px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); line-height:1.55; }
     .bform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid, .flags { grid-template-columns:1fr; } }
   `]

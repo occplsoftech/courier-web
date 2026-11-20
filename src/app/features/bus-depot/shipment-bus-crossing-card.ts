@@ -46,11 +46,11 @@ import { BusDepotService } from './bus-depot.service';
   `,
   styles: [`
     .path { list-style:none; margin:0; padding:0 0 0 14px; border-left:2px solid var(--surface-border); display:flex; flex-direction:column; gap:12px; }
-    .path li { display:flex; flex-direction:column; font:400 14px var(--font-sans); position:relative; }
+    .path li { display:flex; flex-direction:column; font:400 17px var(--font-sans); position:relative; }
     .path li::before { content:''; position:absolute; left:-20px; top:5px; width:10px; height:10px; border-radius:50%; background:var(--brand-600, #4f46e5); }
     .path li.via::before { background:var(--warning, #f59e0b); }
-    .sub { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .empty { margin:0; font:400 14px var(--font-sans); color:var(--content-muted); }
+    .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .empty { margin:0; font:400 17px var(--font-sans); color:var(--content-muted); }
     .bar { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
   `]
 })

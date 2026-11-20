@@ -61,16 +61,16 @@ import { BranchCourierAccess, CourierIntegrationService } from './courier-integr
   `,
   styles: [`
     .ca { display:flex; flex-direction:column; gap:12px; }
-    .ca__pick { display:flex; flex-direction:column; gap:4px; font:600 13px var(--font-sans); max-width:420px; }
-    .ca__pick select { height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
+    .ca__pick { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); max-width:420px; }
+    .ca__pick select { height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
     .ca__list { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:8px; }
     .ca__list label { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--surface-border); border-radius:10px; cursor:pointer; }
     .ca__list input { width:1.05rem; height:1.05rem; }
-    .ca__name { font:600 14px var(--font-sans); }
-    .ca__off { margin-left:auto; font:500 11px var(--font-sans); color:var(--content-muted); }
+    .ca__name { font:600 17px var(--font-sans); }
+    .ca__off { margin-left:auto; font:500 14px var(--font-sans); color:var(--content-muted); }
     .ca__bar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-    .hint { font:400 13px var(--font-sans); color:var(--content-muted); margin:0; }
-    .alert { color:var(--danger, #b3123a); font:500 13px var(--font-sans); margin:0; }
+    .hint { font:400 16px var(--font-sans); color:var(--content-muted); margin:0; }
+    .alert { color:var(--danger, #b3123a); font:500 16px var(--font-sans); margin:0; }
   `]
 })
 export class BranchCourierAccessCard implements OnInit {

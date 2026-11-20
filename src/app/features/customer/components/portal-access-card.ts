@@ -67,17 +67,17 @@ import { PortalAccess, PortalAccessGranted, PortalAccessService } from '../porta
     </app-card>
   `,
   styles: [`
-    .muted { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
+    .muted { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; }
     .kv { display:grid; grid-template-columns:140px 1fr; gap:8px 16px; margin:0 0 12px; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); margin:0; overflow-wrap:anywhere; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); margin:0; overflow-wrap:anywhere; }
     .bar { display:flex; gap:10px; justify-content:flex-end; }
     .form { display:flex; flex-direction:column; gap:12px; }
     .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .error { color:var(--danger); font:500 13px var(--font-sans); margin:0; }
-    .granted p { margin:8px 0; font:400 13px var(--font-sans); }
+    .error { color:var(--danger); font:500 16px var(--font-sans); margin:0; }
+    .granted p { margin:8px 0; font:400 16px var(--font-sans); }
     .pw { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .pw code { font:600 16px ui-monospace, monospace; padding:8px 12px; background:var(--surface-muted); border-radius:8px; user-select:all; }
+    .pw code { font:600 19px ui-monospace, monospace; padding:8px 12px; background:var(--surface-muted); border-radius:8px; user-select:all; }
     @media (max-width:560px) { .two { grid-template-columns:1fr; } }
   `]
 })

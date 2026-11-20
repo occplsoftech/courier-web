@@ -27,8 +27,8 @@ import { CompanyProfile } from '@core/models/company.model';
     .addr { display:flex; gap:12px; align-items:flex-start; }
     .addr__pin { color:var(--content-muted); }
     .addr__body { font-style:normal; display:flex; flex-direction:column; gap:4px;
-      font:500 14px var(--font-sans); color:var(--content-fg); }
-    .addr__empty { font:400 14px var(--font-sans); color:var(--content-muted); margin:0; }
+      font:500 17px var(--font-sans); color:var(--content-fg); }
+    .addr__empty { font:400 17px var(--font-sans); color:var(--content-muted); margin:0; }
   `]
 })
 export class AddressInformation {

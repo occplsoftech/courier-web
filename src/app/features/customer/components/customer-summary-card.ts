@@ -32,7 +32,7 @@ import { CustomerResponse } from '@core/models/customer.model';
     .mono { font-family:var(--font-mono, ui-monospace); }
     .cs__tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .tag { display:inline-flex; align-items:center; gap:3px; background:var(--surface-muted); border:1px solid var(--surface-border);
-      color:var(--content-muted); font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; }
+      color:var(--content-muted); font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; }
     .tag mat-icon { font-size:13px; width:13px; height:13px; }
     .tag--brand { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); }
   `]

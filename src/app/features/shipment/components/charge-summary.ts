@@ -133,15 +133,15 @@ export interface ChargeSummaryData {
   `,
   styles: [`
     .kv { display:grid; grid-template-columns:1fr auto; gap:8px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; text-align:right; }
     .discount { color:var(--success); }
-    .kv .total { font-weight:700; font-size:16px; color:var(--brand-600); border-top:1px solid var(--surface-border); padding-top:8px; margin-top:4px; }
+    .kv .total { font-weight:700; font-size:19px; color:var(--brand-600); border-top:1px solid var(--surface-border); padding-top:8px; margin-top:4px; }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .net-input { width:100px; text-align:right; font:700 16px var(--font-mono, ui-monospace); color:var(--brand-600);
+    .net-input { width:100px; text-align:right; font:700 19px var(--font-mono, ui-monospace); color:var(--brand-600);
       background:transparent; border:1px solid var(--surface-border); border-radius:6px; padding:2px 6px; }
     .net-input:focus { outline:0; border-color:var(--brand-500); }
-    .hint { font:400 11px var(--font-sans); color:var(--content-muted); }
+    .hint { font:400 14px var(--font-sans); color:var(--content-muted); }
   `]
 })
 export class ChargeSummary {

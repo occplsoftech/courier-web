@@ -59,7 +59,7 @@ interface RateRow { zone: PricingZone; rate?: CustomerRate; }
   `,
   styles: [`
     .filters { display:grid; grid-template-columns:minmax(0,320px); gap:16px; margin:0 0 16px; }
-    .muted { color:var(--content-muted); font:500 13px var(--font-sans); }
+    .muted { color:var(--content-muted); font:500 16px var(--font-sans); }
     .col-actions { text-align:right; width:140px; }
   `]
 })

@@ -155,36 +155,36 @@ const OCCPL_NETWORK = 'OCCPL_NETWORK';
   `,
   styles: [`
     .cm { display:flex; flex-direction:column; gap:16px; }
-    .cm__head h1 { margin:0 0 4px; font:700 22px var(--font-sans); color:var(--content-fg); }
+    .cm__head h1 { margin:0 0 4px; font:700 25px var(--font-sans); color:var(--content-fg); }
     .cm__row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
-    .f { display:flex; flex-direction:column; gap:4px; font:600 13px var(--font-sans); min-width:200px; flex:1 1 200px; }
+    .f { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); min-width:200px; flex:1 1 200px; }
     .f--sm { flex:0 1 120px; min-width:100px; }
     .f--grow { flex:2 1 260px; }
     .f--inline { flex-direction:row; align-items:center; gap:8px; flex:0 0 auto; min-width:0; }
     .f--check { flex-direction:row; align-items:center; gap:8px; flex:0 0 auto; min-width:0; height:40px; }
     .f select, .f input[type=number], .f input[type=text], .f input[type=datetime-local] {
       height:40px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px;
-      background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
+      background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
     .cm__bar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
     .cm__form { border:1px solid var(--surface-border); border-radius:12px; padding:14px; margin-bottom:14px; display:flex; flex-direction:column; gap:12px; }
-    .cm__lines { border:0; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:8px 16px; font:400 13px var(--font-sans); }
-    .cm__lines legend { font:600 13px var(--font-sans); margin-bottom:6px; }
+    .cm__lines { border:0; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:8px 16px; font:400 16px var(--font-sans); }
+    .cm__lines legend { font:600 16px var(--font-sans); margin-bottom:6px; }
     .cm__lines label { display:flex; align-items:center; gap:6px; }
-    .cm__result { margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--surface-muted, #f4f6fa); display:flex; flex-wrap:wrap; gap:6px 10px; align-items:baseline; font:400 14px var(--font-sans); }
-    .cm__result strong { font:700 20px var(--font-sans); }
-    .cm__src { flex-basis:100%; font:400 12px var(--font-sans); color:var(--content-muted); }
+    .cm__result { margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--surface-muted, #f4f6fa); display:flex; flex-wrap:wrap; gap:6px 10px; align-items:baseline; font:400 17px var(--font-sans); }
+    .cm__result strong { font:700 23px var(--font-sans); }
+    .cm__src { flex-basis:100%; font:400 15px var(--font-sans); color:var(--content-muted); }
     .cm__table { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
+    table { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
     th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--surface-border); white-space:nowrap; }
     th { font-weight:600; color:var(--content-muted); }
-    .cm__note td { color:var(--content-muted); font-size:12px; padding-top:0; white-space:normal; text-transform:none; letter-spacing:normal; }
-    .st { display:inline-block; padding:2px 8px; border-radius:999px; font:600 11px var(--font-sans); }
+    .cm__note td { color:var(--content-muted); font-size:15px; padding-top:0; white-space:normal; text-transform:none; letter-spacing:normal; }
+    .st { display:inline-block; padding:2px 8px; border-radius:999px; font:600 14px var(--font-sans); }
     .st--IN_FORCE { background:#e6f6ec; color:#17733a; }
     .st--UPCOMING { background:#e8f0fe; color:#1a56c4; }
     .st--OFF { background:#fff4e0; color:#9a5b00; }
     .st--ENDED { background:#eef0f3; color:#5b6472; }
-    .hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:0; }
-    .alert { color:#b42318; font:500 13px var(--font-sans); margin:0; }
+    .hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:0; }
+    .alert { color:#b42318; font:500 16px var(--font-sans); margin:0; }
   `]
 })
 export class CourierMarkupPage implements OnInit {

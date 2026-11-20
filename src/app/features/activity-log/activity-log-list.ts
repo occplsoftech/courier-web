@@ -112,16 +112,16 @@ const STATUS_OPTIONS: SelectOption[] = [
     .filters > * { min-width:160px; flex:1 1 160px; }
     .filters--dates { align-items:flex-end; margin-top:12px; }
     .dt { display:flex; flex-direction:column; gap:6px; flex:1 1 160px; }
-    .dt__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .dt__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .dt__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .desc { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .detail { display:flex; flex-direction:column; gap:14px; }
-    .detail__row { display:flex; flex-direction:column; gap:2px; font-size:14px; }
-    .detail__row span { color:var(--content-muted); font-size:12px; }
-    .detail__block span { color:var(--content-muted); font-size:12px; display:block; margin-bottom:6px; }
+    .detail__row { display:flex; flex-direction:column; gap:2px; font-size:17px; }
+    .detail__row span { color:var(--content-muted); font-size:15px; }
+    .detail__block span { color:var(--content-muted); font-size:15px; display:block; margin-bottom:6px; }
     .detail__block pre { background:var(--surface-muted); border-radius:var(--r-field); padding:12px;
-      font-size:12px; overflow:auto; max-height:220px; }
+      font-size:15px; overflow:auto; max-height:220px; }
   `]
 })
 export class ActivityLogList implements OnInit {

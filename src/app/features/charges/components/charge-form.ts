@@ -43,10 +43,10 @@ import { ChargeResponse, CreateChargeRequest, UpdateChargeRequest } from '@core/
   styles: [`
     .cform { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .cform__qty { display:block; margin-top:14px; font:400 13px var(--font-sans); }
+    .cform__qty { display:block; margin-top:14px; font:400 16px var(--font-sans); }
     .cform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .cform__note { font:500 13px var(--font-sans); color:var(--danger); }
+    .cform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .cform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
   `]

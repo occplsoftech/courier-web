@@ -85,10 +85,10 @@ export type MasterAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'delete
     </app-table>
   `,
   styles: [`
-    .strong { font:600 14px var(--font-sans); }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .strong { font:600 17px var(--font-sans); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border);
-      color:var(--content-muted); font:600 10px var(--font-sans); padding:2px 7px; border-radius:6px; }
+      color:var(--content-muted); font:600 13px var(--font-sans); padding:2px 7px; border-radius:6px; }
     .tag--ok { background:var(--success-bg); color:var(--success); border-color:transparent; }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted);

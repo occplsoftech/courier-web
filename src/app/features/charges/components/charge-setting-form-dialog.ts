@@ -88,7 +88,7 @@ const VALUE_TYPE_OPTS: SelectOption[] = [{ value: 'AMOUNT', label: 'Amount' }, {
     .csd { padding:24px; width:560px; max-width:92vw; max-height:85vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px; }
     .csd__form { display:flex; flex-direction:column; gap:16px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .csd__hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:-8px 0 0; }
+    .csd__hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:-8px 0 0; }
     .csd__actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
     @media (max-width:600px){ .grid { grid-template-columns:1fr; } }
   `]

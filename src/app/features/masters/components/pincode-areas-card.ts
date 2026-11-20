@@ -70,19 +70,19 @@ import { MasterDataService } from '../master-data.service';
   `,
   styles: [`
     .pa__wrap { overflow-x:auto; }
-    .pa { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .pa th { text-align:left; font:500 12px var(--font-sans); color:var(--content-muted);
+    .pa { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .pa th { text-align:left; font:500 15px var(--font-sans); color:var(--content-muted);
       text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
     .pa td { padding:10px 12px; border-top:1px solid var(--surface-border); color:var(--content-fg); }
     .pa__name { font-weight:500; }
-    .pa__badge { font:600 11px var(--font-sans); color:var(--brand-600, #4f46e5);
+    .pa__badge { font:600 14px var(--font-sans); color:var(--brand-600, #4f46e5);
       background:var(--brand-100, #eef2ff); border-radius:999px; padding:2px 8px; }
     .pa__amount { width:110px; height:34px; padding:0 10px; background:var(--surface);
       border:1px solid var(--surface-border); border-radius:var(--r-field);
-      font:400 14px var(--font-sans); color:var(--content-fg); outline:0; }
+      font:400 17px var(--font-sans); color:var(--content-fg); outline:0; }
     .pa__amount:focus { border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
     .pa__dash { color:var(--content-muted); }
-    .pa__empty { color:var(--content-muted); font:400 14px var(--font-sans); margin:0; }
+    .pa__empty { color:var(--content-muted); font:400 17px var(--font-sans); margin:0; }
   `]
 })
 export class PincodeAreasCard {

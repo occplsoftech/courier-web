@@ -36,7 +36,7 @@ import { QuickActionDef } from '../dashboard.roles';
     .qa__ic[data-tone="danger"]  { background:var(--danger-bg);  color:var(--danger); }
     .qa__ic[data-tone="info"]    { background:var(--info-bg);    color:var(--info); }
     .qa__btn:hover .qa__ic { filter:brightness(.96); }
-    .qa__label { font:600 12px var(--font-sans); text-align:center; }
+    .qa__label { font:600 15px var(--font-sans); text-align:center; }
     @media (max-width:520px){ .qa { grid-template-columns:repeat(2,1fr); } }
   `]
 })

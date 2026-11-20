@@ -55,9 +55,9 @@ interface EventRow {
   styles: [`
     .sc { display:flex; flex-direction:column; gap:10px; }
     .sc__row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
-    .sc__event { font:600 13px var(--font-sans); color:var(--content-fg); min-width:150px; }
+    .sc__event { font:600 16px var(--font-sans); color:var(--content-fg); min-width:150px; }
     .sc__channels { display:flex; flex-wrap:wrap; gap:8px; }
-    .sc__chip { font:500 12px var(--font-sans); padding:4px 10px; border-radius:999px; border:1px solid var(--surface-border); }
+    .sc__chip { font:500 15px var(--font-sans); padding:4px 10px; border-radius:999px; border:1px solid var(--surface-border); }
     .sc__chip.ok { color:var(--success); border-color:var(--success); }
     .sc__chip.bad { color:var(--danger); border-color:var(--danger); }
   `]

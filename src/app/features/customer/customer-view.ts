@@ -142,10 +142,10 @@ const ADDRESS_DELETERS = [AppRole.COMPANY_ADMIN];
     .cv__grid app-card:last-child { grid-column:1 / -1; }
     .cv__addr-bar { display:flex; justify-content:flex-end; margin-bottom:12px; }
     .kv { display:grid; grid-template-columns:160px 1fr; gap:10px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:860px){ .cv__grid { grid-template-columns:1fr; } }
   `]
 })

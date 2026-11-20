@@ -62,7 +62,7 @@ import { BusDepotService } from './bus-depot.service';
     }
   `,
   styles: [`
-    .chk { display:flex; align-items:center; gap:8px; font:500 14px var(--font-sans); cursor:pointer; }
+    .chk { display:flex; align-items:center; gap:8px; font:500 17px var(--font-sans); cursor:pointer; }
     .row2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; margin-top:10px; }
     .stops { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
     .stop { display:flex; align-items:flex-end; gap:8px; }
@@ -71,14 +71,14 @@ import { BusDepotService } from './bus-depot.service';
                border-radius:8px; cursor:pointer; color:var(--content-muted); }
     .stop__x:hover { color:var(--danger, #e11d48); border-color:currentColor; }
     .sugg { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
-    .sugg__t { margin:0; font:600 13px var(--font-sans); }
-    .sugg__h { margin:0; font:400 12px var(--font-sans); color:var(--content-muted); }
+    .sugg__t { margin:0; font:600 16px var(--font-sans); }
+    .sugg__h { margin:0; font:400 15px var(--font-sans); color:var(--content-muted); }
     .sugg__i { display:flex; justify-content:space-between; align-items:center; gap:8px; text-align:left; cursor:pointer;
-               border:1px solid var(--surface-border); background:var(--surface-muted); border-radius:10px; padding:10px 12px; font:500 13px var(--font-sans); color:inherit; }
+               border:1px solid var(--surface-border); background:var(--surface-muted); border-radius:10px; padding:10px 12px; font:500 16px var(--font-sans); color:inherit; }
     .sugg__i:hover { border-color:var(--brand-600, #4f46e5); }
     .sugg__i--on { border-color:var(--brand-600, #4f46e5); box-shadow:0 0 0 2px var(--brand-100); }
-    .sugg__tag { font:600 11px var(--font-sans); color:var(--brand-600, #4f46e5); }
-    .hint { margin:8px 0 0; font:400 12px var(--font-sans); color:var(--content-muted); }
+    .sugg__tag { font:600 14px var(--font-sans); color:var(--brand-600, #4f46e5); }
+    .hint { margin:8px 0 0; font:400 15px var(--font-sans); color:var(--content-muted); }
     @media (max-width:760px){ .row2 { grid-template-columns:1fr; } }
   `]
 })

@@ -52,7 +52,7 @@ export interface AssignRoleData {
     .rd { padding:24px; width:440px; max-width:92vw; }
     .rd__chips { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; min-height:32px; }
     .chip { display:inline-flex; align-items:center; gap:4px; background:var(--brand-50); color:var(--brand-700);
-      border:1px solid var(--brand-100); font:600 12px var(--font-sans); padding:4px 6px 4px 10px; border-radius:999px; }
+      border:1px solid var(--brand-100); font:600 15px var(--font-sans); padding:4px 6px 4px 10px; border-radius:999px; }
     .chip__x { border:0; background:transparent; cursor:pointer; color:var(--brand-700); display:flex; padding:0; }
     .chip__x mat-icon { font-size:16px; width:16px; height:16px; }
     .rd__add { display:flex; gap:10px; align-items:flex-end; }

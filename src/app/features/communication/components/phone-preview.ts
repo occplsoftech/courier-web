@@ -116,7 +116,7 @@ import { PreviewSegment } from '../template-preview';
     .screen { position:relative; height:100%; border-radius:36px; overflow:hidden; display:flex; flex-direction:column;
       background:#fff; font-family:-apple-system, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color:#111; }
     .status { display:flex; justify-content:space-between; align-items:center; padding:14px 22px 6px;
-      font-size:13px; font-weight:600; background:#f6f6f6; }
+      font-size:16px; font-weight:600; background:#f6f6f6; }
     .status__icons { display:flex; gap:3px; align-items:center; }
     .status__icons mat-icon { font-size:15px; width:15px; height:15px; }
     .avatar { width:34px; height:34px; border-radius:50%; background:#d9e4ec; color:#355; display:flex;
@@ -130,59 +130,59 @@ import { PreviewSegment } from '../template-preview';
       border-bottom:1px solid #e3e3e3; }
     .wa-head__back { color:#007aff; font-size:17px; width:17px; height:17px; }
     .wa-head__who { display:flex; flex-direction:column; flex:1; min-width:0; line-height:1.15; }
-    .wa-head__who strong { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .wa-head__who span { font-size:11px; color:#6b7280; }
+    .wa-head__who strong { font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .wa-head__who span { font-size:14px; color:#6b7280; }
     .wa-head > mat-icon:not(.wa-head__back) { color:#007aff; }
     .chat { flex:1; overflow:hidden; padding:10px 10px 0; background-color:#efeae2;
       background-image:radial-gradient(rgba(0,0,0,.045) 1px, transparent 1.4px); background-size:14px 14px; }
     .chip { width:max-content; margin:2px auto 10px; padding:3px 10px; border-radius:8px; background:#fff;
-      font-size:11px; color:#54656f; letter-spacing:.03em; box-shadow:0 1px 1px rgba(0,0,0,.08); }
+      font-size:14px; color:#54656f; letter-spacing:.03em; box-shadow:0 1px 1px rgba(0,0,0,.08); }
     .msg { max-width:86%; width:fit-content; display:flex; flex-direction:column; gap:2px; }
-    .bubble { position:relative; width:fit-content; min-width:0; padding:7px 9px 6px; font-size:13.5px; line-height:1.32;
+    .bubble { position:relative; width:fit-content; min-width:0; padding:7px 9px 6px; font-size:16.5px; line-height:1.32;
       box-shadow:0 1px .5px rgba(11,20,26,.13); word-break:break-word; }
     .bubble--wa { background:#fff; border-radius:0 8px 8px 8px; }
     .bubble--wa::before { content:''; position:absolute; top:0; left:-7px; border-style:solid;
       border-width:0 8px 8px 0; border-color:transparent #fff transparent transparent; }
     .bubble__text { white-space:pre-wrap; }
-    .bubble__header { font-weight:700; margin-bottom:3px; font-size:14px; }
-    .bubble__footer { margin-top:4px; font-size:11.5px; color:#667781; }
+    .bubble__header { font-weight:700; margin-bottom:3px; font-size:17px; }
+    .bubble__footer { margin-top:4px; font-size:14.5px; color:#667781; }
     .wa-btn { display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 10px; background:#fff;
-      border-radius:8px; color:#027eb5; font-size:13.5px; font-weight:500; box-shadow:0 1px .5px rgba(11,20,26,.13); }
+      border-radius:8px; color:#027eb5; font-size:16.5px; font-weight:500; box-shadow:0 1px .5px rgba(11,20,26,.13); }
     .wa-btn mat-icon { font-size:16px; width:16px; height:16px; }
-    .bubble__time { display:block; text-align:right; font-size:10.5px; color:#667781; margin-top:2px; }
+    .bubble__time { display:block; text-align:right; font-size:13.5px; color:#667781; margin-top:2px; }
     .b { font-weight:700; } .i { font-style:italic; } .s { text-decoration:line-through; }
-    .m { font-family:ui-monospace, Menlo, monospace; font-size:12.5px; }
+    .m { font-family:ui-monospace, Menlo, monospace; font-size:15.5px; }
     .l { color:#027eb5; text-decoration:underline; }
     .wa-input { display:flex; align-items:center; gap:10px; padding:8px 12px 24px; background:#f6f6f6; color:#007aff; }
     .wa-input__field { flex:1; background:#fff; border:1px solid #d8d8d8; border-radius:18px; padding:5px 12px;
-      font-size:13px; color:#9aa0a6; }
+      font-size:16px; color:#9aa0a6; }
 
     /* ---- SMS (Messages) ---- */
     .sms-head { display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 12px 8px;
       background:#f6f6f6; border-bottom:1px solid #e3e3e3; position:relative; }
     .sms-head__back { position:absolute; left:12px; top:14px; color:#007aff; font-size:17px; width:17px; height:17px; }
     .avatar--sms { width:36px; height:36px; background:#b5bcc6; color:#fff; }
-    .sms-head__name { font-size:11.5px; color:#333; }
+    .sms-head__name { font-size:14.5px; color:#333; }
     .chat--sms { background:#fff; background-image:none; padding:12px 12px 0; }
-    .sms-stamp { text-align:center; font-size:10.5px; color:#8e8e93; margin-bottom:10px; line-height:1.3; }
-    .bubble--sms { background:#e9e9eb; border-radius:18px; padding:8px 12px; font-size:13.5px; white-space:pre-wrap;
+    .sms-stamp { text-align:center; font-size:13.5px; color:#8e8e93; margin-bottom:10px; line-height:1.3; }
+    .bubble--sms { background:#e9e9eb; border-radius:18px; padding:8px 12px; font-size:16.5px; white-space:pre-wrap;
       box-shadow:none; }
     .sms-input { display:flex; align-items:center; gap:8px; padding:8px 12px 24px; color:#9aa0a6; }
-    .sms-input__field { flex:1; border:1px solid #d1d1d6; border-radius:18px; padding:5px 12px; font-size:13px; }
+    .sms-input__field { flex:1; border:1px solid #d1d1d6; border-radius:18px; padding:5px 12px; font-size:16px; }
 
     /* ---- Email ---- */
     .mail { width:100%; box-sizing:border-box; border:1px solid var(--surface-border); border-radius:16px;
       background:#fff; color:#111; box-shadow:0 10px 30px rgba(15,23,42,.10); overflow:hidden;
       font-family:-apple-system, 'Helvetica Neue', Arial, sans-serif; }
     .mail__bar { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f6f6f6;
-      border-bottom:1px solid #e3e3e3; font-size:13px; color:#007aff; }
+      border-bottom:1px solid #e3e3e3; font-size:16px; color:#007aff; }
     .mail__head { display:flex; gap:10px; align-items:center; padding:14px 16px 4px; }
     .mail__avatar { width:36px; height:36px; border-radius:50%; background:#d9e4ec; display:flex;
       align-items:center; justify-content:center; font-weight:600; }
-    .mail__meta { display:flex; flex-direction:column; font-size:12px; color:#6b7280; }
-    .mail__meta strong { font-size:14px; color:#111; }
-    .mail__subject { margin:8px 16px 4px; font-size:16px; }
-    .mail__body { padding:6px 16px 18px; font-size:14px; line-height:1.5; }
+    .mail__meta { display:flex; flex-direction:column; font-size:15px; color:#6b7280; }
+    .mail__meta strong { font-size:17px; color:#111; }
+    .mail__subject { margin:8px 16px 4px; font-size:19px; }
+    .mail__body { padding:6px 16px 18px; font-size:17px; line-height:1.5; }
     .mail__body :is(p) { margin:0 0 10px; }
   `]
 })

@@ -105,8 +105,8 @@ import { UiLoader } from '@shared/components/ui-loader/ui-loader';
     .kv span { color:var(--content-muted); }
     .session-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--surface-border); }
     .mini-table { width:100%; border-collapse:collapse; }
-    .mini-table th { text-align:left; font:600 12px var(--font-sans); color:var(--content-muted); padding:8px 6px; border-bottom:1px solid var(--surface-border); }
-    .mini-table td { padding:8px 6px; border-bottom:1px solid var(--surface-border); font-size:13px; }
+    .mini-table th { text-align:left; font:600 15px var(--font-sans); color:var(--content-muted); padding:8px 6px; border-bottom:1px solid var(--surface-border); }
+    .mini-table td { padding:8px 6px; border-bottom:1px solid var(--surface-border); font-size:16px; }
   `]
 })
 export class UserActivity implements OnInit {

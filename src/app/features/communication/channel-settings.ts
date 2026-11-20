@@ -105,8 +105,8 @@ const CARDS: ChannelCard[] = [
     .csettings { display:flex; flex-direction:column; gap:14px; }
     .flag { display:flex; align-items:center; gap:12px; }
     .flag span { display:flex; flex-direction:column; }
-    .flag em { font-style:normal; font-size:12px; color:var(--content-muted); }
-    .status { min-height:18px; font:500 12px var(--font-sans); }
+    .flag em { font-style:normal; font-size:15px; color:var(--content-muted); }
+    .status { min-height:18px; font:500 15px var(--font-sans); }
     .status .ok { color:var(--success); }
     .status .bad { color:var(--danger); }
     .csettings__actions { display:flex; gap:10px; justify-content:flex-end; }

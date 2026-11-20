@@ -69,7 +69,7 @@ const STATUSES: SelectOption[] = [
   `,
   styles: [`
     .filters { display:grid; grid-template-columns:minmax(0,320px) minmax(0,220px); gap:16px; margin:0 0 16px; }
-    .hint, .sum { font:400 13px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .sum strong { color:var(--content-fg); }
+    .hint, .sum { font:400 16px var(--font-sans); color:var(--content-muted); margin:0 0 12px; } .sum strong { color:var(--content-fg); }
     .warn { color:#b45309; font-weight:600; } .ok { color:#047857; font-weight:600; } .muted { color:var(--content-muted); }
   `]
 })

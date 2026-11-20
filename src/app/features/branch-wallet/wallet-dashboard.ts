@@ -130,11 +130,11 @@ const ADMINS = [AppRole.COMPANY_ADMIN];
     .wd__id { min-width:0; }
     .wd__tags { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:6px; }
     .tag { display:inline-flex; align-items:center; background:var(--surface-muted); border:1px solid var(--surface-border);
-      color:var(--content-muted); font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; }
+      color:var(--content-muted); font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .wd__actions { display:flex; gap:10px; align-items:center; flex:0 0 auto; }
     .wd__grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:960px){ .wd__grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (max-width:600px){ .wd__grid { grid-template-columns:1fr; } .wd__banner { flex-wrap:wrap; } }
   `]

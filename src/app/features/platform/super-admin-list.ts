@@ -96,16 +96,16 @@ import { SuperAdminService } from './super-admin.service';
     </div>
   `,
   styles: [`
-    .ops { width:100%; border-collapse:collapse; font:14px var(--font-sans); }
+    .ops { width:100%; border-collapse:collapse; font:17px var(--font-sans); }
     .ops th { text-align:left; padding:8px 12px; color:var(--text-muted); font-weight:600; }
     .ops td { padding:10px 12px; border-top:1px solid var(--surface-border); }
     .mono { font-family:var(--font-mono,monospace); }
     .roles { display:flex; flex-wrap:wrap; gap:6px; }
     .chip { padding:2px 8px; border-radius:999px; background:var(--surface-muted);
-      border:1px solid var(--surface-border); font:600 11px var(--font-sans); }
+      border:1px solid var(--surface-border); font:600 14px var(--font-sans); }
     .empty { color:var(--text-muted); margin:0; }
     .form { display:grid; gap:14px; max-width:520px; }
-    .hint { display:flex; gap:8px; margin:0; color:var(--text-muted); font-size:12px; line-height:1.55; }
+    .hint { display:flex; gap:8px; margin:0; color:var(--text-muted); font-size:15px; line-height:1.55; }
     .hint mat-icon { font-size:18px; width:18px; height:18px; flex:none; }
     .actions { display:flex; justify-content:flex-end; }
   `]

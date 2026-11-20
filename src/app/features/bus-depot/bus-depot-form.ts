@@ -75,7 +75,7 @@ const TYPE_OPTS: SelectOption[] = (Object.keys(BUS_DEPOT_TYPE_LABEL) as BusDepot
   `,
   styles: [`
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
     .bar { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
     @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
   `]

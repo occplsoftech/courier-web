@@ -113,14 +113,14 @@ import { HubDashboardStats } from './hub-operations.model';
     .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; }
     .two { display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; }
     .tbl__wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; font:500 11px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:0 10px 8px; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; font:500 14px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:0 10px 8px; }
     .tbl td { padding:8px 10px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl .b { font-weight:600; }
     .tbl .r { text-align:right; }
     .more { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
     .qa { display:flex; flex-wrap:wrap; gap:10px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
   `]
 })
 export class HubDashboard implements OnInit {

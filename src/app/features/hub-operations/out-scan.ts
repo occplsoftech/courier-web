@@ -84,16 +84,16 @@ import { HubOperationsService } from './hub-operations.service';
   `,
   styles: [`
     .page__head { display:flex; justify-content:space-between; align-items:flex-start; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .ml { display:flex; flex-direction:column; gap:8px; }
     .mrow { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--surface-border); }
     .mrow:first-child { border-top:none; }
     .mh { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .mh strong { display:block; font:600 15px var(--font-sans); }
+    .mh strong { display:block; font:600 18px var(--font-sans); }
     .row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
     .row app-input { flex:1; min-width:200px; }
     .ol { display:flex; flex-direction:column; gap:6px; }
-    .ol__row { display:flex; align-items:center; gap:8px; font:400 13px var(--font-sans); color:var(--success-600, #16a34a); }
+    .ol__row { display:flex; align-items:center; gap:8px; font:400 16px var(--font-sans); color:var(--success-600, #16a34a); }
     .ol__row--fail { color:var(--danger-600, #dc2626); }
   `]
 })

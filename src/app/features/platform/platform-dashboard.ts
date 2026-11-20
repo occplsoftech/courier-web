@@ -91,7 +91,7 @@ import { CompanyService } from '@features/company/company.service';
   `,
   styles: [`
     .tiles { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); margin-bottom:20px; }
-    .renewals { width:100%; border-collapse:collapse; font:14px var(--font-sans); }
+    .renewals { width:100%; border-collapse:collapse; font:17px var(--font-sans); }
     .renewals th { text-align:left; padding:8px 12px; color:var(--text-muted); font-weight:600; }
     .renewals th.num, .renewals td.num { text-align:right; }
     .renewals td { padding:10px 12px; border-top:1px solid var(--surface-border); }
@@ -100,7 +100,7 @@ import { CompanyService } from '@features/company/company.service';
     .mono { font-family:var(--font-mono,monospace); }
     .overdue { color:var(--danger); font-weight:600; }
     .empty { color:var(--text-muted); margin:0; }
-    .note { display:flex; align-items:center; gap:8px; margin-top:16px; color:var(--text-muted); font-size:13px; }
+    .note { display:flex; align-items:center; gap:8px; margin-top:16px; color:var(--text-muted); font-size:16px; }
     .note mat-icon { font-size:18px; width:18px; height:18px; }
   `]
 })

@@ -36,19 +36,19 @@ import { AuthService } from '@core/auth/auth.service';
       border:0; background:var(--surface-muted); box-shadow:var(--shadow-clay-inset); cursor:pointer; }
     .um__trigger:hover { box-shadow:var(--shadow-clay-inset), 0 0 0 2px var(--brand-100); }
     .um__avatar { width:32px; height:32px; border-radius:12px; background:linear-gradient(155deg, var(--brand-400), var(--brand-600)); color:#fff;
-      display:grid; place-items:center; font:700 12px var(--font-sans); flex-shrink:0; box-shadow:var(--shadow-clay-sm); }
-    .um__avatar--lg { width:40px; height:40px; font-size:15px; }
-    .um__name { font:600 13px var(--font-sans); color:var(--content-fg); max-width:140px; overflow:hidden;
+      display:grid; place-items:center; font:700 15px var(--font-sans); flex-shrink:0; box-shadow:var(--shadow-clay-sm); }
+    .um__avatar--lg { width:40px; height:40px; font-size:18px; }
+    .um__name { font:600 16px var(--font-sans); color:var(--content-fg); max-width:140px; overflow:hidden;
       text-overflow:ellipsis; white-space:nowrap; }
     .um__caret { color:var(--content-muted); }
     .um__head { display:flex; gap:12px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--surface-border); }
     .um__id { min-width:0; }
-    .um__id-name { margin:0; font:700 14px var(--font-sans); color:var(--content-fg);
+    .um__id-name { margin:0; font:700 17px var(--font-sans); color:var(--content-fg);
       max-width:180px; overflow-wrap:break-word; }
-    .um__id-mail { margin:2px 0 0; font:400 12px var(--font-sans); color:var(--content-muted);
+    .um__id-mail { margin:2px 0 0; font:400 15px var(--font-sans); color:var(--content-muted);
       overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
     .um__id-role { display:inline-block; margin-top:6px; padding:2px 8px; border-radius:999px;
-      background:var(--brand-50); color:var(--brand-700); font:600 11px var(--font-sans); }
+      background:var(--brand-50); color:var(--brand-700); font:600 14px var(--font-sans); }
     .um__signout { color:var(--danger); }
     @media (max-width: 640px) { .um__name, .um__caret { display:none; } }
   `]

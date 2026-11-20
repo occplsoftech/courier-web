@@ -79,16 +79,16 @@ import { ShipmentMovementService } from './shipment-movement.service';
   styles: [`
     .page__actions { display:flex; gap:10px; flex-wrap:wrap; }
     .chips { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
-    .chip { border:1px solid var(--surface-border); background:var(--surface); color:var(--content-fg); border-radius:999px; padding:6px 12px; font:500 13px var(--font-sans); cursor:pointer; }
+    .chip { border:1px solid var(--surface-border); background:var(--surface); color:var(--content-fg); border-radius:999px; padding:6px 12px; font:500 16px var(--font-sans); cursor:pointer; }
     .chip b { margin-left:4px; }
     .chip--on { border-color:var(--brand-600); background:color-mix(in srgb, var(--brand-600) 10%, var(--surface)); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .tbl th { text-align:left; font:500 12px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .tbl th { text-align:left; font:500 15px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--surface-border); color:var(--content-fg); vertical-align:top; }
     .tbl--right { text-align:right; }
-    .muted { font-size:12px; color:var(--content-muted); }
+    .muted { font-size:15px; color:var(--content-muted); }
     .row--back { background:color-mix(in srgb, #1a9d5a 6%, transparent); }
     .back { font-weight:600; color:#17733a; }
   `]

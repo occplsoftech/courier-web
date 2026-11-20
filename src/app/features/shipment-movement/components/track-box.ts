@@ -29,7 +29,7 @@ import { matchesScan } from '@features/shipment/shipment-label-print.util';
   styles: [`
     .row { display:flex; gap:12px; align-items:flex-end; }
     .row app-input { flex:1; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:12px 0 0; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:12px 0 0; }
   `]
 })
 export class TrackBox {

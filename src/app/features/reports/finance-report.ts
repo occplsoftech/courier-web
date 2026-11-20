@@ -74,9 +74,9 @@ import { downloadCsv } from '@shared/utils/csv-export.util';
     .stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
     .stat { display:flex; flex-direction:column; gap:4px; padding:12px 18px; min-width:150px;
       background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .stat__l { font:500 12px var(--font-sans); color:var(--content-muted); }
-    .stat__v { font:700 20px var(--font-sans); color:var(--content-fg); }
-    .mono { font:600 13px var(--font-mono, ui-monospace); color:var(--content-fg); }
+    .stat__l { font:500 15px var(--font-sans); color:var(--content-muted); }
+    .stat__v { font:700 23px var(--font-sans); color:var(--content-fg); }
+    .mono { font:600 16px var(--font-mono, ui-monospace); color:var(--content-fg); }
     .num { text-align:right; }
     .hint { margin-top:12px; }
     .hint a { color:var(--brand-600); cursor:pointer; }

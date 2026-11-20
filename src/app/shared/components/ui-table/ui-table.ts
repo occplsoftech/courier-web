@@ -83,9 +83,9 @@ export interface SortState { active: string; direction: 'asc' | 'desc'; }
   `,
   styles: [`
     .tbl__wrap { overflow:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
     .tbl thead th { position:sticky; top:0; background:var(--surface-muted); color:var(--content-muted);
-      font:600 12px var(--font-sans); text-transform:uppercase; letter-spacing:.04em;
+      font:600 15px var(--font-sans); text-transform:uppercase; letter-spacing:.04em;
       padding:14px 16px; border-bottom:1px solid var(--surface-border); white-space:nowrap; }
     .tbl thead th:first-child { border-top-left-radius:var(--r-card); }
     .tbl thead th:last-child { border-top-right-radius:var(--r-card); }

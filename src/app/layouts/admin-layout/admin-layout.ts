@@ -45,11 +45,11 @@ import { Footer } from './components/footer';
     .shell__main { flex:1; display:flex; flex-direction:column; min-width:0; }
     .shell__content { flex:1; overflow:auto; padding:20px 28px 32px; background:transparent; }
     .shell__backdrop { position:fixed; inset:0; z-index:50; background:rgb(20 20 40 / 45%); backdrop-filter:blur(1px); }
-    .imp-banner { display:flex; align-items:center; gap:10px; padding:8px 20px; font:600 13px var(--font-sans);
+    .imp-banner { display:flex; align-items:center; gap:10px; padding:8px 20px; font:600 16px var(--font-sans);
       background:var(--warning-bg, #fff7ed); color:var(--warning, #b45309); }
     .imp-banner mat-icon { font-size:18px; width:18px; height:18px; }
     .imp-banner span { flex:1; }
-    .imp-banner__exit { font:700 12px var(--font-sans); color:inherit; background:rgba(0,0,0,.08);
+    .imp-banner__exit { font:700 15px var(--font-sans); color:inherit; background:rgba(0,0,0,.08);
       border:none; border-radius:var(--r-field); padding:4px 12px; cursor:pointer; }
     .imp-banner__exit:hover { background:rgba(0,0,0,.15); }
     @media (max-width: 1024px) { .shell__content { padding:20px 20px 24px; } }

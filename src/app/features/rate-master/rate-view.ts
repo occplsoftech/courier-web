@@ -117,8 +117,8 @@ const LIFECYCLE = [AppRole.COMPANY_ADMIN];
   styles: [`
     .rv__banner { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:20px 24px; margin-bottom:16px; }
     .rv__id { display:flex; flex-direction:column; gap:6px; }
-    .rv__code { font:700 16px var(--font-mono, ui-monospace); color:var(--brand-600); }
-    .rv__name { font:600 18px var(--font-sans); color:var(--content-fg); }
+    .rv__code { font:700 19px var(--font-mono, ui-monospace); color:var(--brand-600); }
+    .rv__name { font:600 21px var(--font-sans); color:var(--content-fg); }
     .rv__actions { display:flex; gap:10px; align-items:center; flex:0 0 auto; }
     .kebab { border:1px solid var(--surface-border); background:var(--surface); cursor:pointer; color:var(--content-muted);
       display:inline-flex; padding:8px; border-radius:8px; }
@@ -126,10 +126,10 @@ const LIFECYCLE = [AppRole.COMPANY_ADMIN];
     .rv__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     .rv__grid app-card:last-child { grid-column:1 / -1; }
     .kv { display:grid; grid-template-columns:180px 1fr; gap:10px 16px; margin:0; }
-    .kv dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .kv dd { font:600 14px var(--font-sans); color:var(--content-fg); margin:0; }
+    .kv dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .kv dd { font:600 17px var(--font-sans); color:var(--content-fg); margin:0; }
     .mono { font-family:var(--font-mono, ui-monospace); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
     @media (max-width:860px){ .rv__grid { grid-template-columns:1fr; } }
   `]
 })

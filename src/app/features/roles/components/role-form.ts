@@ -90,21 +90,21 @@ const TYPE_OPTIONS: SelectOption[] = ROLE_TYPES.map((t) => ({
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .full { margin-top:16px; }
     .hint-cell { display:flex; flex-direction:column; gap:4px; justify-content:center; }
-    .hint { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .preview { font:400 12px var(--font-sans); color:var(--content-fg); }
+    .hint { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .preview { font:400 15px var(--font-sans); color:var(--content-fg); }
     .preview b { font-family:var(--font-mono, var(--font-sans)); }
     .stat { display:flex; flex-direction:column; gap:6px; justify-content:center; }
-    .stat__l { font:500 13px var(--font-sans); color:var(--content-fg); }
-    .stat__v { font:600 14px var(--font-sans); color:var(--content-fg); }
+    .stat__l { font:500 16px var(--font-sans); color:var(--content-fg); }
+    .stat__v { font:600 17px var(--font-sans); color:var(--content-fg); }
     .stat__v.mono { font-family:var(--font-mono, var(--font-sans)); }
-    .stat__h { font:400 12px var(--font-sans); color:var(--content-muted); }
-    .chk { display:flex; gap:10px; align-items:flex-start; font:400 14px var(--font-sans); color:var(--content-fg); cursor:pointer; }
+    .stat__h { font:400 15px var(--font-sans); color:var(--content-muted); }
+    .chk { display:flex; gap:10px; align-items:flex-start; font:400 17px var(--font-sans); color:var(--content-fg); cursor:pointer; }
     .chk input { margin-top:3px; width:16px; height:16px; accent-color:var(--brand-600); }
-    .sys { margin-top:14px; font:400 13px var(--font-sans); color:var(--warning); }
-    .note { margin-top:10px; font:400 13px var(--font-sans); color:var(--content-muted); }
+    .sys { margin-top:14px; font:400 16px var(--font-sans); color:var(--warning); }
+    .note { margin-top:10px; font:400 16px var(--font-sans); color:var(--content-muted); }
     .rform__bar { position:sticky; bottom:0; display:flex; align-items:center; justify-content:space-between;
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .rform__note { font:500 13px var(--font-sans); color:var(--danger); }
+    .rform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .rform__actions { display:flex; gap:10px; }
     @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
   `]

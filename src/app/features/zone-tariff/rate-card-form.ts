@@ -311,28 +311,28 @@ function defaultSlabs(): RateSlab[] {
     .grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 20px; align-items:end; }
     .grid--3 { margin-bottom:12px; }
     .bar { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); margin-bottom:16px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); margin-bottom:16px; }
     .tbl th { text-align:left; font-weight:600; color:var(--content-muted); padding:8px; border-bottom:1px solid var(--surface-border); }
     .tbl td { padding:8px; border-bottom:1px solid var(--surface-border); vertical-align:middle; }
     .tbl tr.sel td { background:var(--surface-muted); }
     .tbl .slabs { color:var(--content-muted); }
     .flt { display:flex; flex-wrap:wrap; gap:12px 16px; align-items:end; margin-bottom:12px; }
-    .flt label { display:flex; flex-direction:column; gap:4px; font:600 12px var(--font-sans); color:var(--content-muted); }
-    .flt select, .bulk select, .bulk input { height:36px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
-    .flt__n { margin-left:auto; font:400 13px var(--font-sans); color:var(--content-muted); }
-    .lnk { border:0; background:transparent; color:var(--brand-primary, #c8102e); cursor:pointer; font:600 13px var(--font-sans); padding:8px 0; }
-    .bulk { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px; margin-bottom:12px; border:1px dashed var(--surface-border); border-radius:12px; background:var(--surface-muted); font:400 14px var(--font-sans); }
+    .flt label { display:flex; flex-direction:column; gap:4px; font:600 15px var(--font-sans); color:var(--content-muted); }
+    .flt select, .bulk select, .bulk input { height:36px; border:1px solid var(--surface-border); border-radius:8px; padding:0 10px; background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
+    .flt__n { margin-left:auto; font:400 16px var(--font-sans); color:var(--content-muted); }
+    .lnk { border:0; background:transparent; color:var(--brand-primary, #c8102e); cursor:pointer; font:600 16px var(--font-sans); padding:8px 0; }
+    .bulk { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px; margin-bottom:12px; border:1px dashed var(--surface-border); border-radius:12px; background:var(--surface-muted); font:400 17px var(--font-sans); }
     .bulk input { width:100px; }
     .scroll { max-height:480px; overflow:auto; margin-bottom:12px; border:1px solid var(--surface-border); border-radius:8px; }
     .scroll .tbl { margin:0; }
     .scroll thead th { position:sticky; top:0; background:var(--surface-card, #fff); z-index:1; }
     .num { text-align:right; }
-    .cell { width:96px; height:32px; text-align:right; border:1px solid var(--surface-border); border-radius:6px; padding:0 8px; background:transparent; color:var(--content-fg); font:400 13px var(--font-sans); }
+    .cell { width:96px; height:32px; text-align:right; border:1px solid var(--surface-border); border-radius:6px; padding:0 8px; background:transparent; color:var(--content-fg); font:400 16px var(--font-sans); }
     .cell:focus { outline:2px solid var(--brand-primary, #c8102e); outline-offset:-1px; }
     .tbl tr.chg td { background:color-mix(in srgb, #f59e0b 14%, transparent); }
     .tbl tr.chg .cell { border-color:#f59e0b; font-weight:600; }
-    .savebar { position:sticky; bottom:0; display:flex; gap:10px; align-items:center; justify-content:flex-end; padding:12px; margin-bottom:16px; border:1px solid #f59e0b; border-radius:12px; background:var(--surface-card, #fff); font:400 14px var(--font-sans); }
+    .savebar { position:sticky; bottom:0; display:flex; gap:10px; align-items:center; justify-content:flex-end; padding:12px; margin-bottom:16px; border:1px solid #f59e0b; border-radius:12px; background:var(--surface-card, #fff); font:400 17px var(--font-sans); }
     .savebar span { margin-right:auto; }
     .lanes__h { margin:8px 0; }
     .act { text-align:right; white-space:nowrap; }
@@ -342,15 +342,15 @@ function defaultSlabs(): RateSlab[] {
     .editor { border-top:1px solid var(--surface-border); padding-top:16px; }
     .editor h3 { margin:0 0 12px; }
     .slab { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)) minmax(0,1.2fr) minmax(0,1fr) minmax(0,0.8fr) 32px; gap:10px; align-items:center; margin-bottom:8px; }
-    .slab--head { font:600 12px var(--font-sans); color:var(--content-muted); }
+    .slab--head { font:600 15px var(--font-sans); color:var(--content-muted); }
     .muted { color:var(--content-muted); text-align:center; }
-    .hint { font:400 12px var(--font-sans); color:var(--content-muted); margin:4px 0 0; }
+    .hint { font:400 15px var(--font-sans); color:var(--content-muted); margin:4px 0 0; }
     .imp { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .imp__sum { font:400 14px var(--font-sans); margin:12px 0 8px; }
-    .imp__warn { display:flex; align-items:center; gap:6px; font:400 13px var(--font-sans); color:var(--content-muted); margin:4px 0; }
+    .imp__sum { font:400 17px var(--font-sans); margin:12px 0 8px; }
+    .imp__warn { display:flex; align-items:center; gap:6px; font:400 16px var(--font-sans); color:var(--content-muted); margin:4px 0; }
     .imp__warn mat-icon { font-size:18px; width:18px; height:18px; }
     .bad { color:var(--danger); }
-    .chk { display:flex; align-items:center; gap:8px; font:400 14px var(--font-sans); margin-top:8px; }
+    .chk { display:flex; align-items:center; gap:8px; font:400 17px var(--font-sans); margin-top:8px; }
     @media (max-width:900px){ .grid { grid-template-columns:1fr; } .slab { grid-template-columns:1fr 1fr; } }
   `]
 })

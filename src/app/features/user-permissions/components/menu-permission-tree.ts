@@ -48,7 +48,7 @@ import {
     .tree__bar-l, .tree__bar-r { display:flex; align-items:center; gap:4px; }
     .tree__list { list-style:none; margin:0; padding:0; border:1px solid var(--surface-border);
       border-radius:var(--r-lg, 12px); background:var(--surface); padding:6px; }
-    .tree__empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:32px; }
+    .tree__empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:32px; }
   `]
 })
 export class MenuPermissionTree {

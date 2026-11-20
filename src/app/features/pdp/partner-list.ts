@@ -44,7 +44,7 @@ import { PdpService } from './pdp.service';
       <app-pagination [page]="page()" (pageChange)="onPage($event)" />
     </div>
   `,
-  styles: [`.cs{font:600 14px var(--font-sans)} .col-actions{text-align:right;width:130px}`]
+  styles: [`.cs{font:600 17px var(--font-sans)} .col-actions{text-align:right;width:130px}`]
 })
 export class PartnerList implements OnInit {
   private readonly service = inject(PdpService);

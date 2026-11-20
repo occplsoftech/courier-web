@@ -97,17 +97,17 @@ import { DialogService } from '@shared/components/ui-dialog/dialog.service';
   `,
   styles: [`
     .mh { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
-    .mh strong { display:block; font:600 16px var(--font-sans); }
+    .mh strong { display:block; font:600 19px var(--font-sans); }
     .mh__stats { display:flex; gap:20px; }
     .stat { display:flex; flex-direction:column; align-items:flex-end; }
-    .stat__value { font:600 15px var(--font-sans); color:var(--content-fg); }
-    .stat__label { font:400 11px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
+    .stat__value { font:600 18px var(--font-sans); color:var(--content-fg); }
+    .stat__label { font:400 14px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
     .tbl__wrap { overflow-x:auto; border:1px solid var(--surface-border); border-radius:var(--r-field); }
-    .tbl { width:100%; border-collapse:collapse; font:400 13px var(--font-sans); }
-    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 11px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
+    .tbl { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
+    .tbl th { text-align:left; padding:10px 14px; background:var(--surface-muted); color:var(--content-muted); font:600 14px var(--font-sans); text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; }
     .tbl td { padding:10px 14px; border-top:1px solid var(--surface-border); white-space:nowrap; }
     .tbl--right { text-align:right; }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
     @media (max-width:760px){ .mh { flex-direction:column; } .mh__stats { gap:14px; } }
   `]
 })

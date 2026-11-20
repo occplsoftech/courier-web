@@ -60,15 +60,15 @@ import { BranchService } from './branch.service';
     </div>
   `,
   styles: [`
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:20px; }
     .tbl__wrap { overflow-x:auto; }
-    .tbl { width:100%; border-collapse:collapse; font:400 14px var(--font-sans); }
-    .tbl th { text-align:left; font:500 12px var(--font-sans); color:var(--content-muted);
+    .tbl { width:100%; border-collapse:collapse; font:400 17px var(--font-sans); }
+    .tbl th { text-align:left; font:500 15px var(--font-sans); color:var(--content-muted);
       text-transform:uppercase; letter-spacing:.04em; padding:0 12px 8px; }
     .tbl td { padding:10px 12px; border-top:1px solid var(--surface-border); color:var(--content-fg); }
     .tbl__code { font-weight:600; }
     .sel { min-width:240px; padding:8px 10px; border:1px solid var(--surface-border); border-radius:var(--r-field);
-      background:var(--surface-card, #fff); color:var(--content-fg); font:400 14px var(--font-sans); }
+      background:var(--surface-card, #fff); color:var(--content-fg); font:400 17px var(--font-sans); }
   `]
 })
 export class BranchHubAssignment implements OnInit {

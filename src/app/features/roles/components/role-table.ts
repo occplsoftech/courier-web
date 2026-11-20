@@ -61,10 +61,10 @@ export type RoleAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'clone' |
     </app-table>
   `,
   styles: [`
-    .cs { font:600 14px var(--font-sans); }
-    .mono { font:600 13px var(--font-mono, var(--font-sans)); color:var(--content-fg); }
+    .cs { font:600 17px var(--font-sans); }
+    .mono { font:600 16px var(--font-mono, var(--font-sans)); color:var(--content-fg); }
     .tag { display:inline-block; background:var(--surface-muted); border:1px solid var(--surface-border); color:var(--content-muted);
-      font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; margin-right:6px; }
+      font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; margin-right:6px; }
     .tag--brand { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); }
     .tag--soft { background:transparent; }
     .col-actions { text-align:right; width:56px; }

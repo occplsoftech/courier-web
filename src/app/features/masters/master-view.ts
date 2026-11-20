@@ -95,12 +95,12 @@ import {
   `,
   styles: [`
     .mv__title { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .mv__code { font:600 13px var(--font-mono, ui-monospace); color:var(--content-muted);
+    .mv__code { font:600 16px var(--font-mono, ui-monospace); color:var(--content-muted);
       background:var(--surface-muted); border-radius:6px; padding:3px 8px; }
     .mv__grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:18px; margin:0; }
-    .mv__item dt { font:500 12px var(--font-sans); color:var(--content-muted);
+    .mv__item dt { font:500 15px var(--font-sans); color:var(--content-muted);
       text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
-    .mv__item dd { font:400 14px var(--font-sans); color:var(--content-fg); margin:0; }
+    .mv__item dd { font:400 17px var(--font-sans); color:var(--content-fg); margin:0; }
   `]
 })
 export class MasterView {

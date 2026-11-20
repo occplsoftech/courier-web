@@ -39,11 +39,11 @@ import { BranchResponse } from '@core/models/branch.model';
     .mono { font-family:var(--font-mono, ui-monospace); }
     .bs__tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .tag { display:inline-flex; align-items:center; gap:3px; background:var(--surface-muted); border:1px solid var(--surface-border);
-      color:var(--content-muted); font:600 11px var(--font-sans); padding:2px 8px; border-radius:6px; }
+      color:var(--content-muted); font:600 14px var(--font-sans); padding:2px 8px; border-radius:6px; }
     .tag mat-icon { font-size:13px; width:13px; height:13px; }
     .tag--brand { background:var(--brand-50); color:var(--brand-700); border-color:var(--brand-100); }
     .bs__caps { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-    .chip { background:var(--success-bg); color:var(--success); font:600 11px var(--font-sans); padding:3px 9px; border-radius:999px; }
+    .chip { background:var(--success-bg); color:var(--success); font:600 14px var(--font-sans); padding:3px 9px; border-radius:999px; }
   `]
 })
 export class BranchSummaryCard {

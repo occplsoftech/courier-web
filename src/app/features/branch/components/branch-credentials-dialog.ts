@@ -70,11 +70,11 @@ export interface BranchCredentialsData {
     .bc__grid { display:grid; grid-template-columns:auto minmax(0,1fr); gap:10px 18px; margin:0;
       padding:16px; background:var(--surface-muted, var(--surface)); border:1px solid var(--surface-border);
       border-radius:var(--r-field); }
-    .bc__grid dt { font:500 13px var(--font-sans); color:var(--content-muted); }
-    .bc__grid dd { margin:0; font:600 14px var(--font-sans); color:var(--content-fg); word-break:break-all; }
+    .bc__grid dt { font:500 16px var(--font-sans); color:var(--content-muted); }
+    .bc__grid dd { margin:0; font:600 17px var(--font-sans); color:var(--content-fg); word-break:break-all; }
     .mono { font-family:var(--font-mono, ui-monospace); }
     .bc__pwd { letter-spacing:0.04em; }
-    .bc__warn { display:flex; gap:10px; margin:0; font:400 12px var(--font-sans);
+    .bc__warn { display:flex; gap:10px; margin:0; font:400 15px var(--font-sans);
       color:var(--content-muted); line-height:1.55; }
     .bc__warn mat-icon { font-size:18px; width:18px; height:18px; color:var(--warning, #b26a00); flex:none; }
     .bc__actions { display:flex; justify-content:flex-end; gap:10px; }

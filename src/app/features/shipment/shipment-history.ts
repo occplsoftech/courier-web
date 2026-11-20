@@ -53,10 +53,10 @@ import { ShipmentService } from './shipment.service';
     .tl__dot { position:absolute; left:-7px; top:14px; width:12px; height:12px; border-radius:50%; background:var(--brand-600); }
     .tl__body { flex:1; }
     .tl__head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .tl__arrow { color:var(--content-muted); font-size:13px; }
-    .tl__at { font:400 12px var(--font-sans); color:var(--content-muted); margin-left:auto; }
-    .tl__remarks { margin:6px 0 0; font:400 13px var(--font-sans); color:var(--content-fg); }
-    .empty { font:400 14px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
+    .tl__arrow { color:var(--content-muted); font-size:16px; }
+    .tl__at { font:400 15px var(--font-sans); color:var(--content-muted); margin-left:auto; }
+    .tl__remarks { margin:6px 0 0; font:400 16px var(--font-sans); color:var(--content-fg); }
+    .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:24px; }
   `]
 })
 export class ShipmentHistory implements OnInit {

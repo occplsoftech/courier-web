@@ -41,9 +41,9 @@ const LOCKED: SelectOption[] = [{ value: 'true', label: 'Locked only' }, { value
   styles: [`
     .uf { display:flex; flex-direction:column; gap:16px; }
     .dt { display:flex; flex-direction:column; gap:6px; }
-    .dt__l { font:500 13px var(--font-sans); color:var(--content-fg); }
+    .dt__l { font:500 16px var(--font-sans); color:var(--content-fg); }
     .dt__i { height:42px; padding:0 12px; background:var(--surface); border:1px solid var(--surface-border);
-      border-radius:var(--r-field); font:400 14px var(--font-sans); color:var(--content-fg); }
+      border-radius:var(--r-field); font:400 17px var(--font-sans); color:var(--content-fg); }
     .dt__i:focus { outline:0; border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-100); }
     .uf__bar { display:flex; justify-content:space-between; gap:10px; margin-top:8px; }
   `]

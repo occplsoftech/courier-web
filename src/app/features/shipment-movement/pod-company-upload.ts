@@ -122,19 +122,19 @@ import { PinIllustration } from '@shared/components/illustrations/pin-illustrati
     .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px 20px; }
     @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
     .sh { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-    .sh strong { display:block; font:600 15px var(--font-sans); }
+    .sh strong { display:block; font:600 18px var(--font-sans); }
     .pod-row { display:flex; gap:16px; flex-wrap:wrap; }
     .pod { display:flex; flex-direction:column; gap:6px; }
-    .pod__label { font:600 11px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
+    .pod__label { font:600 14px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
     .pod__label em { color:var(--danger); font-style:normal; }
     .pod__btn { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:var(--r-field);
       border:1px dashed var(--surface-border); background:var(--surface-muted); cursor:pointer;
-      font:600 13px var(--font-sans); color:var(--content-fg); }
+      font:600 16px var(--font-sans); color:var(--content-fg); }
     .ok { display:flex; align-items:center; gap:12px; padding:8px 0 16px; }
     .ok mat-icon { font-size:32px; width:32px; height:32px; color:var(--success); }
     .reg { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px 16px; margin:0 0 16px; }
-    .reg dt { font:600 11px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
-    .reg dd { margin:2px 0 0; font:500 13px var(--font-sans); }
+    .reg dt { font:600 14px var(--font-sans); color:var(--content-muted); text-transform:uppercase; letter-spacing:.03em; }
+    .reg dd { margin:2px 0 0; font:500 16px var(--font-sans); }
   `]
 })
 export class PodCompanyUpload {
