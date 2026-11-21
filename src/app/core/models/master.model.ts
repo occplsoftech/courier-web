@@ -155,6 +155,8 @@ export interface ServiceType extends MasterRecord {
   express: boolean;
   cutoffTime: string | null;
   priority: number;
+  /** cm3-per-kg divisor of L×W×H for this service; null = the default 5000. */
+  volumetricDivisor?: number | null;
 }
 
 export interface PaymentMode extends MasterRecord {

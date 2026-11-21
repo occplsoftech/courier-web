@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { AuthService } from '@core/auth/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -137,7 +137,7 @@ const TYPE_OPTIONS: SelectOption[] = SHIPMENT_TYPES.map((t) => ({ value: t, labe
           </app-card>
 
           <app-card title="Items">
-            <app-item-entry-grid [initial]="hydrateItems()" (itemsChange)="onItems($event)" (weightChange)="weight.set($event)" />
+            <app-item-entry-grid [initial]="hydrateItems()" [volumetricDivisor]="volumetricDivisor()" (itemsChange)="onItems($event)" (weightChange)="weight.set($event)" />
           </app-card>
 
           <app-card title="Remarks">
@@ -221,6 +221,11 @@ export class ShipmentEdit implements OnInit {
   readonly hydrateItems = signal<ShipmentItemRequest[] | null>(null);
   readonly items = signal<ShipmentItemRequest[]>([]);
   readonly weight = signal({ actual: 0, volumetric: 0, chargeable: 0 });
+  /** Service Type id -> its volumetric divisor; the item grid divides L×W×H by the chosen one. */
+  private readonly serviceTypeDivisors = signal<Map<string, number | null>>(new Map());
+  private readonly chosenServiceTypeId = signal<string | null>(null);
+  protected readonly volumetricDivisor = computed(() =>
+    this.serviceTypeDivisors().get(this.chosenServiceTypeId() ?? '') ?? null);
   /** Company Settings → Shipment → default chargeable weight, for any new row added
    *  while editing. */
   /** Company Settings → Shipment → default appointment delivery charge, prefilled onto
@@ -277,6 +282,10 @@ export class ShipmentEdit implements OnInit {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     this.masters.options('branches').subscribe((o) => this.branchOptions.set(o));
     this.masters.options('service-types').subscribe((o) => this.serviceTypeOptions.set(o));
+    this.masters.serviceTypeDirectory().subscribe((rows) =>
+      this.serviceTypeDivisors.set(new Map(rows.map((r) => [r.id, r.volumetricDivisor ?? null]))));
+    this.chosenServiceTypeId.set(this.form.get('serviceTypeId')?.value ?? null);
+    this.form.get('serviceTypeId')?.valueChanges.subscribe((v) => this.chosenServiceTypeId.set(v ?? null));
     this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
     this.masters.options('payment-modes').subscribe((o) => this.paymentModeOptions.set(o));
     this.settings.get().subscribe((d) => {

@@ -17,7 +17,8 @@ export interface ItemRow {
   dangerousGoods: boolean;
 }
 
-const VOLUMETRIC_DIVISOR = 5000;
+/** The default when the service type sets no divisor of its own. */
+export const DEFAULT_VOLUMETRIC_DIVISOR = 5000;
 
 /** A new row starts with no weight: the desk types the real weight, nothing is assumed. */
 function emptyRow(): ItemRow {
@@ -34,7 +35,8 @@ function emptyRow(): ItemRow {
  * The packed item grid — one row per package, add/remove freely. Weight/volumetric/
  * chargeable shown here are a **client-side preview only**, using the same formula the
  * Pricing Engine's `VolumetricCalculator`/`ChargeableWeightCalculator` apply
- * (`volumetric = l*w*h/5000 * quantity`, `chargeable = max(actual, volumetric)`) — the
+ * (`volumetric = l*w*h/divisor * quantity`, the divisor being the chosen service type's own,
+ * 5000 by default; `chargeable = max(actual, volumetric)`) — the
  * figures that actually book come back from the server in Step 3. `weight` itself is the
  * row's own total, entered directly — not multiplied by `quantity` the way L/W/H are.
  */
@@ -75,7 +77,7 @@ function emptyRow(): ItemRow {
       <div class="ieg__summary">
         <span>Packages: <strong>{{ totalQuantity() }}</strong></span>
         <span>Actual Weight: <strong>{{ actualWeight() | number: '1.3-3' }} kg</strong></span>
-        <span>Volumetric Weight: <strong>{{ volumetricWeight() | number: '1.3-3' }} kg</strong></span>
+        <span>Volumetric Weight (÷{{ volumetricDivisor() || 5000 }}): <strong>{{ volumetricWeight() | number: '1.3-3' }} kg</strong></span>
         <span class="ieg__summary-main">Chargeable Weight: <strong>{{ chargeableWeight() | number: '1.3-3' }} kg</strong></span>
       </div>
     </div>
@@ -109,6 +111,8 @@ function emptyRow(): ItemRow {
 export class ItemEntryGrid {
   /** Prefill for edit mode. */
   readonly initial = input<ShipmentItemRequest[] | null>(null);
+  /** The chosen service type's volumetric divisor (Air and Surface differ); empty = 5000. */
+  readonly volumetricDivisor = input<number | null | undefined>(null);
 
   readonly itemsChange = output<ShipmentItemRequest[]>();
   readonly weightChange = output<{ actual: number; volumetric: number; chargeable: number }>();
@@ -129,7 +133,7 @@ export class ItemEntryGrid {
   protected readonly volumetricWeight = computed(() =>
     this.rows().reduce((sum, r) => {
       if (!r.lengthCm || !r.widthCm || !r.heightCm) return sum;
-      const v = (r.lengthCm * r.widthCm * r.heightCm) / VOLUMETRIC_DIVISOR;
+      const v = (r.lengthCm * r.widthCm * r.heightCm) / (this.volumetricDivisor() || DEFAULT_VOLUMETRIC_DIVISOR);
       return sum + v * (r.quantity || 1);
     }, 0));
 
