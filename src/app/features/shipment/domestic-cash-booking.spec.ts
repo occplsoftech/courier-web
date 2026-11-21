@@ -21,6 +21,20 @@ describe('DomesticCashBooking', () => {
     expect(volumetricKg(rows)).toBeCloseTo(3.6);
   });
 
+  it('divides L×W×H by each service type\'s own divisor, 5000 when it has none', () => {
+    const rows = [{ length: 40, width: 40, height: 40, weightGrams: 2000, pieces: 1 }];
+    expect(volumetricKg(rows, 4000)).toBeCloseTo(16);
+    const c = make();
+    c['itemType'].set('PARCEL');
+    c['rows'].set(rows);
+    c['divisors'].set(new Map([['svc-surface', 4000], ['svc-air', null]]));
+    expect(c['weightsFor']('svc-surface').chargeable).toBeCloseTo(16);
+    expect(c['weightsFor']('svc-air').chargeable).toBeCloseTo(12.8);
+    expect(c['weights']().chargeable).toBeCloseTo(12.8); // no mode chosen yet
+    c['modeId'].set('svc-surface');
+    expect(c['weights']().volumetric).toBeCloseTo(16);
+  });
+
   it('will not leave Package Details until the size rows add up to the number of pieces', () => {
     const c = make();
     c['itemType'].set('PARCEL');

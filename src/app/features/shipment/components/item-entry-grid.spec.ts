@@ -62,6 +62,19 @@ describe('ItemEntryGrid — weight preview', () => {
     expect(weight.chargeable).toBeCloseTo(4.8, 3);
   });
 
+  it('divides by the chosen service type\'s own divisor when it has one', () => {
+    // 40×30×20 / 4000 = 6kg on a Surface service set to 4000.
+    fixture.componentRef.setInput('volumetricDivisor', 4000);
+    internals.patch(0, { itemName: 'Box', quantity: 1, weight: 2, lengthCm: 40, widthCm: 30, heightCm: 20 });
+    fixture.detectChanges();
+    expect(weight.volumetric).toBeCloseTo(6, 3);
+    expect(weight.chargeable).toBeCloseTo(6, 3);
+
+    fixture.componentRef.setInput('volumetricDivisor', null);
+    fixture.detectChanges();
+    expect(weight.volumetric).toBeCloseTo(4.8, 3);
+  });
+
   it('a row missing any one dimension contributes no volumetric weight, same as a single parcel', () => {
     internals.patch(0, { itemName: 'Box', quantity: 1, weight: 5, lengthCm: 40, widthCm: 30, heightCm: null });
     fixture.detectChanges();

@@ -172,7 +172,7 @@ interface ServiceRate {
           </app-card>
 
           <app-card title="Items" subtitle="Add every package on this shipment; weight and dimensions drive the chargeable weight.">
-            <app-item-entry-grid [initial]="voiceItems()" (itemsChange)="onItems($event)" (weightChange)="onWeight($event)" (packagesChange)="onPackages($event)">
+            <app-item-entry-grid [initial]="voiceItems()" [volumetricDivisor]="volumetricDivisor()" (itemsChange)="onItems($event)" (weightChange)="onWeight($event)" (packagesChange)="onPackages($event)">
               <label class="fld fld--sm"><span class="fld__l">Number of Packages</span>
                 <input class="fld__i" type="number" [value]="c('numberOfPackages').value" disabled /></label>
               <label class="fld fld--sm"><span class="fld__l">Declared Value</span>
@@ -809,6 +809,11 @@ export class ShipmentCreate implements OnInit {
   /** Service Type id -> `deliveryDays`, from the raw directory (options() only carries
    *  {value,label}) — feeds {@link expectedDeliveryPreview}. */
   private readonly serviceTypeDeliveryDays = signal<Map<string, number | null>>(new Map());
+  /** Service Type id -> its volumetric divisor; the item grid divides L×W×H by the chosen one. */
+  private readonly serviceTypeDivisors = signal<Map<string, number | null>>(new Map());
+  private readonly chosenServiceTypeId = signal<string | null>(null);
+  protected readonly volumetricDivisor = computed(() =>
+    this.serviceTypeDivisors().get(this.chosenServiceTypeId() ?? '') ?? null);
   /** `bookingDate + serviceType.deliveryDays`, client-side and instant (mirrors the
    *  server's own `ShipmentServiceImpl.expectedDeliveryDate`) — a live preview only, the
    *  saved value still comes from the create/update response. */
@@ -1239,8 +1244,11 @@ export class ShipmentCreate implements OnInit {
     });
     this.masters.serviceTypeDirectory().subscribe((rows) => {
       this.serviceTypeDeliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays])));
+      this.serviceTypeDivisors.set(new Map(rows.map((r) => [r.id, r.volumetricDivisor ?? null])));
       this.updateDeliveryPreview();
     });
+    this.chosenServiceTypeId.set(this.c('serviceTypeId').value ?? null);
+    this.c('serviceTypeId').valueChanges.subscribe((v) => this.chosenServiceTypeId.set(v ?? null));
     merge(this.c('serviceTypeId').valueChanges, this.c('bookingDate').valueChanges)
       .subscribe(() => this.updateDeliveryPreview());
     this.initBusinessBooking();

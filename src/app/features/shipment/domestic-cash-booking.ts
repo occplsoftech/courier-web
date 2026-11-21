@@ -18,7 +18,8 @@ import { BusinessCustomerService } from '@features/business-customer/business-cu
 import { CustomerResponse } from '@core/models/customer.model';
 import { FreightCalculationService } from './freight-calculation.service';
 
-const VOLUMETRIC_DIVISOR = 5000;
+/** The default when the service type sets no divisor of its own. */
+const DEFAULT_VOLUMETRIC_DIVISOR = 5000;
 
 /** One row of "pieces of the same size"; weight is per piece, in grams (as the desk is used to). */
 export interface SizeRow { length: number | null; width: number | null; height: number | null; weightGrams: number | null; pieces: number; }
@@ -27,6 +28,8 @@ export interface SizeRow { length: number | null; width: number | null; height: 
 export interface ModeRate {
   serviceTypeId: string; label: string; total: number | null; error?: string;
   freight: number; oda: number; extras: number; gst: number; estimate: number; days: number | null; basis?: string;
+  /** This service's own chargeable weight: its volumetric divisor can differ from the others'. */
+  chargeable: number;
 }
 
 /** A pincode as the wizard resolved it: its city and the Area the freight is priced against. */
@@ -37,10 +40,12 @@ export function actualKg(rows: SizeRow[]): number {
   return rows.reduce((s, r) => s + ((r.weightGrams ?? 0) * (r.pieces || 0)) / 1000, 0);
 }
 
-/** L×W×H / 5000 × pieces, in kg (the backend's own volumetric formula). */
-export function volumetricKg(rows: SizeRow[]): number {
+/** L×W×H / divisor × pieces, in kg (the backend's own volumetric formula). The divisor is
+ *  the service type's own (Air and Surface commonly differ), 5000 when it sets none. */
+export function volumetricKg(rows: SizeRow[], divisor?: number | null): number {
+  const by = divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   return rows.reduce((s, r) => (r.length && r.width && r.height)
-    ? s + (r.length * r.width * r.height) / VOLUMETRIC_DIVISOR * (r.pieces || 0) : s, 0);
+    ? s + (r.length * r.width * r.height) / by * (r.pieces || 0) : s, 0);
 }
 
 const VIEW_KEY = 'cs.domesticBooking.view';
@@ -270,7 +275,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
               }
               <div class="weights">
                 <span>Actual: <strong>{{ weights().actual | number: '1.3-3' }} kg</strong></span>
-                @if (itemType() === 'PARCEL') { <span>Volumetric: <strong>{{ weights().volumetric | number: '1.3-3' }} kg</strong></span> }
+                @if (itemType() === 'PARCEL') { <span>Volumetric (÷{{ divisorFor(modeId()) }}): <strong>{{ weights().volumetric | number: '1.3-3' }} kg</strong></span> }
                 <span>Chargeable: <strong>{{ weights().chargeable | number: '1.3-3' }} kg</strong></span>
               </div>
       </ng-template>
@@ -291,7 +296,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                         <span class="mode__err">{{ m.error }}</span>
                       } @else {
                         <span class="mode__meta">Rate: <strong>₹ {{ m.estimate | number: '1.0-0' }}</strong></span>
-                        <span class="mode__meta mode__meta--cw">Chargeable Weight: {{ weights().chargeable | number: '1.3-3' }} kg</span>
+                        <span class="mode__meta mode__meta--cw">Chargeable Weight: {{ m.chargeable | number: '1.3-3' }} kg</span>
                         <span class="mode__meta">Time to Deliver: {{ m.days != null ? m.days + ' day' + (m.days === 1 ? '' : 's') : 'N/A' }}</span>
                       }
                     </button>
@@ -420,7 +425,6 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     .sp { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
     .sp__main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
     .sp__side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
-    .sp .mode__meta--cw { display: none; }
     .sp__side app-button { display: block; }
     .sp__side ::ng-deep .app-btn { width: 100%; height: 50px; justify-content: center; }
     .sp .modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
@@ -577,13 +581,23 @@ export class DomesticCashBooking implements OnInit {
   protected readonly numPieces = signal<number | null>(null);
   protected readonly docWeightGrams = signal<number | null>(null);
   protected readonly rows = signal<SizeRow[]>([{ length: null, width: null, height: null, weightGrams: null, pieces: 1 }]);
-  protected readonly weights = computed(() => {
+  /** Weights with the chosen mode's volumetric divisor (5000 until a mode is chosen). */
+  protected readonly weights = computed(() => this.weightsFor(this.modeId()));
+
+  /** Service Type id -> its volumetric divisor (null = 5000). */
+  private readonly divisors = signal<Map<string, number | null>>(new Map());
+  protected divisorFor(serviceTypeId: string | null): number {
+    return (serviceTypeId && this.divisors().get(serviceTypeId)) || DEFAULT_VOLUMETRIC_DIVISOR;
+  }
+
+  /** Chargeable weight on one service: whichever is higher, actual or volumetric
+   *  (L×W×H ÷ that service's divisor). No minimum. */
+  weightsFor(serviceTypeId: string | null): { actual: number; volumetric: number; chargeable: number } {
     const doc = this.itemType() === 'DOCUMENT';
     const actual = doc ? (this.docWeightGrams() ?? 0) / 1000 : actualKg(this.rows());
-    const volumetric = doc ? 0 : volumetricKg(this.rows());
-    // Chargeable weight: whichever is higher, actual or volumetric (L×W×H / 5000). No minimum.
+    const volumetric = doc ? 0 : volumetricKg(this.rows(), this.divisorFor(serviceTypeId));
     return { actual: round3(actual), volumetric: round3(volumetric), chargeable: round3(Math.max(actual, volumetric)) };
-  });
+  }
 
   // Step 3
   private readonly serviceOptions = signal<SelectOption[]>([]);
@@ -625,8 +639,10 @@ export class DomesticCashBooking implements OnInit {
   private ratesKey = '';
   /** What the rates depend on; a change re-prices every mode. */
   private ratesKeyNow(ready = true): string {
-    return [ready, this.toPincode(), this.toInfo().areaId, this.weights().chargeable, this.itemType(), this.numPieces(),
-      this.serviceOptions().length, this.client()?.id].join('|');
+    // The package itself, not the chosen mode's weight: picking a mode must not re-price.
+    const pkg = this.itemType() === 'DOCUMENT' ? this.docWeightGrams() : JSON.stringify(this.rows());
+    return [ready, this.toPincode(), this.toInfo().areaId, pkg, this.itemType(), this.numPieces(),
+      this.serviceOptions().length, this.divisors().size, this.client()?.id].join('|');
   }
   private ratesSeq = 0;
 
@@ -646,7 +662,10 @@ export class DomesticCashBooking implements OnInit {
     }
     this.masters.options('service-types').subscribe((o) => this.serviceOptions.set(o));
     this.masters.options('package-types').subscribe((o) => this.packageTypeOptions.set(o));
-    this.masters.serviceTypeDirectory().subscribe((rows) => this.deliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays]))));
+    this.masters.serviceTypeDirectory().subscribe((rows) => {
+      this.deliveryDays.set(new Map(rows.map((r) => [r.id, r.deliveryDays])));
+      this.divisors.set(new Map(rows.map((r) => [r.id, r.volumetricDivisor ?? null])));
+    });
     this.masters.options('payment-modes').subscribe((o) => {
       this.paymentOptions.set(o);
       // Cash counter: Paid is the default, as on the earlier portal. Credit: always To Be Billed.
@@ -962,9 +981,10 @@ export class DomesticCashBooking implements OnInit {
     const calls: Observable<ModeRate>[] = services.map((svc) => {
       const label = svc.label.replace(/\s*\(.*\)$/, '');
       const days = this.deliveryDays().get(String(svc.value)) ?? null;
+      const chargeable = this.weightsFor(String(svc.value)).chargeable;
       return this.freight.calculate({
         bookingBranchId: this.branchId!, destinationPincode: this.toPincode(), destinationAreaId: areaId,
-        chargeableWeight: this.weights().chargeable, businessCustomerId: this.client()?.id ?? null,
+        chargeableWeight: chargeable, businessCustomerId: this.client()?.id ?? null,
         declaredValue: Number(this.d()['packageValue']) || null,
         serviceTypeId: String(svc.value), packageTypeId: this.packageTypeId(),
         numberOfPackages: this.numPieces() || 1, bookingDate: null
@@ -975,10 +995,10 @@ export class DomesticCashBooking implements OnInit {
           const extras = Number(r.customerExtraCharges ?? 0);
           const gst = Math.round((freight + oda + extras) * this.gstPercent()) / 100;
           return { serviceTypeId: String(svc.value), label, total: r.totalFreight, freight, oda, extras, gst,
-            estimate: Math.round(freight + oda + extras + gst), days, basis: r.weightSlabLabel };
+            estimate: Math.round(freight + oda + extras + gst), days, basis: r.weightSlabLabel, chargeable };
         }),
         catchError((e: HttpErrorResponse) => of<ModeRate>({ serviceTypeId: String(svc.value), label, total: null,
-          error: e?.error?.message ?? 'No rate for this destination.', freight: 0, oda: 0, extras: 0, gst: 0, estimate: 0, days }))
+          error: e?.error?.message ?? 'No rate for this destination.', freight: 0, oda: 0, extras: 0, gst: 0, estimate: 0, days, chargeable }))
       );
     });
     forkJoin(calls).subscribe((rates) => {

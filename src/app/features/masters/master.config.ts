@@ -414,6 +414,8 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'express', header: 'Express', kind: 'boolean', width: '100px', value: (r) => yesNo(r['express']) },
       { key: 'cutoffTime', header: 'Cut-off', width: '100px', value: (r) => text(r['cutoffTime']) },
       { key: 'priority', header: 'Priority', align: 'right', width: '100px', value: (r) => text(r['priority']) },
+      { key: 'volumetricDivisor', header: 'Vol. divisor', align: 'right', width: '120px',
+        value: (r) => text(r['volumetricDivisor'] ?? 5000) },
       STATUS_COLUMN
     ],
     fields: [
@@ -424,10 +426,12 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'cutoffTime', label: 'Booking cut-off', kind: 'time', group: 'Promise',
         hint: 'The last booking time that still makes today’s promise.' },
       { key: 'priority', label: 'Priority', kind: 'number', min: 0, group: 'Promise',
-        hint: 'Higher wins when more than one service can carry a shipment.' }
+        hint: 'Higher wins when more than one service can carry a shipment.' },
+      { key: 'volumetricDivisor', label: 'Volumetric divisor', kind: 'number', min: 1, group: 'Weight',
+        hint: 'Volumetric weight = L×W×H (cm) ÷ this. Air is usually 5000, Surface 4000. Empty uses 5000.' }
     ],
     filters: [{ key: 'express', label: 'Express only', kind: 'boolean' }],
-    exportColumns: ['code', 'name', 'deliveryDays', 'express', 'cutoffTime', 'priority', 'status']
+    exportColumns: ['code', 'name', 'deliveryDays', 'express', 'cutoffTime', 'priority', 'volumetricDivisor', 'status']
   },
 
   'payment-modes': {
