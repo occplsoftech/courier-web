@@ -35,13 +35,28 @@ type SlabGroup = FormGroup<{
   rateType: FormControl<string>; rate: FormControl<number | null>; stepKg: FormControl<number | null>;
 }>;
 
-/** The rows of the sheet's usual lane: up to 250 g, 500 g and 1 kg fixed, then per extra kg. */
-function defaultSlabs(): RateSlab[] {
+/** Whether a package-type option is Document (not Non Document). */
+export function isDocumentPackage(label: string | undefined | null): boolean {
+  return !!label && /\bdoc/i.test(label) && !/non[\s-]?doc/i.test(label);
+}
+
+/**
+ * A new lane's starting slabs: the first 500 g at a fixed rate, then a rate for each extra step up to 99 kg —
+ * every 500 g for Documents, every 1 kg for everything else. E.g. Document 40 fixed + 100 per 500 g: 1.5 kg = 240.
+ * Before a package type is chosen: up to 250 g, 500 g and 1 kg fixed, then per extra kg.
+ */
+export function defaultSlabs(document: boolean | null = null): RateSlab[] {
+  if (document === null) {
+    return [
+      { weightFromKg: 0.001, weightToKg: 0.25, rateType: 'FIXED', rate: 0, stepKg: null },
+      { weightFromKg: 0.251, weightToKg: 0.5, rateType: 'FIXED', rate: 0, stepKg: null },
+      { weightFromKg: 0.501, weightToKg: 1, rateType: 'FIXED', rate: 0, stepKg: null },
+      { weightFromKg: 1.001, weightToKg: 99, rateType: 'PER_EXTRA_KG', rate: 0, stepKg: 1 }
+    ];
+  }
   return [
-    { weightFromKg: 0.001, weightToKg: 0.25, rateType: 'FIXED', rate: 0, stepKg: null },
-    { weightFromKg: 0.251, weightToKg: 0.5, rateType: 'FIXED', rate: 0, stepKg: null },
-    { weightFromKg: 0.501, weightToKg: 1, rateType: 'FIXED', rate: 0, stepKg: null },
-    { weightFromKg: 1.001, weightToKg: 99, rateType: 'PER_EXTRA_KG', rate: 0, stepKg: 1 }
+    { weightFromKg: 0.001, weightToKg: 0.5, rateType: 'FIXED', rate: 0, stepKg: null },
+    { weightFromKg: 0.501, weightToKg: 99, rateType: 'PER_EXTRA_KG', rate: 0, stepKg: document ? 0.5 : 1 }
   ];
 }
 
@@ -209,7 +224,7 @@ function defaultSlabs(): RateSlab[] {
                     <button type="button" class="ico" aria-label="Remove slab" [disabled]="slabs.length === 1" (click)="slabs.removeAt(i)"><mat-icon>close</mat-icon></button>
                   </div>
                 }
-                <p class="hint">Fixed: the rate is the freight. Per extra kg: the fixed slab before it, plus the rate for each step (1 kg) or part of one above it.</p>
+                <p class="hint">Fixed: the rate is the freight. Per extra kg: the fixed slab before it, plus the rate for each step (Step kg: 0.5 for Documents, 1 for others) or part of one above it. E.g. 40 fixed to 0.5 kg + 100 per 0.5 kg: 1.5 kg = 40 + 100 + 100.</p>
                 <div class="bar">
                   <app-button variant="stroked" icon="add" (pressed)="addSlab()">Add slab</app-button>
                   @if (editingLane()) { <app-button variant="stroked" (pressed)="resetLane()">Cancel</app-button> }
@@ -460,6 +475,7 @@ export class RateCardForm implements OnInit {
     this.masters.options('service-types').subscribe((o) => this.serviceOpts.set(o));
     this.masters.options('package-types').subscribe((o) => this.packageOpts.set(o));
     this.charge.controls.calcMethod.valueChanges.subscribe((v) => this.calcTick.set(v));
+    this.lanePackage.valueChanges.subscribe(() => this.onLanePackage());
     this.resetLane();
     if (this.isCreate()) {
       this.head.controls.effectiveFrom.setValue(new Date().toISOString().slice(0, 10));
@@ -651,7 +667,21 @@ export class RateCardForm implements OnInit {
   protected addSlab(): void {
     const last = this.slabs.at(this.slabs.length - 1)?.getRawValue();
     const from = last?.weightToKg != null ? Math.round((Number(last.weightToKg) + 0.001) * 1000) / 1000 : 0.001;
-    this.slabs.push(this.slabGroup({ weightFromKg: from, weightToKg: from + 1, rateType: 'PER_EXTRA_KG', rate: 0, stepKg: 1 }));
+    this.slabs.push(this.slabGroup({ weightFromKg: from, weightToKg: from + 1, rateType: 'PER_EXTRA_KG', rate: 0,
+      stepKg: this.laneIsDocument() ? 0.5 : 1 }));
+  }
+
+  /** The chosen lane package type: true Document, false Non Document, null not chosen yet. */
+  private laneIsDocument(): boolean | null {
+    const opt = this.packageOpts().find((o) => String(o.value) === this.lanePackage.value);
+    return opt ? isDocumentPackage(opt.label) : null;
+  }
+
+  /** A new lane whose slabs are still untouched follows its package type's steps (500 g Document, 1 kg otherwise). */
+  protected onLanePackage(): void {
+    if (this.editingLane() || this.slabs.dirty) return;
+    this.slabs.clear();
+    defaultSlabs(this.laneIsDocument()).forEach((s) => this.slabs.push(this.slabGroup(s)));
   }
 
   protected editLane(l: RateLane): void {
@@ -666,6 +696,7 @@ export class RateCardForm implements OnInit {
     this.laneTo.setValue(''); this.laneService.setValue(''); this.lanePackage.setValue('');
     this.slabs.clear();
     defaultSlabs().forEach((s) => this.slabs.push(this.slabGroup(s)));
+    this.slabs.markAsPristine();
   }
 
   protected saveLane(): void {
