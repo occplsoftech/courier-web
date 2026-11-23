@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { DomesticCashBooking, actualKg, volumetricKg } from './domestic-cash-booking';
 
@@ -71,6 +71,14 @@ describe('DomesticCashBooking', () => {
     expect(body).toMatchObject({ manualShipmentNumber: 'AWB123', pickupPincode: '411001', deliveryPincode: '400001', destinationAreaId: 'area-1',
       serviceTypeId: 'svc-air', paymentModeId: 'pm-paid', declaredValue: 4500, numberOfPackages: 3, remarks: 'Ref: REF-9' });
     expect(body.items.map((i: any) => [i.quantity, i.weight])).toEqual([[2, 1.6], [1, 0.5]]);
+  });
+
+  it('charges GST at the company rate from Settings (0% here), not the branch\'s', () => {
+    const f = TestBed.createComponent(DomesticCashBooking);
+    f.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((r) => r.url.endsWith('/company-settings')).forEach((r) => r.flush({ success: true, data: { finance: { gstPercentage: 0 } } }));
+    expect((f.componentInstance as unknown as Record<string, any>)['gstPercent']()).toBe(0);
   });
 
   it('starts on Non-Document (Parcel)', () => {

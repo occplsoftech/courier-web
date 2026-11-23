@@ -17,6 +17,7 @@ import { CustomerService } from '@features/customer/customer.service';
 import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
 import { CustomerResponse } from '@core/models/customer.model';
 import { FreightCalculationService } from './freight-calculation.service';
+import { SettingsService } from '@features/settings/settings.service';
 
 /** The default when the service type sets no divisor of its own. */
 const DEFAULT_VOLUMETRIC_DIVISOR = 5000;
@@ -522,6 +523,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
 export class DomesticCashBooking implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly breadcrumb = inject(BreadcrumbService);
+  private readonly settings = inject(SettingsService);
   private readonly notify = inject(NotificationService);
   private readonly masters = inject(MasterDataService);
   private readonly shipments = inject(ShipmentService);
@@ -674,9 +676,16 @@ export class DomesticCashBooking implements OnInit {
         : o.find((opt) => /\(PAID\)$/i.test(opt.label)) ?? o.find((opt) => /cash/i.test(opt.label));
       if (paid && !this.paymentModeId()) this.paymentModeId.set(String(paid.value));
     });
+    // GST: the company's one rate (Settings → Finance), the same the server books with — not the branch's.
+    this.settings.get().subscribe({
+      next: (d) => {
+        const gst = (d as { finance?: { gstPercentage?: number } })?.finance?.gstPercentage;
+        if (gst != null) this.gstPercent.set(Number(gst));
+      },
+      error: () => { /* keep the default; the server's figure is what books */ }
+    });
     this.masters.branchDirectory().subscribe((list) => {
       const mine = list.find((b) => b.id === this.branchId);
-      if (mine?.gstPercentage != null) this.gstPercent.set(mine.gstPercentage);
       if (mine?.postalCode && !this.fromPincode()) this.lookup('from', mine.postalCode);
     });
   }

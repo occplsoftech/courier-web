@@ -435,7 +435,7 @@ interface ServiceRate {
                               <tr><td>Freight @if (r.basis) { <span class="why">{{ r.basis }}</span> }</td><td class="amt">₹{{ r.freight | number: '1.2-2' }}</td></tr>
                               @if (r.oda) { <tr><td>ODA</td><td class="amt">₹{{ r.oda | number: '1.2-2' }}</td></tr> }
                               @if (r.extras) { <tr><td>Other charges</td><td class="amt">₹{{ r.extras | number: '1.2-2' }}</td></tr> }
-                              <tr><td>GST {{ myBranchGstPercentage() }}%</td><td class="amt">₹{{ r.gst | number: '1.2-2' }}</td></tr>
+                              <tr><td>GST {{ gstPercentage() }}%</td><td class="amt">₹{{ r.gst | number: '1.2-2' }}</td></tr>
                               @if (r.roundOff) { <tr><td>Round off</td><td class="amt">₹{{ r.roundOff | number: '1.2-2' }}</td></tr> }
                               <tr class="tot"><td>Total</td><td class="amt">₹{{ r.estimate | number: '1.2-2' }}</td></tr>
                             </tbody></table>
@@ -927,11 +927,11 @@ export class ShipmentCreate implements OnInit {
   private areaCheckSeq = 0;
   private readonly destinationPincodeQuery$ = new Subject<string>();
 
-  /** The booking branch's own GST% (V25) — Other Charges is a manual, booking-time amount
+  /** The company GST% (Settings → Finance → GST Percentage, the one rate every booking charges) — Other Charges is a manual, booking-time amount
    *  the Pricing Engine never sees, so GST on it is computed here (mirroring
    *  `ShipmentServiceImpl.copyCharge`) purely so the live preview's total matches what
    *  actually gets persisted at booking. */
-  protected readonly myBranchGstPercentage = signal<number>(18);
+  protected readonly gstPercentage = signal<number>(18);
 
   /** Company Settings → Shipment → default chargeable weight, fed to `ItemEntryGrid`.
    *  Null until the settings call resolves — the grid falls back to its own constant
@@ -1095,8 +1095,10 @@ export class ShipmentCreate implements OnInit {
         this.ewayBillThreshold.set(Number(ewayBill.ewayBillMandatoryValue));
       }
       const finance = (d as { finance?: {
-        roundOffRule?: string; netAmountMaxDecreasePercent?: number; netAmountMaxIncreasePercent?: number;
+        gstPercentage?: number; roundOffRule?: string; netAmountMaxDecreasePercent?: number; netAmountMaxIncreasePercent?: number;
       } })?.finance;
+      // The one GST rate every booking charges (Settings → Finance), the same the server books with.
+      if (finance?.gstPercentage != null) this.gstPercentage.set(Number(finance.gstPercentage));
       if (finance?.roundOffRule) {
         this.companyRoundOffRule.set(finance.roundOffRule);
       }
@@ -1128,7 +1130,6 @@ export class ShipmentCreate implements OnInit {
       if (mine?.postalCode && !this.form.get('pickupPincode')?.value) {
         this.form.get('pickupPincode')?.setValue(mine.postalCode);
       }
-      if (mine?.gstPercentage != null) this.myBranchGstPercentage.set(mine.gstPercentage);
       if (mine?.city) this.myBranchCity.set(mine.city);
     });
     // MSRTC "To Branch" mode: the picked branch's own pincode becomes the destination
@@ -1500,7 +1501,7 @@ export class ShipmentCreate implements OnInit {
    *  GST% (V25) — mirrors `ShipmentServiceImpl.copyCharge`'s server-side math so the live
    *  total shown here matches what actually gets booked. */
   protected gstOnOtherCharges(): number {
-    return (this.otherCharges() * this.myBranchGstPercentage()) / 100;
+    return (this.otherCharges() * this.gstPercentage()) / 100;
   }
 
   /** Manual Door Delivery Charge (DOOR only) is taxed with GST, same branch GST% as
@@ -1508,7 +1509,7 @@ export class ShipmentCreate implements OnInit {
    *  `gstOnDoorDeliveryCharge`. Zero when Delivery Type isn't DOOR. */
   protected gstOnDoorDeliveryCharge(): number {
     if (this.c('deliveryType').value !== 'DOOR') return 0;
-    return (this.doorDeliveryCharge() * this.myBranchGstPercentage()) / 100;
+    return (this.doorDeliveryCharge() * this.gstPercentage()) / 100;
   }
 
   /** The company's To-Pay charge when the selected payment mode is To-Pay, else zero — the
@@ -1524,7 +1525,7 @@ export class ShipmentCreate implements OnInit {
   /** GST on {@link toPayCharge} at the booking branch's GST% — mirrors `copyCharge`'s
    *  `gstOnToPayCharge`. */
   protected gstOnToPayCharge(): number {
-    return (this.toPayCharge() * this.myBranchGstPercentage()) / 100;
+    return (this.toPayCharge() * this.gstPercentage()) / 100;
   }
 
   /** ODA Charge is normally the Pricing Engine's own figure (GST on it already folded into
@@ -1532,7 +1533,7 @@ export class ShipmentCreate implements OnInit {
    *  from the engine's figure needs fresh GST, same branch GST% as {@link gstOnOtherCharges}.
    *  Mirrors `ShipmentServiceImpl.copyCharge`'s `odaChargeDelta`/`gstOnOdaChargeDelta`. */
   protected gstOnOdaChargeDelta(): number {
-    return (this.odaChargeDelta() * this.myBranchGstPercentage()) / 100;
+    return (this.odaChargeDelta() * this.gstPercentage()) / 100;
   }
 
   /** Difference between the final ODA figure and the Pricing Engine's own `chargeBreakup.
@@ -1560,7 +1561,7 @@ export class ShipmentCreate implements OnInit {
   }
 
   protected gstOnFreightDelta(): number {
-    return (this.freightDelta() * this.myBranchGstPercentage()) / 100;
+    return (this.freightDelta() * this.gstPercentage()) / 100;
   }
 
   /** When the FOV (insurance) Applicable checkbox is on, FOV is 2% of Invoice Value instead
@@ -1581,7 +1582,7 @@ export class ShipmentCreate implements OnInit {
   }
 
   protected gstOnInsuranceChargeDelta(): number {
-    return (this.insuranceChargeDelta() * this.myBranchGstPercentage()) / 100;
+    return (this.insuranceChargeDelta() * this.gstPercentage()) / 100;
   }
 
   /** Every line `ShipmentServiceImpl.copyCharge`'s own `totalBeforeRoundOff` sums, before
@@ -1939,7 +1940,7 @@ export class ShipmentCreate implements OnInit {
         const freight = Number(d.baseFreight ?? 0);
         const oda = Number(d.odaCharge ?? 0);
         const extras = Number(d.customerExtraCharges ?? 0);
-        const gst = Math.round((freight + oda + extras) * this.myBranchGstPercentage()) / 100;
+        const gst = Math.round((freight + oda + extras) * this.gstPercentage()) / 100;
         const raw = freight + oda + extras + gst;
         const estimate = Math.round(raw);
         return { serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: d.totalFreight as number | null,
