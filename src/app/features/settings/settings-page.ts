@@ -112,6 +112,15 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
                   </div>
                 </div>
                 <div class="dcw">
+                  <label class="text-caption" for="fmp-input">Minimum profit on forwarding (%): only couriers costing at most the booked amount less this are offered (10 = a ₹100 booking shows couriers up to ₹90; 0 shows all)</label>
+                  <div class="dcw__row">
+                    <input id="fmp-input" class="dcw__i" type="number" step="0.5" min="0" max="100"
+                           [value]="forwardProfitInput() ?? ''" (input)="onForwardProfitInput($event)" />
+                    <button type="button" class="dcw__save" [disabled]="savingForwardProfit() || forwardProfitInput() == null"
+                            (click)="saveForwardProfit()">{{ savingForwardProfit() ? 'Saving…' : 'Save' }}</button>
+                  </div>
+                </div>
+                <div class="dcw">
                   <label class="rzp__check">
                     <input type="checkbox" [checked]="manualStatusOverrideInput()" [disabled]="savingManualOverride()"
                            (change)="onManualStatusOverrideToggle($event)" />
@@ -275,6 +284,8 @@ export class SettingsPage implements OnInit {
   readonly defaultAppointmentChargeInput = signal<number | null>(null);
   readonly savingAppointmentCharge = signal(false);
   readonly toPayChargeInput = signal<number | null>(null);
+  readonly forwardProfitInput = signal<number | null>(null);
+  readonly savingForwardProfit = signal(false);
   readonly savingToPayCharge = signal(false);
 
   /** Shipment's third inline field — a plain toggle, saved immediately on change (no
@@ -328,13 +339,14 @@ export class SettingsPage implements OnInit {
       next: (d) => {
         this.data.set(d ?? {});
         const shipment = (d as { shipment?: {
-          defaultAppointmentDeliveryCharge?: number; toPayCharge?: number;
+          defaultAppointmentDeliveryCharge?: number; toPayCharge?: number; forwardMinProfitPercent?: number;
           manualStatusOverrideEnabled?: boolean;
         } })?.shipment;
         if (shipment?.defaultAppointmentDeliveryCharge != null) {
           this.defaultAppointmentChargeInput.set(Number(shipment.defaultAppointmentDeliveryCharge));
         }
         if (shipment?.toPayCharge != null) this.toPayChargeInput.set(Number(shipment.toPayCharge));
+        if (shipment?.forwardMinProfitPercent != null) this.forwardProfitInput.set(Number(shipment.forwardMinProfitPercent));
         this.manualStatusOverrideInput.set(shipment?.manualStatusOverrideEnabled === true);
         const finance = (d as { finance?: {
           gstPercentage?: number; roundOffRule?: string; netAmountMaxDecreasePercent?: number; netAmountMaxIncreasePercent?: number;
@@ -404,6 +416,26 @@ export class SettingsPage implements OnInit {
         this.notify.success('To-Pay charge updated');
       },
       error: () => this.savingToPayCharge.set(false)
+    });
+  }
+
+  onForwardProfitInput(e: Event): void {
+    const v = (e.target as HTMLInputElement).value;
+    this.forwardProfitInput.set(v === '' ? null : Number(v));
+  }
+
+  saveForwardProfit(): void {
+    const value = this.forwardProfitInput();
+    if (value == null || value < 0 || value > 100) { this.notify.error('Enter a percentage from 0 to 100.'); return; }
+    this.savingForwardProfit.set(true);
+    this.service.patchSection('shipment', { forwardMinProfitPercent: value }).subscribe({
+      next: (d) => {
+        const shipment = (d as { shipment?: unknown })?.shipment;
+        if (shipment) this.data.update((prev) => ({ ...prev, shipment }));
+        this.savingForwardProfit.set(false);
+        this.notify.success('Forwarding profit margin updated');
+      },
+      error: () => this.savingForwardProfit.set(false)
     });
   }
 
@@ -561,7 +593,7 @@ export class SettingsPage implements OnInit {
     const d = this.data() as Record<string, Record<string, unknown>>;
     const s = d[section] ?? {};
     // defaultChargeableWeightKg is retired (no minimum chargeable weight); not shown.
-    return Object.entries(s).filter(([k]) => k !== 'defaultChargeableWeightKg').slice(0, 4).map(([k, v]) => ({
+    return Object.entries(s).filter(([k]) => k !== 'defaultChargeableWeightKg' && k !== 'forwardMinProfitPercent').slice(0, 4).map(([k, v]) => ({
       k: k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()),
       v: v === null || v === undefined || v === '' ? '—' : String(v)
     }));
