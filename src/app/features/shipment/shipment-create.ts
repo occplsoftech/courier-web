@@ -27,6 +27,7 @@ import {
   ShipmentItemRequest, CreateShipmentRequest, PricingResponse, DeliveryType, DELIVERY_TYPES
 } from '@core/models/shipment.model';
 import { FreightCalculationResponse } from '@core/models/district-level-freight.model';
+import { fovCharge } from './fov';
 import { ItemEntryGrid } from './components/item-entry-grid';
 import { ChargeSummary } from './components/charge-summary';
 import { VoiceMicButton } from './components/voice-mic-button';
@@ -227,7 +228,7 @@ interface ServiceRate {
                   <input type="checkbox" [formControl]="c('insuranceApplicable')" />
                   <span>FOV Applicable</span>
                 </label>
-                <p class="hint pref-box__note">2% of Invoice Value, added to charges automatically.</p>
+                <p class="hint pref-box__note">0.2% of Invoice Value (or Declared Value), minimum ₹100, added to charges automatically.</p>
               </div>
             </div>
           </app-card>
@@ -1564,7 +1565,7 @@ export class ShipmentCreate implements OnInit {
     return (this.freightDelta() * this.gstPercentage()) / 100;
   }
 
-  /** When the FOV (insurance) Applicable checkbox is on, FOV is 2% of Invoice Value instead
+  /** When the FOV (insurance) Applicable checkbox is on, FOV is 0.2% of Invoice Value (else Declared Value), minimum ₹100, instead
    *  of the Pricing Engine's own rate-driven `chargeBreakup.insuranceCharge` — mirrors
    *  `ShipmentServiceImpl.copyCharge`'s `finalInsuranceCharge`. Plain method, not
    *  `computed()` — same `FormControl.value`-staleness reason as {@link readyToPrice}. */
@@ -1572,7 +1573,7 @@ export class ShipmentCreate implements OnInit {
     const engineInsurance = this.pricing()?.chargeBreakup.insuranceCharge ?? 0;
     if (!this.c('insuranceApplicable').value) return engineInsurance;
     const invoiceValue = Number(this.c('invoiceValue').value) || 0;
-    return invoiceValue * 0.02;
+    return fovCharge(invoiceValue > 0 ? invoiceValue : Number(this.c('declaredValue').value) || 0);
   }
 
   /** Difference between {@link finalInsuranceCharge} and the engine's own figure — zero

@@ -96,6 +96,20 @@ describe('DomesticCashBooking', () => {
     expect(c['cargoNote'](mode('air', 500, 500, { chargeable: 7 }))).toBe(false);
   });
 
+  it('adds FOV only when ticked: 0.2% of the package value, at least ₹100, with GST, and books it', () => {
+    const c = make();
+    c['gstPercent'].set(18);
+    c['d'].update((d: any) => ({ ...d, packageValue: '125000' }));
+    const m = mode('air', 1000, 1180, { freight: 1000, gst: 180 });
+    expect(c['totalOf'](m)).toBe(1180);
+    c['fovOn'].set(true);
+    expect(c['fov']()).toBe(250);
+    expect(c['totalOf'](m)).toBe(1180 + 250 + 45);
+    c['d'].update((d: any) => ({ ...d, packageValue: '5000' }));
+    expect(c['fov']()).toBe(100);
+    expect(c['buildRequest']().insuranceApplicable).toBe(true);
+  });
+
   it('starts on Non-Document (Parcel)', () => {
     const c = make();
     expect(c['itemType']()).toBe('PARCEL');
