@@ -71,6 +71,8 @@ export interface ConsignmentPrintData {
   /** Company To-Pay charge (backend-added on To-Pay bookings, taxed with GST) — absent/0 on any
    *  other payment mode. Printed totals add it back like the other raw charge lines. */
   toPayCharge?: number;
+  /** Cash on Delivery: the COD charge (2% of the collection amount, at least ₹100). */
+  codCharge?: number;
   /** Booking form's remarks field — printed as the LR's "Special Instruction" line. */
   remarks: string | null;
   /** Booked-by user's name — `ShipmentResponse.createdByName`, absent if the booking user
@@ -229,7 +231,7 @@ type CopyLabel = 'Customer Copy' | 'Office Copy' | 'Driver Copy' | 'Delivery Cop
 
 function copy(d: ConsignmentPrintData, label: CopyLabel): string {
   const weight = d.chargeableWeight % 1 === 0 ? d.chargeableWeight.toFixed(0) : d.chargeableWeight.toFixed(3);
-  const total = d.charges.netAmount + d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0);
+  const total = d.charges.netAmount + d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0) + (d.codCharge ?? 0);
   const taxableAmount = total - d.charges.gstAmount;
   const detailRows: Array<[string, string]> = [
     ['From', d.bookingPincode ? `${d.bookingBranchLabel} - ${d.bookingPincode}` : d.bookingBranchLabel],

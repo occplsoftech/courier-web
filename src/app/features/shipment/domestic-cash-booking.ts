@@ -17,7 +17,7 @@ import { CustomerService } from '@features/customer/customer.service';
 import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
 import { CustomerResponse } from '@core/models/customer.model';
 import { FreightCalculationService } from './freight-calculation.service';
-import { fovCharge, FOV_MINIMUM, FOV_PERCENT } from './fov';
+import { codCharge, COD_MINIMUM, COD_PERCENT, fovCharge, FOV_MINIMUM, FOV_PERCENT, isCodOption } from './fov';
 import { SettingsService } from '@features/settings/settings.service';
 
 /** The default when the service type sets no divisor of its own. */
@@ -213,7 +213,9 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 @if (m.oda) { <div class="sum__row"><span>ODA</span><span>₹{{ m.oda | number: '1.2-2' }}</span></div> }
                 @if (m.extras) { <div class="sum__row"><span>Other Charges</span><span>₹{{ m.extras | number: '1.2-2' }}</span></div> }
                 @if (fovOn()) { <div class="sum__row"><span>FOV</span><span>₹{{ fov() | number: '1.2-2' }}</span></div> }
+                @if (codFee()) { <div class="sum__row"><span>COD Charge</span><span>₹{{ codFee() | number: '1.2-2' }}</span></div> }
                 <div class="sum__row"><span>GST {{ gstPercent() }}%</span><span>₹{{ m.gst + fovGst() | number: '1.2-2' }}</span></div>
+                @if (isCod() && codAmount()) { <div class="sum__row"><span>COD to collect</span><span>₹{{ codAmount() | number: '1.0-0' }}</span></div> }
                 @if (cargoNote(m)) { <p class="sum__note">Cargo: you can ship up to {{ cargoMin }} kg for this same amount.</p> }
               }
               <div class="sum__tot"><span>Total</span><span>{{ chosen() ? '₹' + (totalOf(chosen()!) | number: '1.0-0') : '—' }}</span></div>
@@ -330,6 +332,13 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 <span>Risk cover (FOV) <small class="muted">· {{ fovPercent }}% of package value, minimum ₹{{ fovMin }}</small></span>
                 @if (fovOn()) { <strong class="fov__amt">FOV ₹{{ fov() | number: '1.2-2' }}</strong> }
               </label>
+              @if (credit && codModeId()) {
+                <label class="fov">
+                  <input type="checkbox" [checked]="isCod()" (change)="setCreditCod($any($event.target).checked)" />
+                  <span>Cash on Delivery (COD) <small class="muted">· freight billed to the client; the rider collects the COD amount</small></span>
+                </label>
+                @if (isCod()) { <ng-container [ngTemplateOutlet]="tCod" /> }
+              }
               <div class="grid2 parties">
                 @for (side of sides; track side.key) {
                   <div>
@@ -357,6 +366,13 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                   </button>
                 }
               </div>
+              @if (isCod()) { <ng-container [ngTemplateOutlet]="tCod" /> }
+      </ng-template>
+
+      <ng-template #tCod>
+              <label class="f f--narrow cod"><span class="f__l">COD Collection Amount (₹)</span>
+                <input class="f__i" inputmode="numeric" [value]="codAmount()" (input)="setCodAmount($event)" /></label>
+              <p class="cod__hint">The rider collects this from the consignee for the shipper. COD charge {{ codPercent }}%, minimum ₹{{ codMin }}@if (codFee()) {: <strong>₹{{ codFee() | number: '1.2-2' }}</strong>}</p>
       </ng-template>
 
       @if (weightAsk()) {
@@ -412,8 +428,10 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                   @if (m.oda) { <tr><td>ODA</td><td>₹ {{ m.oda | number: '1.2-2' }}</td></tr> }
                   @if (m.extras) { <tr><td>Other Charges</td><td>₹ {{ m.extras | number: '1.2-2' }}</td></tr> }
                   @if (fovOn()) { <tr><td>FOV (risk cover)</td><td>₹ {{ fov() | number: '1.2-2' }}</td></tr> }
+                  @if (codFee()) { <tr><td>COD Charge</td><td>₹ {{ codFee() | number: '1.2-2' }}</td></tr> }
                   <tr><td>GST {{ gstPercent() }}%</td><td>₹ {{ m.gst + fovGst() | number: '1.2-2' }}</td></tr>
                   <tr class="inv__total"><td>Total</td><td>₹ {{ totalOf(m) | number: '1.0-0' }}</td></tr>
+                  @if (isCod() && codAmount()) { <tr><td>COD to collect from consignee</td><td>₹ {{ codAmount() | number: '1.0-0' }}</td></tr> }
                 }
               </tbody>
             </table>
@@ -514,6 +532,8 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     .fov { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; font: 400 17px var(--font-sans); color: var(--content-fg); cursor: pointer; }
     .fov input { width: 18px; height: 18px; accent-color: var(--brand-600); }
     .fov__amt { color: var(--brand-600); }
+    .cod { margin-top: 12px; }
+    .cod__hint { margin: 6px 0 0; color: var(--content-muted); font: 400 15px var(--font-sans); }
     .mode__note, .sum__note { color: var(--occpl-color-success, #15803d); font: 500 15px var(--font-sans); }
     .sum__note { margin: 8px 0 0; }
     .chosen { display: flex; flex-wrap: wrap; gap: 6px 24px; padding: 12px 14px; border-radius: 8px; background: var(--brand-50); font: 400 17px var(--font-sans); color: var(--content-fg); }
@@ -642,10 +662,31 @@ export class DomesticCashBooking implements OnInit {
   protected readonly fovPercent = FOV_PERCENT;
   protected readonly fovMin = FOV_MINIMUM;
   protected readonly fov = computed(() => this.fovOn() ? fovCharge(Number(this.d()['packageValue']) || 0) : 0);
-  protected readonly fovGst = computed(() => Math.round(this.fov() * this.gstPercent()) / 100);
-  /** What the customer pays on a mode: its rate plus FOV and its GST when ticked. */
+  /** Cash on Delivery: the payment mode is COD; the rider collects {@link codAmount}; the shipper pays a COD charge. */
+  protected readonly codModeId = computed(() => this.paymentOptions().find((o) => isCodOption(o.label))?.value?.toString() ?? null);
+  protected readonly isCod = computed(() => !!this.paymentModeId() && this.paymentModeId() === this.codModeId());
+  protected readonly codAmount = signal('');
+  protected readonly codPercent = COD_PERCENT;
+  protected readonly codMin = COD_MINIMUM;
+  protected readonly codFee = computed(() => this.isCod() ? codCharge(Number(this.codAmount()) || 0) : 0);
+  /** GST on what this page adds on top of a mode's rate: FOV and the COD charge. */
+  protected readonly fovGst = computed(() => Math.round((this.fov() + this.codFee()) * this.gstPercent()) / 100);
+  /** What the shipper pays on a mode: its rate plus FOV and the COD charge, with their GST. */
   protected totalOf(m: ModeRate): number {
-    return Math.round(m.freight + m.oda + m.extras + m.gst + this.fov() + this.fovGst());
+    return Math.round(m.freight + m.oda + m.extras + m.gst + this.fov() + this.codFee() + this.fovGst());
+  }
+  protected setCodAmount(e: Event): void {
+    const el = e.target as HTMLInputElement;
+    el.value = el.value.replace(/\D/g, '').slice(0, 9);
+    this.codAmount.set(el.value);
+  }
+  /** Credit: COD switches the payment mode between COD and To Be Billed. */
+  protected setCreditCod(on: boolean): void {
+    const tbb = this.paymentOptions().find((o) => /\(TBB\)$/i.test(o.label)) ?? this.paymentOptions().find((o) => /credit|to be billed/i.test(o.label));
+    this.paymentModeId.set(on ? this.codModeId() : tbb ? String(tbb.value) : null);
+  }
+  private codError(): string | null {
+    return this.isCod() && !(Number(this.codAmount()) > 0) ? 'Enter the COD collection amount.' : null;
   }
   protected readonly cargoMin = CARGO_MIN_KG;
   protected cargoNote(m: ModeRate): boolean { return !!m.cargo && m.chargeable < CARGO_MIN_KG; }
@@ -1003,10 +1044,11 @@ export class DomesticCashBooking implements OnInit {
         const phones: [string, string][] = [['pickupContact', 'Pickup Contact Number'], ['pickupAltContact', 'Alternate Pickup Contact Number'],
           ['deliveryContact', 'Delivery Contact Number'], ['deliveryAltContact', 'Alternate Delivery Contact Number']];
         const bad = phones.find(([k]) => d[k] && !PHONE.test(d[k]));
-        return bad ? `${bad[1]} must be exactly 10 digits.` : null;
+        if (bad) return `${bad[1]} must be exactly 10 digits.`;
+        return this.credit ? this.codError() : null;
       }
       case 4:
-        if (this.paymentModeId()) return null;
+        if (this.paymentModeId()) return this.codError();
         return this.credit ? 'The payment-mode list has no To Be Billed (TBB) mode — add it under Masters.' : 'Please select a payment method.';
       default:
         return null;
@@ -1092,7 +1134,8 @@ export class DomesticCashBooking implements OnInit {
       serviceTypeId: this.modeId()!, packageTypeId: this.packageTypeId(), paymentModeId: this.paymentModeId()!,
       declaredValue: value, numberOfPackages: this.numPieces() || 1, items,
       remarks: extra || null, deliveryType: 'DOOR', businessCustomerId: this.client()?.id ?? null,
-      insuranceApplicable: this.fovOn() || null
+      insuranceApplicable: this.fovOn() || null,
+      codAmount: this.isCod() ? Number(this.codAmount()) || null : null
     };
   }
 
@@ -1191,6 +1234,8 @@ export class DomesticCashBooking implements OnInit {
     this.modeId.set(null);
     this.ratesKey = '';
     this.fovOn.set(false);
+    this.codAmount.set('');
+    if (this.credit && this.isCod()) this.setCreditCod(false);
     this.d.update((d) => ({ ...d, packageDescription: '', packageValue: '', deliveryName: '', deliveryAddress: '',
       deliveryContact: '', deliveryAltContact: '', deliveryEmail: '' }));
     this.active.set(0);

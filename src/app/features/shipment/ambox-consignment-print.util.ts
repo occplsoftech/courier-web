@@ -32,7 +32,7 @@ const COPY_LABELS: CopyLabel[] = ['CONSIGNOR COPY', 'P.O.D. COPY', 'DRIVER COPY'
 
 function sheet(d: ConsignmentPrintData, label: CopyLabel): string {
   const weight = d.chargeableWeight % 1 === 0 ? d.chargeableWeight.toFixed(0) : d.chargeableWeight.toFixed(3);
-  const total = d.charges.netAmount + d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0);
+  const total = d.charges.netAmount + d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0) + (d.codCharge ?? 0);
   const tax = d.charges.gstAmount;
   const subtotal = total - tax;
 
@@ -57,7 +57,7 @@ function sheet(d: ConsignmentPrintData, label: CopyLabel): string {
     ['WBC', 0],
     ['HANDLING CHARGES', d.charges.handlingCharge],
     ['D.O.D / C.O.D SERVICE CHARGES', d.charges.odaCharge],
-    ['OSC', d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.toPayCharge ?? 0)],
+    ['OSC', d.otherCharges + (d.appointmentDeliveryCharge ?? 0) + (d.toPayCharge ?? 0) + (d.codCharge ?? 0)],
     ['HAMALI', d.charges.fuelCharge + d.charges.insuranceCharge + d.charges.applicableCharges]
   ];
 

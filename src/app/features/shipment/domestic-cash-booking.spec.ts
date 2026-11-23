@@ -110,6 +110,25 @@ describe('DomesticCashBooking', () => {
     expect(c['buildRequest']().insuranceApplicable).toBe(true);
   });
 
+  it('COD: asks for the collection amount, adds 2% (min ₹100) with GST, and books the amount', () => {
+    const c = make();
+    c['gstPercent'].set(18);
+    c['paymentOptions'].set([{ value: 'pm-paid', label: 'Paid (PAID)' }, { value: 'pm-cod', label: 'Cash on Delivery (COD)' }]);
+    c['paymentModeId'].set('pm-cod');
+    expect(c['stepError'](4)).toBe('Enter the COD collection amount.');
+    c['codAmount'].set('12500');
+    expect(c['stepError'](4)).toBeNull();
+    expect(c['codFee']()).toBe(250);
+    const m = mode('air', 1000, 1180, { freight: 1000, gst: 180 });
+    expect(c['totalOf'](m)).toBe(1180 + 250 + 45);
+    expect(c['buildRequest']().codAmount).toBe(12500);
+    c['codAmount'].set('900');
+    expect(c['codFee']()).toBe(100);
+    c['paymentModeId'].set('pm-paid');
+    expect(c['codFee']()).toBe(0);
+    expect(c['buildRequest']().codAmount).toBeNull();
+  });
+
   it('starts on Non-Document (Parcel)', () => {
     const c = make();
     expect(c['itemType']()).toBe('PARCEL');
@@ -164,6 +183,16 @@ describe('DomesticCashBooking', () => {
       c['d'].set({ packageDescription: 'Medicines', packageValue: '18000', pickupName: 'Sai Pharma', pickupAddress: 'MIDC', pickupContact: '9890011122',
         pickupAltContact: '', pickupEmail: '', deliveryName: 'City Care', deliveryAddress: 'Bandra', deliveryContact: '9819012345', deliveryAltContact: '', deliveryEmail: '' });
       expect(c['buildRequest']()).toMatchObject({ businessCustomerId: 'cust-9', paymentModeId: 'pm-tbb', serviceTypeId: 'svc-srf' });
+    });
+
+    it('COD on a credit booking switches the payment mode between COD and To Be Billed', () => {
+      const c = makeCredit();
+      c['paymentOptions'].set([{ value: 'pm-tbb', label: 'To Be Billed (TBB)' }, { value: 'pm-cod', label: 'Cash on Delivery (COD)' }]);
+      c['paymentModeId'].set('pm-tbb');
+      c['setCreditCod'](true);
+      expect(c['paymentModeId']()).toBe('pm-cod');
+      c['setCreditCod'](false);
+      expect(c['paymentModeId']()).toBe('pm-tbb');
     });
 
     it('Continue Inscan keeps the client and sender but clears the shipment', () => {

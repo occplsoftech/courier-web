@@ -20,7 +20,7 @@ const COPY_LABELS: CopyLabel[] = ['Customer Copy', 'Delivery Copy', 'Driver Copy
 
 function sheet(d: ConsignmentPrintData, label: CopyLabel): string {
   const weight = d.chargeableWeight % 1 === 0 ? d.chargeableWeight.toFixed(0) : d.chargeableWeight.toFixed(3);
-  const total = d.charges.netAmount + d.otherCharges + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0);
+  const total = d.charges.netAmount + d.otherCharges + (d.doorDeliveryCharge ?? 0) + (d.toPayCharge ?? 0) + (d.codCharge ?? 0);
   const taxableAmount = total - d.charges.gstAmount;
   const isPaid = d.paymentModeLabel.includes('(PAID)');
   const isToPay = d.paymentModeLabel.includes('(TO_PAY)');

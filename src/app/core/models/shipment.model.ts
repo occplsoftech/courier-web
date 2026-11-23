@@ -349,6 +349,8 @@ export interface ShipmentCharge {
   /** Company-configured flat To-Pay charge, added by the backend on To-Pay bookings — taxed
    *  with GST (folded into `gstAmount`). Zero on any other payment mode. */
   toPayCharge: number;
+  /** Cash on Delivery: 2% of the COD collection amount, at least ₹100 — taxed with GST. Zero otherwise. */
+  codCharge?: number;
   /** Commission breakdown (V28), computed from the booking branch's own charge percentages. */
   commissionOnBasicFreight: number;
   branchCommissionOnOtherAmount: number;
@@ -487,6 +489,8 @@ export interface ShipmentFields {
   /** Optional, defaults to zero, meaningful only when `deliveryType` is DOOR. Deliberately
    *  never taxed with GST, unlike `otherCharges`. */
   doorDeliveryCharge?: number | null;
+  /** Cash on Delivery: the amount the rider collects from the consignee for the shipper. Required on COD. */
+  codAmount?: number | null;
 }
 
 /** Body of POST /shipments — mirrors backend `CreateShipmentRequest`. */

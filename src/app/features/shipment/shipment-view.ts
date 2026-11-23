@@ -857,12 +857,13 @@ export class ShipmentView implements OnInit {
         // charges, and the print totals add each back on top (same shape as the booking-time
         // print) — take them out here so they are counted once.
         netAmount: c.netAmount - (c.otherCharges ?? 0) - (c.appointmentDeliveryCharge ?? 0)
-          - (c.doorDeliveryCharge ?? 0) - (c.toPayCharge ?? 0)
+          - (c.doorDeliveryCharge ?? 0) - (c.toPayCharge ?? 0) - (c.codCharge ?? 0)
       },
       otherCharges: c.otherCharges,
       appointmentDeliveryCharge: c.appointmentDeliveryCharge,
       doorDeliveryCharge: c.doorDeliveryCharge,
       toPayCharge: c.toPayCharge,
+      codCharge: c.codCharge ?? 0,
       remarks: s.remarks ?? null,
       createdByName: s.createdByName ?? null,
       invoiceValue: s.invoiceValue ?? null,
