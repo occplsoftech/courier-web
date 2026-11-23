@@ -36,8 +36,8 @@ export class ApiService {
       .pipe(map((r) => r.data));
   }
 
-  post<T>(path: string, body: unknown): Observable<T> {
-    return this.http.post<ApiResponse<T>>(this.base + path, body).pipe(map((r) => r.data));
+  post<T>(path: string, body: unknown, context?: HttpContext): Observable<T> {
+    return this.http.post<ApiResponse<T>>(this.base + path, body, { context }).pipe(map((r) => r.data));
   }
 
   put<T>(path: string, body: unknown): Observable<T> {

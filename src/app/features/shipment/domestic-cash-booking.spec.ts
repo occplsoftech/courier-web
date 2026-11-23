@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { DomesticCashBooking, actualKg, volumetricKg } from './domestic-cash-booking';
+import { DomesticCashBooking, ModeRate, actualKg, pricedModes, volumetricKg } from './domestic-cash-booking';
 
 describe('DomesticCashBooking', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] }));
@@ -79,6 +79,21 @@ describe('DomesticCashBooking', () => {
     const http = TestBed.inject(HttpTestingController);
     http.match((r) => r.url.endsWith('/company-settings')).forEach((r) => r.flush({ success: true, data: { finance: { gstPercentage: 0 } } }));
     expect((f.componentInstance as unknown as Record<string, any>)['gstPercent']()).toBe(0);
+  });
+
+  const mode = (id: string, total: number | null, estimate: number, extra: Partial<ModeRate> = {}): ModeRate => ({
+    serviceTypeId: id, label: id, total, freight: 0, oda: 0, extras: 0, gst: 0, estimate, days: null, chargeable: 5, ...extra });
+
+  it('offers only the services with charges set up, cheapest first', () => {
+    const shown = pricedModes([mode('air', 300, 300), mode('none', null, 0, { error: 'No rate' }), mode('zero', 0, 0), mode('surface', 120, 120)]);
+    expect(shown.map((m) => m.serviceTypeId)).toEqual(['surface', 'air']);
+  });
+
+  it('notes on Cargo that up to 20 kg costs the same, only below 20 kg', () => {
+    const c = make();
+    expect(c['cargoNote'](mode('cargo', 500, 500, { cargo: true, chargeable: 7 }))).toBe(true);
+    expect(c['cargoNote'](mode('cargo', 500, 500, { cargo: true, chargeable: 20 }))).toBe(false);
+    expect(c['cargoNote'](mode('air', 500, 500, { chargeable: 7 }))).toBe(false);
   });
 
   it('starts on Non-Document (Parcel)', () => {

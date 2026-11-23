@@ -31,6 +31,16 @@ export interface ModeRate {
   freight: number; oda: number; extras: number; gst: number; estimate: number; days: number | null; basis?: string;
   /** This service's own chargeable weight: its volumetric divisor can differ from the others'. */
   chargeable: number;
+  /** A Cargo service: priced at 20 kg at least, so a lighter parcel gets the note that 20 kg costs the same. */
+  cargo?: boolean;
+}
+
+/** Cargo is charged for at least this much: anything lighter costs the same as this. */
+export const CARGO_MIN_KG = 20;
+
+/** The modes to offer: only those with charges set up (a price above 0), cheapest first. */
+export function pricedModes(rates: ModeRate[]): ModeRate[] {
+  return rates.filter((m) => m.total !== null && m.total > 0).sort((a, b) => a.estimate - b.estimate);
 }
 
 /** A pincode as the wizard resolved it: its city and the Area the freight is priced against. */
@@ -202,6 +212,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 @if (m.oda) { <div class="sum__row"><span>ODA</span><span>₹{{ m.oda | number: '1.2-2' }}</span></div> }
                 @if (m.extras) { <div class="sum__row"><span>Other Charges</span><span>₹{{ m.extras | number: '1.2-2' }}</span></div> }
                 <div class="sum__row"><span>GST {{ gstPercent() }}%</span><span>₹{{ m.gst | number: '1.2-2' }}</span></div>
+                @if (cargoNote(m)) { <p class="sum__note">Cargo: you can ship up to {{ cargoMin }} kg for this same amount.</p> }
               }
               <div class="sum__tot"><span>Total</span><span>{{ chosen() ? '₹' + (chosen()!.estimate | number: '1.0-0') : '—' }}</span></div>
             </div>
@@ -285,7 +296,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
               @if (ratesLoading() && !modes().length) {
                 <p class="muted">Getting rates for every mode…</p>
               } @else if (!modes().length) {
-                <p class="muted">No delivery mode is set up for this company yet.</p>
+                <p class="muted">{{ noRates() ? 'No delivery mode has charges set up for this destination and weight.' : 'No delivery mode is set up for this company yet.' }}</p>
               } @else {
                 <div class="modes" role="radiogroup" aria-label="Delivery mode">
                   @for (m of modes(); track m.serviceTypeId) {
@@ -299,6 +310,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                         <span class="mode__meta">Rate: <strong>₹ {{ m.estimate | number: '1.0-0' }}</strong></span>
                         <span class="mode__meta mode__meta--cw">Chargeable Weight: {{ m.chargeable | number: '1.3-3' }} kg</span>
                         <span class="mode__meta">Time to Deliver: {{ m.days != null ? m.days + ' day' + (m.days === 1 ? '' : 's') : 'N/A' }}</span>
+                        @if (cargoNote(m)) { <span class="mode__note">You can ship up to {{ cargoMin }} kg for this same amount.</span> }
                       }
                     </button>
                   }
@@ -483,13 +495,16 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
     .mode:hover:not(:disabled) { border-color: var(--brand-500); }
     .mode:disabled { cursor: default; opacity: .6; }
     .mode--on { border-color: var(--brand-600); background: var(--brand-50); }
-    .mode__radio { grid-row: span 4; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface-border); box-sizing: border-box; }
+    .mode__radio { grid-row: span 5; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface-border); box-sizing: border-box; }
     .mode--row .mode__radio { grid-row: auto; }
     .mode--on .mode__radio { border: 5px solid var(--brand-600); }
     .mode__name { font: 600 17px var(--font-sans); }
     .mode__meta { color: var(--content-muted); }
     .mode__meta strong { color: var(--content-fg); }
     .mode__err { color: var(--danger); }
+    .mode__note { grid-column: 2; }
+    .mode__note, .sum__note { color: var(--occpl-color-success, #15803d); font: 500 15px var(--font-sans); }
+    .sum__note { margin: 8px 0 0; }
     .chosen { display: flex; flex-wrap: wrap; gap: 6px 24px; padding: 12px 14px; border-radius: 8px; background: var(--brand-50); font: 400 17px var(--font-sans); color: var(--content-fg); }
     .party__title { font: 600 18px var(--font-sans); margin: 8px 0 4px; color: var(--content-fg); }
     .parties > div { display: flex; flex-direction: column; gap: 12px; }
@@ -609,6 +624,10 @@ export class DomesticCashBooking implements OnInit {
   protected readonly modes = signal<ModeRate[]>([]);
   protected readonly ratesLoading = signal(false);
   protected readonly modeId = signal<string | null>(null);
+  /** Services exist, but none has charges set up for this destination and weight. */
+  protected readonly noRates = signal(false);
+  protected readonly cargoMin = CARGO_MIN_KG;
+  protected cargoNote(m: ModeRate): boolean { return !!m.cargo && m.chargeable < CARGO_MIN_KG; }
   protected readonly firstModeId = computed(() => this.modes().find((m) => m.total !== null)?.serviceTypeId ?? null);
   protected readonly chosen = computed(() => this.modes().find((m) => m.serviceTypeId === this.modeId()) ?? null);
 
@@ -989,6 +1008,7 @@ export class DomesticCashBooking implements OnInit {
     const seq = ++this.ratesSeq;
     const calls: Observable<ModeRate>[] = services.map((svc) => {
       const label = svc.label.replace(/\s*\(.*\)$/, '');
+      const cargo = /cargo/i.test(svc.label);
       const days = this.deliveryDays().get(String(svc.value)) ?? null;
       const chargeable = this.weightsFor(String(svc.value)).chargeable;
       return this.freight.calculate({
@@ -997,14 +1017,14 @@ export class DomesticCashBooking implements OnInit {
         declaredValue: Number(this.d()['packageValue']) || null,
         serviceTypeId: String(svc.value), packageTypeId: this.packageTypeId(),
         numberOfPackages: this.numPieces() || 1, bookingDate: null
-      }).pipe(
+      }, { silent: true }).pipe(
         map((r): ModeRate => {
           const freight = Number(r.baseFreight ?? 0);
           const oda = Number(r.odaCharge ?? 0);
           const extras = Number(r.customerExtraCharges ?? 0);
           const gst = Math.round((freight + oda + extras) * this.gstPercent()) / 100;
           return { serviceTypeId: String(svc.value), label, total: r.totalFreight, freight, oda, extras, gst,
-            estimate: Math.round(freight + oda + extras + gst), days, basis: r.weightSlabLabel, chargeable };
+            estimate: Math.round(freight + oda + extras + gst), days, basis: r.weightSlabLabel, chargeable, cargo };
         }),
         catchError((e: HttpErrorResponse) => of<ModeRate>({ serviceTypeId: String(svc.value), label, total: null,
           error: e?.error?.message ?? 'No rate for this destination.', freight: 0, oda: 0, extras: 0, gst: 0, estimate: 0, days, chargeable }))
@@ -1016,8 +1036,9 @@ export class DomesticCashBooking implements OnInit {
       // Step by step: the rates arrive after the step opened, so put the cursor on them now.
       if (this.view() === 'steps' && this.active() === 2) this.focusLater();
       if (this.awaitModes) { this.awaitModes = false; this.focusModes(); }
-      // Priced modes first, cheapest first; the rest show why they cannot be used.
-      this.modes.set([...rates].sort((a, b) => (a.total === null ? 1 : 0) - (b.total === null ? 1 : 0) || a.estimate - b.estimate));
+      // Only the modes with charges set up for this destination, cheapest first; the rest are left out.
+      this.modes.set(pricedModes(rates));
+      this.noRates.set(rates.length > 0 && !this.modes().length);
       if (!this.chosen()) this.modeId.set(null);
     });
   }
