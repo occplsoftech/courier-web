@@ -209,6 +209,17 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
                   </div>
                 </div>
                 <div class="dcw">
+                  <label class="text-caption" for="upi-id">UPI ID (Paid booking → QR: the customer scans a QR for the exact amount)</label>
+                  <div class="dcw__row">
+                    <input id="upi-id" class="dcw__i" type="text" maxlength="100" placeholder="e.g. occpl@okaxis"
+                           [value]="upiIdInput()" (input)="upiIdInput.set($any($event.target).value)" />
+                    <input class="dcw__i" type="text" maxlength="100" placeholder="Payee name shown in the UPI app"
+                           [value]="upiPayeeInput()" (input)="upiPayeeInput.set($any($event.target).value)" />
+                    <button type="button" class="dcw__save" [disabled]="savingUpi()"
+                            (click)="saveUpi()">{{ savingUpi() ? 'Saving…' : 'Save' }}</button>
+                  </div>
+                </div>
+                <div class="dcw">
                   <label class="text-caption" for="round-off-select">Round Off (Shipment Booking's final amount)</label>
                   <div class="dcw__row">
                     <select id="round-off-select" class="dcw__i" [value]="roundOffRuleInput()"
@@ -314,6 +325,9 @@ export class SettingsPage implements OnInit {
   /** Finance's second inline field — same "no full edit dialog yet" treatment as
    *  Razorpay above and Shipment's default weight. */
   readonly roundOffRuleInput = signal('NEAREST_FIVE');
+  readonly upiIdInput = signal('');
+  readonly upiPayeeInput = signal('');
+  readonly savingUpi = signal(false);
   readonly savingRoundOff = signal(false);
 
   /** Finance's third inline field — bounds on Shipment Booking's editable Net Amount
@@ -350,7 +364,10 @@ export class SettingsPage implements OnInit {
         this.manualStatusOverrideInput.set(shipment?.manualStatusOverrideEnabled === true);
         const finance = (d as { finance?: {
           gstPercentage?: number; roundOffRule?: string; netAmountMaxDecreasePercent?: number; netAmountMaxIncreasePercent?: number;
+          upiId?: string | null; upiPayeeName?: string | null;
         } })?.finance;
+        this.upiIdInput.set(finance?.upiId ?? '');
+        this.upiPayeeInput.set(finance?.upiPayeeName ?? '');
         if (finance?.gstPercentage != null) {
           this.gstPercentageInput.set(Number(finance.gstPercentage));
         }
@@ -534,6 +551,25 @@ export class SettingsPage implements OnInit {
         this.notify.success('Round off rule updated');
       },
       error: () => this.savingRoundOff.set(false)
+    });
+  }
+
+  /** The company's UPI ID for a Paid booking's QR option; empty clears it. */
+  saveUpi(): void {
+    const upiId = this.upiIdInput().trim();
+    if (upiId && !/^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9]{1,63}$/.test(upiId)) {
+      this.notify.error('Enter a UPI ID like name@bank.');
+      return;
+    }
+    this.savingUpi.set(true);
+    this.service.patchSection('finance', { upiId, upiPayeeName: this.upiPayeeInput().trim() }).subscribe({
+      next: (d) => {
+        const finance = (d as { finance?: unknown })?.finance;
+        if (finance) this.data.update((prev) => ({ ...prev, finance }));
+        this.savingUpi.set(false);
+        this.notify.success(upiId ? 'UPI ID saved' : 'UPI ID removed');
+      },
+      error: () => this.savingUpi.set(false)
     });
   }
 

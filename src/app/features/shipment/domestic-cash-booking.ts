@@ -19,6 +19,10 @@ import { CustomerResponse } from '@core/models/customer.model';
 import { FreightCalculationService } from './freight-calculation.service';
 import { codCharge, COD_MINIMUM, COD_PERCENT, fovCharge, FOV_MINIMUM, FOV_PERCENT, isCodOption } from './fov';
 import { SettingsService } from '@features/settings/settings.service';
+import { MatDialog } from '@angular/material/dialog';
+import { CounterPaymentMethod } from '@core/models/shipment.model';
+import { CounterPayment } from './components/counter-payment';
+import { RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult } from './components/razorpay-qr-dialog';
 
 /** The default when the service type sets no divisor of its own. */
 const DEFAULT_VOLUMETRIC_DIVISOR = 5000;
@@ -78,7 +82,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
   selector: 'app-domestic-cash-booking',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, NgTemplateOutlet, UpperCasePipe, MatIconModule, UiButton],
+  imports: [DecimalPipe, NgTemplateOutlet, UpperCasePipe, MatIconModule, UiButton, CounterPayment],
   template: `
     <div class="page" (keydown)="onKey($event)">
       <header class="page__head">
@@ -367,6 +371,10 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 }
               </div>
               @if (isCod()) { <ng-container [ngTemplateOutlet]="tCod" /> }
+              @if (isPaidMode()) {
+                <app-counter-payment [amount]="finalAmount()" [upiId]="upiId()" [payeeName]="upiPayee()"
+                  [note]="'Courier ' + (awbNumber().trim() || 'booking')" [(method)]="payMethod" [(reference)]="payRef" />
+              }
       </ng-template>
 
       <ng-template #tCod>
@@ -422,7 +430,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                 <tr><td>Mode</td><td>{{ chosen()?.label }}</td></tr>
                 <tr><td>Description</td><td>{{ d()['packageDescription'] }}</td></tr>
                 <tr><td>Package Value</td><td>₹ {{ d()['packageValue'] }}</td></tr>
-                <tr><td>Payment</td><td>{{ paymentLabel() }}</td></tr>
+                <tr><td>Payment</td><td>{{ paymentLabel() }}@if (isPaidMode()) { · {{ payMethodLabel() }} }</td></tr>
                 @if (chosen(); as m) {
                   <tr><td>Freight</td><td>₹ {{ m.freight | number: '1.2-2' }}</td></tr>
                   @if (m.oda) { <tr><td>ODA</td><td>₹ {{ m.oda | number: '1.2-2' }}</td></tr> }
@@ -704,6 +712,17 @@ export class DomesticCashBooking implements OnInit {
   protected readonly paymentOptions = signal<SelectOption[]>([]);
   protected readonly paymentModeId = signal<string | null>(null);
   protected readonly paymentLabel = computed(() => this.paymentOptions().find((o) => o.value === this.paymentModeId())?.label ?? '—');
+  /** A Paid booking (not credit): the customer pays at the counter by Razorpay QR, cash or the company's UPI QR. */
+  protected readonly isPaidMode = computed(() => !this.credit && /\(PAID\)$/i.test(this.paymentLabel()));
+  protected readonly payMethod = signal<CounterPaymentMethod>('CASH');
+  protected readonly payRef = signal('');
+  protected readonly payMethodLabel = computed(() => ({ RAZORPAY: 'Razorpay QR', CASH: 'Cash', UPI_QR: 'UPI QR' })[this.payMethod()]);
+  /** The company's UPI ID (Settings → Finance) for the QR option. */
+  protected readonly upiId = signal<string | null>(null);
+  protected readonly upiPayee = signal<string | null>(null);
+  /** What the customer pays: the chosen mode's total. */
+  protected readonly finalAmount = computed(() => { const m = this.chosen(); return m ? this.totalOf(m) : 0; });
+  private readonly dialog = inject(MatDialog);
 
   constructor() {
     // Single page: re-price every mode whenever what prices it changes (debounced).
@@ -760,8 +779,11 @@ export class DomesticCashBooking implements OnInit {
     // GST: the company's one rate (Settings → Finance), the same the server books with — not the branch's.
     this.settings.get().subscribe({
       next: (d) => {
-        const gst = (d as { finance?: { gstPercentage?: number } })?.finance?.gstPercentage;
+        const finance = (d as { finance?: { gstPercentage?: number; upiId?: string | null; upiPayeeName?: string | null } })?.finance;
+        const gst = finance?.gstPercentage;
         if (gst != null) this.gstPercent.set(Number(gst));
+        this.upiId.set(finance?.upiId || null);
+        this.upiPayee.set(finance?.upiPayeeName || null);
       },
       error: () => { /* keep the default; the server's figure is what books */ }
     });
@@ -1048,6 +1070,9 @@ export class DomesticCashBooking implements OnInit {
         return this.credit ? this.codError() : null;
       }
       case 4:
+        if (this.isPaidMode() && this.payMethod() === 'UPI_QR' && !this.upiId()) {
+          return 'No company UPI ID yet: choose Razorpay or Cash, or ask the company admin to add it in Settings.';
+        }
         if (this.paymentModeId()) return this.codError();
         return this.credit ? 'The payment-mode list has no To Be Billed (TBB) mode — add it under Masters.' : 'Please select a payment method.';
       default:
@@ -1135,7 +1160,9 @@ export class DomesticCashBooking implements OnInit {
       declaredValue: value, numberOfPackages: this.numPieces() || 1, items,
       remarks: extra || null, deliveryType: 'DOOR', businessCustomerId: this.client()?.id ?? null,
       insuranceApplicable: this.fovOn() || null,
-      codAmount: this.isCod() ? Number(this.codAmount()) || null : null
+      codAmount: this.isCod() ? Number(this.codAmount()) || null : null,
+      paymentMethod: this.isPaidMode() ? this.payMethod() : null,
+      paymentReference: this.isPaidMode() && this.payMethod() === 'UPI_QR' ? this.payRef().trim() || null : null
     };
   }
 
@@ -1248,6 +1275,17 @@ export class DomesticCashBooking implements OnInit {
     if (b) this.router.navigate(['/shipments', b.id]);
   }
 
+  /** Razorpay: the QR for the final amount; once paid the booking carries on by itself (status Paid). */
+  private collectByRazorpay(id: string, shipmentNumber: string): void {
+    this.dialog.open<RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult>(RazorpayQrDialog,
+      { data: { shipmentId: id, shipmentNumber }, disableClose: true, autoFocus: false })
+      .afterClosed().subscribe((result) => {
+        if (result === 'PAID') this.notify.success(`Payment received. Shipment ${shipmentNumber} is paid.`);
+        else this.notify.info(`Shipment ${shipmentNumber} booked; the Razorpay payment is pending. Show the QR again from the shipment.`);
+        this.router.navigate(['/shipments', id]);
+      });
+  }
+
   protected confirm(): void {
     this.busy.set(true);
     this.shipments.create(this.buildRequest()).subscribe({
@@ -1257,6 +1295,10 @@ export class DomesticCashBooking implements OnInit {
         if (this.credit) {
           this.booked.set({ id: s.id, number: s.shipmentNumber });
           this.focusLater('[data-autofocus]');
+          return;
+        }
+        if (this.isPaidMode() && this.payMethod() === 'RAZORPAY') {
+          this.collectByRazorpay(s.id, s.shipmentNumber);
           return;
         }
         this.notify.success(`Shipment booked. AWB: ${s.shipmentNumber}`);

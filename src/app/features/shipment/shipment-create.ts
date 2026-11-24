@@ -31,6 +31,10 @@ import { codCharge, COD_MINIMUM, COD_PERCENT, fovCharge, isCodOption } from './f
 import { ItemEntryGrid } from './components/item-entry-grid';
 import { ChargeSummary } from './components/charge-summary';
 import { VoiceMicButton } from './components/voice-mic-button';
+import { MatDialog } from '@angular/material/dialog';
+import { CounterPaymentMethod } from '@core/models/shipment.model';
+import { CounterPayment } from './components/counter-payment';
+import { RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult } from './components/razorpay-qr-dialog';
 import { ShipmentService } from './shipment.service';
 import { EwayBillService } from './eway-bill.service';
 import { PickupService } from '@features/pdp/pickup.service';
@@ -73,7 +77,7 @@ interface ServiceRate {
   selector: 'app-shipment-create',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, MatIconModule, UiSelect, UiAutocomplete, UiButton, UiCard, BusCrossingEditor, ItemEntryGrid, ChargeSummary, VoiceMicButton],
+  imports: [DatePipe, DecimalPipe, ReactiveFormsModule, MatIconModule, UiSelect, UiAutocomplete, UiButton, UiCard, BusCrossingEditor, ItemEntryGrid, ChargeSummary, VoiceMicButton, CounterPayment],
   template: `
     <div class="page">
       <header class="page__head" data-tour="booking-head">
@@ -562,6 +566,10 @@ interface ServiceRate {
                   <input class="fld__i" type="number" min="1" [value]="codAmount() || ''" (input)="codAmount.set(+$any($event.target).value || 0)" placeholder="What the rider collects" /></label>
                 <p class="hint">The rider collects this from the consignee for the shipper. COD charge {{ codPercent }}%, minimum ₹{{ codMin }}.</p>
               }
+              @if (isPaidMode()) {
+                <app-counter-payment [amount]="manualNetAmount() ?? computedNetAmount()" [upiId]="upiId()" [payeeName]="upiPayee()"
+                  [note]="'Courier booking'" [(method)]="payMethod" [(reference)]="payRef" />
+              }
             </div>
 
             @if (ewayBillReason(); as reason) {
@@ -575,7 +583,8 @@ interface ServiceRate {
                 [disabled]="!pricing() || pricingLoading() || !freightCalc() || freightCalcLoading()
                   || form.invalid || ewayBillReason() !== null || appointmentDeliveryReason() !== null
                   || !c('declaredValue').value || (isMsrtc && !msrtcDeliveryBranchId()) || busCrossingIncomplete()
-                  || areaService().state === 'off' || areaService().state === 'checking'"
+                  || areaService().state === 'off' || areaService().state === 'checking'
+                  || (isPaidMode() && payMethod() === 'UPI_QR' && !upiId())"
                 (pressed)="book()">Book Shipment</app-button>
             </div>
           </div>
@@ -861,6 +870,18 @@ export class ShipmentCreate implements OnInit {
    *  see {@link onManualNetAmountChange}. */
   protected readonly manualNetAmount = signal<number | null>(null);
 
+  /** A Paid booking: the customer pays at the counter by Razorpay QR, cash or the company's UPI QR. */
+  protected isPaidMode(): boolean {
+    const id = this.c('paymentModeId').value;
+    return (this.paymentModeOptions().find((o) => o.value === id)?.label ?? '').endsWith('(PAID)');
+  }
+  protected readonly payMethod = signal<CounterPaymentMethod>('CASH');
+  protected readonly payRef = signal('');
+  /** The company's UPI ID (Settings → Finance) for the QR option. */
+  protected readonly upiId = signal<string | null>(null);
+  protected readonly upiPayee = signal<string | null>(null);
+  private readonly dialog = inject(MatDialog);
+
   /** Company's Round Off rule (`CompanySettings.roundOffRule`) — mirrors
    *  `ShipmentServiceImpl.roundOffRule` so this preview's Round Off/Net Amount matches
    *  what actually gets persisted once Other Charges/ODA/Door Delivery are edited. */
@@ -1103,7 +1124,10 @@ export class ShipmentCreate implements OnInit {
       }
       const finance = (d as { finance?: {
         gstPercentage?: number; roundOffRule?: string; netAmountMaxDecreasePercent?: number; netAmountMaxIncreasePercent?: number;
+        upiId?: string | null; upiPayeeName?: string | null;
       } })?.finance;
+      this.upiId.set(finance?.upiId || null);
+      this.upiPayee.set(finance?.upiPayeeName || null);
       // The one GST rate every booking charges (Settings → Finance), the same the server books with.
       if (finance?.gstPercentage != null) this.gstPercentage.set(Number(finance.gstPercentage));
       if (finance?.roundOffRule) {
@@ -2078,6 +2102,8 @@ export class ShipmentCreate implements OnInit {
       codAmount: this.isCod() ? this.codAmount() || null : null,
       deliveryType: v.deliveryType,
       doorDeliveryCharge: v.deliveryType === 'DOOR' ? (this.doorDeliveryCharge() || null) : null,
+      paymentMethod: this.isPaidMode() ? this.payMethod() : null,
+      paymentReference: this.isPaidMode() && this.payMethod() === 'UPI_QR' ? this.payRef().trim() || null : null,
       ...(this.isMsrtc ? { flowType: 'MSRTC' as const, deliveryBranchId: this.msrtcDeliveryBranchId() } : {}),
       ewayBill: this.ewayBillOpen() && v.ewayBillInvoiceNumber?.trim() ? {
         invoiceNumber: v.ewayBillInvoiceNumber?.trim() || '',
@@ -2100,6 +2126,7 @@ export class ShipmentCreate implements OnInit {
           });
         }
         this.notify.success(`Shipment ${s.shipmentNumber} booked — AWB ${s.trackingNumber}.`);
+        const razorpay = this.isPaidMode() && this.payMethod() === 'RAZORPAY';
         const crossing = this.isMsrtc ? this.busCrossing() : null;
         if (crossing) {
           this.busDepotService.setShipmentCrossing(s.id, { ...crossing, saveAsRoute: true }).subscribe({
@@ -2111,7 +2138,7 @@ export class ShipmentCreate implements OnInit {
             error: () => this.notify.error(`Shipment ${s.shipmentNumber} booked, but the pickup request could not be linked to it.`)
           });
         }
-        forkJoin({
+        const printBill = () => forkJoin({
           company: this.companyProfile.get().pipe(catchError(() => of(null))),
           bookingGeo: v.pickupPincode
             ? this.masters.pincodeGeo(v.pickupPincode).pipe(catchError(() => of(null)))
@@ -2185,7 +2212,24 @@ export class ShipmentCreate implements OnInit {
             error: () => this.notify.error(`Shipment ${s.shipmentNumber} booked, but the photo could not be uploaded.`)
           });
         }
-        this.router.navigate(['/shipments', s.id]);
+        if (!razorpay) {
+          printBill();
+          this.router.navigate(['/shipments', s.id]);
+          return;
+        }
+        // Razorpay: the QR for the final amount; once Razorpay has the payment the booking carries on by
+        // itself (bill printed, shipment opened, payment Paid). Closed unpaid: the payment stays pending.
+        this.dialog.open<RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult>(RazorpayQrDialog,
+          { data: { shipmentId: s.id, shipmentNumber: s.shipmentNumber }, disableClose: true, autoFocus: false })
+          .afterClosed().subscribe((result) => {
+            if (result === 'PAID') {
+              this.notify.success(`Payment received. Shipment ${s.shipmentNumber} is paid.`);
+              printBill();
+            } else {
+              this.notify.info(`Shipment ${s.shipmentNumber} booked; the Razorpay payment is pending. Show the QR again from the shipment.`);
+            }
+            this.router.navigate(['/shipments', s.id]);
+          });
       },
       error: (err: HttpErrorResponse) => {
         this.submitting.set(false);
