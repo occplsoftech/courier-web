@@ -32,10 +32,10 @@ const OCCPL_NETWORK = 'OCCPL_NETWORK';
   imports: [UiCard, UiButton, DatePipe],
   template: `
     <div class="cm">
-      <header class="cm__head">
-        <h1>Courier markup</h1>
+      <header class="page__head cm__head">
+        <div><h1 class="text-h1">Courier markup</h1>
         <p class="hint">What is added to an outside courier's price before a business customer sees it in the shipping portal.
-          The most specific rule in force wins: customer + courier, then customer, then courier, then all. With none, the default applies.</p>
+          The most specific rule in force wins: customer + courier, then customer, then courier, then all. With none, the default applies.</p></div>
       </header>
 
       <app-card title="Which markup applies?" subtitle="Pick a customer and a courier to see the markup they get right now.">
@@ -155,7 +155,6 @@ const OCCPL_NETWORK = 'OCCPL_NETWORK';
   `,
   styles: [`
     .cm { display:flex; flex-direction:column; gap:16px; }
-    .cm__head h1 { margin:0 0 4px; font:700 25px var(--font-sans); color:var(--content-fg); }
     .cm__row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
     .f { display:flex; flex-direction:column; gap:4px; font:600 16px var(--font-sans); min-width:200px; flex:1 1 200px; }
     .f--sm { flex:0 1 120px; min-width:100px; }

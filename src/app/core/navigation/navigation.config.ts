@@ -274,6 +274,7 @@ export const NAVIGATION: NavNode[] = [
       { id: 'business-booking', title: 'Business Customer Booking', icon: 'business_center', route: '/business-customer/booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       { id: 'shipment-search', title: 'Shipment Search', icon: 'search', route: '/shipments', permission: 'SHIPMENT_READ', roles: OPS_SHIPMENT_READERS },
       { id: 'track', title: 'Track Shipment', icon: 'my_location', route: '/track', permission: 'SHIPMENT_READ', roles: OPS_SHIPMENT_READERS },
+      { id: 'scan', title: 'Scan', icon: 'qr_code_scanner', route: '/movement/scan', permission: 'TRACKING_CREATE', roles: OPS_BOOKING },
       { id: 'manifest', title: 'Loading Sheet', icon: 'qr_code_scanner', route: '/movement/loading-sheet', permission: 'TRACKING_CREATE', roles: OPS_BOOKING },
       { id: 'dispatch', title: 'Trip Hire Challan (THC)', icon: 'outbound', route: '/movement/trip-hire-challan', permission: 'MANIFEST_DISPATCH', roles: OPS_BOOKING },
       { id: 'receive', title: 'In Scan', icon: 'move_to_inbox', route: '/movement/in-scan', permission: 'MANIFEST_RECEIVE', roles: OPS_DELIVERY_DESK },

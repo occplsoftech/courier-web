@@ -61,7 +61,7 @@ function statusTone(s: FollowUpStatus): 'success' | 'warning' | 'danger' | 'info
       } @else if (!followUp()) {
         <app-card><p class="empty">Follow-up not found or outside your scope.</p></app-card>
       } @else {
-        <header class="hd">
+        <header class="page__head hd">
           <div class="hd__title">
             <h1 class="text-h1">{{ followUp()!.title }}</h1>
             <app-status-badge [value]="followUp()!.status" [label]="label(followUp()!.status)" [tone]="statusTone(followUp()!.status)" />

@@ -676,6 +676,10 @@ export const routes: Routes = [
       // Shipment Movement — the minimal Manifest module (see MEMORY/modules/shipment-movement.md)
       // plus the five movement steps the brief's own REST API list names.
       {
+        path: 'movement/scan', title: 'Scan', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
+        loadComponent: () => import('@features/shipment-movement/scan').then((m) => m.Scan)
+      },
+      {
         path: 'movement/loading-sheet', title: 'Loading Sheet', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
         loadComponent: () => import('@features/shipment-movement/loading-sheet').then((m) => m.LoadingSheet)
       },
