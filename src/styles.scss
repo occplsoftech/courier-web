@@ -116,13 +116,31 @@ body {
   gap: 20px;
   width: 100%;
 }
+// Every page's title area sits on its own card: surface with a soft brand tint, a brand edge on the left.
 .page__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+  position: relative;
+  padding: 18px 22px 18px 26px;
+  border-radius: 16px;
+  border: 1px solid var(--surface-border);
+  background: linear-gradient(110deg, var(--surface) 0%, var(--surface) 55%, var(--brand-50) 100%);
+  box-shadow: var(--shadow-clay-sm);
+  overflow: hidden;
 }
+.page__head::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--brand-500), var(--brand-700));
+}
+.page__head h1, .page__head .text-h1 { margin: 0; }
+.page__head .text-caption, .page__head p { margin: 4px 0 0; }
+@media (max-width: 640px) { .page__head { padding: 14px 16px 14px 20px; border-radius: 14px; } }
 .page__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 // Optional small illustration accent next to a page__head's title — used on a few
 // logistics-heavy pages (Loading Sheet, In Scan, THC, DRS, Delivery). Subtle, hidden on

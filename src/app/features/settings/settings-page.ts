@@ -75,7 +75,7 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
   imports: [MatIconModule, UiCard, UiLoader],
   template: `
     <div class="page">
-      <header><h1 class="text-h1">Company Settings</h1><p class="text-caption">Configure how the platform behaves for your company.</p></header>
+      <header class="page__head"><div><h1 class="text-h1">Company Settings</h1><p class="text-caption">Configure how the platform behaves for your company.</p></div></header>
       @if (loading()) {
         <app-loader [minHeight]="240" caption="Loading settings…" />
       } @else {

@@ -78,7 +78,7 @@ function readDone(): BookingRow[] {
   imports: [NgTemplateOutlet, DecimalPipe, MatIconModule, UiButton],
   template: `
     <div class="qi" (keydown)="onKey($event)">
-      <header class="qi__head">
+      <header class="page__head qi__head">
         <div>
           <h1 class="text-h1">Quick Booking</h1>
           <p class="text-caption">Set the batch once, then type each parcel and press Enter.</p>

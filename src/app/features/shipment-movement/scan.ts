@@ -40,10 +40,10 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
   imports: [DatePipe, DecimalPipe, MatIconModule, UiButton],
   template: `
     <div class="sc">
-      <header>
-        <h1 class="text-h1">Scan</h1>
+      <header class="page__head sc__head">
+        <div><h1 class="text-h1">Scan</h1>
         <p class="flow"><b>Booked</b><mat-icon>east</mat-icon>Pending Outscan<mat-icon>east</mat-icon><b>Outscan</b><mat-icon>east</mat-icon>
-          Pending Inscan<mat-icon>east</mat-icon><b>Inscan</b><mat-icon>east</mat-icon>Generate DRS / Update Delivery</p>
+          Pending Inscan<mat-icon>east</mat-icon><b>Inscan</b><mat-icon>east</mat-icon>Generate DRS / Update Delivery</p></div>
       </header>
 
       <nav class="tabs" role="tablist">

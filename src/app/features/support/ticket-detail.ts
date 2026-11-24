@@ -76,7 +76,7 @@ function slaLabel(s: SlaStatus): string {
       } @else if (!detail()) {
         <app-card><p class="empty">Ticket not found or outside your scope.</p></app-card>
       } @else {
-        <header class="hd">
+        <header class="page__head hd">
           <div class="hd__title">
             <h1 class="text-h1">{{ ticket()!.ticketNumber }}</h1>
             <app-status-badge [value]="ticket()!.status" [label]="label(ticket()!.status)" [tone]="statusTone(ticket()!.status)" />
