@@ -67,4 +67,23 @@ describe('CustomerForm — GST is mandatory only for a business customer', () =>
 
     expect(emitted()!.customerCode).toBeNull();
   });
+
+  it('a business customer carries its zone type (Default unless Customize is chosen); an individual does not', () => {
+    let picked: string | undefined;
+    fixture.componentInstance.zoneTypePicked.subscribe((z) => (picked = z));
+    group().patchValue({ customerType: 'BUSINESS', gstNumber: '27ABCDE1234F1Z5' });
+    fixture.detectChanges();
+    expect(emitted()).toBeDefined();
+    expect(picked).toBe('DEFAULT');
+
+    (form as unknown as { zoneType: { set: (v: string) => void } }).zoneType.set('CUSTOMIZE');
+    emitted();
+    expect(picked).toBe('CUSTOMIZE');
+
+    picked = undefined;
+    group().patchValue({ customerType: 'INDIVIDUAL' });
+    fixture.detectChanges();
+    emitted();
+    expect(picked).toBeUndefined();
+  });
 });

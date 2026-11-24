@@ -4,7 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { CreateCustomerRequest, CustomerType, UpdateCustomerRequest } from '@core/models/customer.model';
-import { CustomerForm } from './components/customer-form';
+import { CustomerForm, ZoneType } from './components/customer-form';
+import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
 import { CustomerService } from './customer.service';
 
 /** Create Customer — wraps CustomerForm in create mode and posts. */
@@ -18,7 +19,7 @@ import { CustomerService } from './customer.service';
       <header class="page__head">
         <div><h1 class="text-h1">New Customer</h1><p class="text-caption">Register reusable customer master data for your company.</p></div>
       </header>
-      <app-customer-form mode="create" [initialType]="initialType" [saving]="saving()" (logoPicked)="logo = $event" (saved)="save($event)" (cancelled)="cancel()" />
+      <app-customer-form mode="create" [initialType]="initialType" [saving]="saving()" (logoPicked)="logo = $event" (zoneTypePicked)="zoneType = $event" (saved)="save($event)" (cancelled)="cancel()" />
     </div>
   `
 })
@@ -31,6 +32,9 @@ export class CustomerCreate {
   readonly saving = signal(false);
   /** The logo chosen in the form, uploaded once the customer exists. */
   protected logo: File | null = null;
+  /** Business customers: the zone type picked in the form. */
+  protected zoneType: ZoneType = 'DEFAULT';
+  private readonly business = inject(BusinessCustomerService);
   protected readonly initialType: CustomerType =
     inject(ActivatedRoute).snapshot.queryParamMap.get('type') === 'BUSINESS' ? 'BUSINESS' : 'INDIVIDUAL';
 
@@ -42,10 +46,24 @@ export class CustomerCreate {
     this.saving.set(true);
     this.service.create(body as CreateCustomerRequest).subscribe({
       next: (c) => {
-        const done = () => {
+        const customize = c.customerType === 'BUSINESS' && this.zoneType === 'CUSTOMIZE';
+        const finish = () => {
           this.saving.set(false);
-          this.notify.success(`Customer ${c.customerCode} created.`);
-          this.router.navigate(['/customers', c.id]);
+          if (customize) {
+            // Customize: this customer is priced from its own zones, so create the first one now.
+            this.notify.success(`Customer ${c.customerCode} created. Now create its pricing zone.`);
+            this.router.navigate(['/business-customer/pricing-zones/new'], { queryParams: { customerId: c.id } });
+          } else {
+            this.notify.success(`Customer ${c.customerCode} created.`);
+            this.router.navigate(['/customers', c.id]);
+          }
+        };
+        const done = () => {
+          if (!customize) { finish(); return; }
+          this.business.setRateSource(c.id, true).subscribe({
+            next: finish,
+            error: () => { this.notify.error('The customer was created, but Customize could not be saved. Set it on the Pricing Zones page.'); finish(); }
+          });
         };
         if (!this.logo) { done(); return; }
         this.service.uploadLogo(c.id, this.logo).subscribe({

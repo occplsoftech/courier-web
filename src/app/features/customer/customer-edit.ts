@@ -6,7 +6,8 @@ import { NotificationService } from '@core/services/notification.service';
 import { CustomerResponse, CreateCustomerRequest, UpdateCustomerRequest } from '@core/models/customer.model';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiLoader } from '@shared/components/ui-loader/ui-loader';
-import { CustomerForm } from './components/customer-form';
+import { CustomerForm, ZoneType } from './components/customer-form';
+import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
 import { CustomerService } from './customer.service';
 
 /** Edit Customer — loads the customer, PUTs a full replacement, handles 409. */
@@ -25,7 +26,7 @@ import { CustomerService } from './customer.service';
       } @else if (!customer()) {
         <app-card><p class="empty">Customer not found or outside your scope.</p></app-card>
       } @else {
-        <app-customer-form mode="edit" [customer]="customer()" [logoUrl]="logoUrl()" [saving]="saving()" (logoPicked)="logo = $event" (saved)="save($event)" (cancelled)="cancel()" />
+        <app-customer-form mode="edit" [customer]="customer()" [logoUrl]="logoUrl()" [saving]="saving()" [initialZoneType]="zoneType()" (zoneTypePicked)="pickedZoneType = $event" (logoPicked)="logo = $event" (saved)="save($event)" (cancelled)="cancel()" />
       }
     </div>
   `,
@@ -44,6 +45,10 @@ export class CustomerEdit implements OnInit {
   readonly logoUrl = signal<string | null>(null);
   /** undefined = untouched, a File = replace, null = remove. */
   protected logo: File | null | undefined = undefined;
+  /** Business customers: the zone type as saved, and as picked in the form. */
+  protected readonly zoneType = signal<ZoneType>('DEFAULT');
+  protected pickedZoneType: ZoneType | null = null;
+  private readonly business = inject(BusinessCustomerService);
   private id = '';
 
   ngOnInit(): void {
@@ -58,6 +63,9 @@ export class CustomerEdit implements OnInit {
         this.customer.set(c);
         this.breadcrumb.set([{ label: 'Customers', route: '/customers' }, { label: c.displayName, route: `/customers/${this.id}` }, { label: 'Edit' }]);
         this.loading.set(false);
+        if (c.customerType === 'BUSINESS') {
+          this.business.rateSource(this.id).subscribe({ next: (r) => this.zoneType.set(r?.useBusinessRates ? 'CUSTOMIZE' : 'DEFAULT'), error: () => undefined });
+        }
         if (c.hasLogo) this.service.logo(this.id).subscribe({ next: (l) => this.logoUrl.set(l.dataUrl), error: () => undefined });
       },
       error: () => { this.customer.set(null); this.loading.set(false); }
@@ -68,7 +76,15 @@ export class CustomerEdit implements OnInit {
     this.saving.set(true);
     this.service.update(this.id, body as UpdateCustomerRequest).subscribe({
       next: () => {
-        const done = () => { this.saving.set(false); this.notify.success('Customer updated.'); this.router.navigate(['/customers', this.id]); };
+        const finish = () => { this.saving.set(false); this.notify.success('Customer updated.'); this.router.navigate(['/customers', this.id]); };
+        const picked = this.pickedZoneType;
+        const done = () => {
+          if (!picked || picked === this.zoneType()) { finish(); return; }
+          this.business.setRateSource(this.id, picked === 'CUSTOMIZE').subscribe({
+            next: () => { this.zoneType.set(picked); finish(); },
+            error: () => { this.notify.error('The customer was saved, but the zone type could not be changed.'); finish(); }
+          });
+        };
         if (this.logo === undefined) { done(); return; }
         const call = this.logo ? this.service.uploadLogo(this.id, this.logo) : this.service.removeLogo(this.id);
         call.subscribe({
