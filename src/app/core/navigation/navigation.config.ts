@@ -269,7 +269,7 @@ export const NAVIGATION: NavNode[] = [
       { id: 'booking', title: 'Shipment Booking', icon: 'add_box', route: '/shipments/new', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       { id: 'domestic-cash-booking', title: 'Domestic (CASH) Shipment', icon: 'receipt_long', route: '/shipments/domestic-cash', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       { id: 'credit-booking', title: 'Credit Shipment', icon: 'credit_card', route: '/shipments/credit', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
-      { id: 'quick-inscan', title: 'Quick Inscan', icon: 'bolt', route: '/shipments/quick-inscan', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
+      { id: 'quick-booking', title: 'Quick Booking', icon: 'bolt', route: '/shipments/quick-booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       // Same booking screen, customer picked first — see ShipmentCreate.isBusinessBooking.
       { id: 'business-booking', title: 'Business Customer Booking', icon: 'business_center', route: '/business-customer/booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       { id: 'shipment-search', title: 'Shipment Search', icon: 'search', route: '/shipments', permission: 'SHIPMENT_READ', roles: OPS_SHIPMENT_READERS },

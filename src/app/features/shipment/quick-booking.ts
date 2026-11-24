@@ -16,22 +16,22 @@ import { MasterDataService } from '@features/masters/master-data.service';
 import { FreightCalculationService } from './freight-calculation.service';
 import { ShipmentService } from './shipment.service';
 
-/** The fields of a Quick Inscan, as typed (weight in grams, as the desk is used to). */
-export interface QuickInscanFields {
+/** The fields of a Quick Booking, as typed (weight in grams, as the desk is used to). */
+export interface QuickBookingFields {
   clientId: string; consignorName: string; fromPincode: string; parcelType: 'DOCUMENT' | 'PARCEL';
   pieces: string; weightGrams: string; awbNumber: string; declaredValue: string;
   consigneeName: string; toPincode: string; consigneeAddress: string; consigneePhone: string;
 }
-type Field = keyof QuickInscanFields;
+type Field = keyof QuickBookingFields;
 type Locks = Partial<Record<Field, boolean>>;
 
 /** One generated AWB, for the session table. */
-export interface InscanRow { awb: string; id: string; consignee: string; to: string; pieces: number; kg: number; at: string; }
+export interface BookingRow { awb: string; id: string; consignee: string; to: string; pieces: number; kg: number; at: string; }
 
 /** A pincode as looked up: its city, and for the destination its Area and whether it is served. */
 interface PinInfo { state: 'idle' | 'loading' | 'ok' | 'error'; city?: string | null; areaId?: string | null; message?: string; }
 
-const EMPTY: QuickInscanFields = {
+const EMPTY: QuickBookingFields = {
   clientId: '', consignorName: '', fromPincode: '', parcelType: 'PARCEL', pieces: '', weightGrams: '', awbNumber: '',
   declaredValue: '', consigneeName: '', toPincode: '', consigneeAddress: '', consigneePhone: ''
 };
@@ -41,10 +41,10 @@ const DIGITS: Partial<Record<Field, number>> = { pieces: 5, weightGrams: 9, decl
 const PINCODE = /^\d{6}$/;
 
 /** Locks, the values they keep, and this session's AWBs live in this browser tab only: kept across reloads, gone when it closes. */
-const SESSION_KEY = 'cs.quickInscan.locked';
-const DONE_KEY = 'cs.quickInscan.done';
+const SESSION_KEY = 'cs.quickBooking.locked';
+const DONE_KEY = 'cs.quickBooking.done';
 
-export function readLocked(): { locks: Locks; values: Partial<QuickInscanFields> } {
+export function readLocked(): { locks: Locks; values: Partial<QuickBookingFields> } {
   try {
     const raw = sessionStorage.getItem(SESSION_KEY);
     if (raw === null) return { locks: Object.fromEntries(BATCH.map((k) => [k, true])), values: {} };
@@ -55,24 +55,24 @@ export function readLocked(): { locks: Locks; values: Partial<QuickInscanFields>
   }
 }
 
-function writeLocked(locks: Locks, v: QuickInscanFields): void {
-  const values: Partial<QuickInscanFields> = {};
+function writeLocked(locks: Locks, v: QuickBookingFields): void {
+  const values: Partial<QuickBookingFields> = {};
   (Object.keys(locks) as Field[]).filter((k) => locks[k]).forEach((k) => { (values as Record<string, string>)[k] = v[k]; });
   try { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ locks, values })); } catch { /* storage unavailable: locks last this visit only */ }
 }
 
-function readDone(): InscanRow[] {
-  try { return JSON.parse(sessionStorage.getItem(DONE_KEY) ?? '[]') as InscanRow[]; } catch { return []; }
+function readDone(): BookingRow[] {
+  try { return JSON.parse(sessionStorage.getItem(DONE_KEY) ?? '[]') as BookingRow[]; } catch { return []; }
 }
 
 /**
- * Quick Inscan — the earlier portal's one-screen credit-client inscan, laid out as a Batch (client, consignor, sender
+ * Quick Booking — the earlier portal's one-screen credit-client booking ("Quick Inscan" there), laid out as a Batch (client, consignor, sender
  * pincode, parcel type: locked for every parcel) and This parcel (pieces, weight, AWB, value, consignee). Every field has a
  * lock; locked fields keep their value for the next parcel. Generate AWB books it To Be Billed for the client on the
  * cheapest service that has charges for the destination, then clears the unlocked fields.
  */
 @Component({
-  selector: 'app-quick-inscan',
+  selector: 'app-quick-booking',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgTemplateOutlet, DecimalPipe, MatIconModule, UiButton],
@@ -80,7 +80,7 @@ function readDone(): InscanRow[] {
     <div class="qi" (keydown)="onKey($event)">
       <header class="qi__head">
         <div>
-          <h1 class="text-h1">Quick Inscan</h1>
+          <h1 class="text-h1">Quick Booking</h1>
           <p class="text-caption">Set the batch once, then type each parcel and press Enter.</p>
         </div>
         <div class="stats">
@@ -143,7 +143,7 @@ function readDone(): InscanRow[] {
       </div>
 
       <section class="card">
-        <h2 class="sec">Inscanned this session</h2>
+        <h2 class="sec">Booked this session</h2>
         @if (!done().length) {
           <p class="muted">Each AWB you generate is listed here.</p>
         } @else {
@@ -164,8 +164,8 @@ function readDone(): InscanRow[] {
       <div class="ovl" (click)="closeSuccess()">
         <div class="dlg" role="alertdialog" aria-modal="true" aria-labelledby="qi-ok" (click)="$event.stopPropagation()">
           <mat-icon class="dlg__ic">check_circle</mat-icon>
-          <h2 id="qi-ok" class="dlg__t">Inscan Successful</h2>
-          <p>Inscan completed successfully. AWB Number: <strong class="mono">{{ s }}</strong></p>
+          <h2 id="qi-ok" class="dlg__t">Booking Successful</h2>
+          <p>Booking completed successfully. AWB Number: <strong class="mono">{{ s }}</strong></p>
           <app-button data-qi-close (pressed)="closeSuccess()">Next parcel</app-button>
         </div>
       </div>
@@ -262,7 +262,7 @@ function readDone(): InscanRow[] {
     @media (max-width: 700px) { .grid3, .grid2 { grid-template-columns: 1fr; } .card { padding: 16px; } .stats { width: 100%; } .stat { flex: 1; } }
   `]
 })
-export class QuickInscan {
+export class QuickBooking {
   private readonly breadcrumb = inject(BreadcrumbService);
   private readonly business = inject(BusinessCustomerService);
   private readonly customers = inject(CustomerService);
@@ -277,7 +277,7 @@ export class QuickInscan {
     { value: 'PARCEL' as const, label: 'Parcel', icon: 'inventory_2' }
   ];
   private readonly saved = readLocked();
-  protected readonly v = signal<QuickInscanFields>({ ...EMPTY, ...this.saved.values });
+  protected readonly v = signal<QuickBookingFields>({ ...EMPTY, ...this.saved.values });
   protected readonly locks = signal<Locks>(this.saved.locks);
   protected readonly clients = signal<SelectOption[]>([]);
   private readonly client = signal<CustomerResponse | null>(null);
@@ -287,7 +287,7 @@ export class QuickInscan {
   protected readonly error = signal<string | null>(null);
   protected readonly busy = signal(false);
   protected readonly success = signal<string | null>(null);
-  protected readonly done = signal<InscanRow[]>(readDone());
+  protected readonly done = signal<BookingRow[]>(readDone());
   protected readonly lockedCount = computed(() => Object.values(this.locks()).filter(Boolean).length);
   protected readonly totalKg = computed(() => this.done().reduce((s, d) => s + d.kg, 0));
   protected readonly kgLabel = computed(() => {
@@ -302,7 +302,7 @@ export class QuickInscan {
   private seq = { from: 0, to: 0 };
 
   constructor() {
-    this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Quick Inscan' }]);
+    this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Quick Booking' }]);
     effect(() => writeLocked(this.locks(), this.v()));
     effect(() => { try { sessionStorage.setItem(DONE_KEY, JSON.stringify(this.done())); } catch { /* this visit only */ } });
     this.business.businessCustomers().subscribe({
@@ -455,7 +455,7 @@ export class QuickInscan {
       serviceTypeId, packageTypeId: this.packageTypeId(), paymentModeId: this.tbbModeId!,
       declaredValue: value, numberOfPackages: Number(s.pieces),
       items: [{ itemName: s.parcelType === 'DOCUMENT' ? 'Document' : 'Parcel', quantity: Number(s.pieces), weight: kg, declaredValue: value }],
-      remarks: 'Quick Inscan', deliveryType: 'DOOR', businessCustomerId: s.clientId
+      remarks: 'Quick Booking', deliveryType: 'DOOR', businessCustomerId: s.clientId
     } as CreateShipmentRequest;
   }
 
@@ -493,7 +493,7 @@ export class QuickInscan {
       },
       error: (e: HttpErrorResponse | Error) => {
         this.busy.set(false);
-        this.error.set(e instanceof HttpErrorResponse ? (e.error?.message ?? 'There was an error performing the quick inscan.') : e.message);
+        this.error.set(e instanceof HttpErrorResponse ? (e.error?.message ?? 'There was an error performing the quick booking.') : e.message);
       }
     });
   }

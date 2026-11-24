@@ -582,8 +582,8 @@ export const routes: Routes = [
       },
       // Credit Shipment: the same page for a business customer picked first, billed to them (To Be Billed).
       {
-        path: 'shipments/quick-inscan', title: 'Quick Inscan', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS },
-        loadComponent: () => import('@features/shipment/quick-inscan').then((m) => m.QuickInscan)
+        path: 'shipments/quick-booking', title: 'Quick Booking', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS },
+        loadComponent: () => import('@features/shipment/quick-booking').then((m) => m.QuickBooking)
       },
       {
         path: 'shipments/credit', title: 'Credit Shipment', canActivate: [roleGuard], data: { roles: SHIPMENT_WRITERS, credit: true },

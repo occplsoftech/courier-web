@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { QuickInscan, readLocked } from './quick-inscan';
+import { QuickBooking, readLocked } from './quick-booking';
 
-describe('QuickInscan', () => {
+describe('QuickBooking', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
@@ -12,7 +12,7 @@ describe('QuickInscan', () => {
   afterEach(() => sessionStorage.clear());
 
   const make = () => {
-    const f = TestBed.createComponent(QuickInscan);
+    const f = TestBed.createComponent(QuickBooking);
     f.detectChanges();
     return { f, c: f.componentInstance as unknown as Record<string, any> };
   };
