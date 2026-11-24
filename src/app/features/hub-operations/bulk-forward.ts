@@ -58,7 +58,7 @@ interface Row {
       }
 
       <table class="tbl">
-        <thead><tr><th>Shipment</th><th>Courier service</th><th class="num">Our cost</th><th>Result</th></tr></thead>
+        <thead><tr><th>Shipment</th><th>Courier service</th><th>Result</th></tr></thead>
         <tbody>
           @for (r of rows(); track r.shipmentId) {
             <tr [class.off]="r.blocked">
@@ -70,12 +70,11 @@ interface Row {
                 @else {
                   <select [value]="r.choice" (change)="choose(r, $any($event.target).value)" [disabled]="busy() || !!r.result" [attr.aria-label]="'Courier for ' + r.shipmentNumber">
                     @for (o of r.options; track o.providerCode + o.serviceCode) {
-                      <option [value]="key(o)">{{ o.providerName }} · {{ o.serviceName }} — ₹{{ o.cost | number: '1.0-2' }}{{ eta(o) }}</option>
+                      <option [value]="key(o)">{{ o.providerName }} · {{ o.serviceName }}{{ eta(o) }}</option>
                     }
                   </select>
                 }
               </td>
-              <td class="num">@if (chosen(r); as o) { ₹{{ o.cost | number: '1.2-2' }} }</td>
               <td>
                 @if (r.result; as x) {
                   <span class="res" [class.ok]="x.outcome === 'FORWARDED'" [class.bad]="x.outcome === 'REFUSED' || x.outcome === 'ERROR'" [class.warn2]="x.outcome === 'UNCONFIRMED'">
@@ -98,7 +97,7 @@ interface Row {
           } @else {
             <p class="text-caption">{{ ready().length }} ready · {{ rows().length - ready().length }} cannot be forwarded.</p>
             <app-button icon="local_shipping" [disabled]="!ready().length || busy()" (pressed)="forwardAll()">
-              {{ busy() ? 'Forwarding ' + progress() + ' of ' + ready().length + '…' : 'Forward ' + ready().length + ' for ₹' + (total() | number: '1.2-2') }}</app-button>
+              {{ busy() ? 'Forwarding ' + progress() + ' of ' + ready().length + '…' : 'Forward ' + ready().length }}</app-button>
           }
         </footer>
       }
@@ -140,7 +139,6 @@ export class BulkForward implements OnInit {
   readonly done = signal(false);
 
   readonly ready = computed(() => this.rows().filter((r) => !r.blocked && r.options.length && !r.result));
-  readonly total = computed(() => this.ready().reduce((sum, r) => sum + (this.chosen(r)?.cost ?? 0), 0));
   readonly providers = computed(() => {
     const m = new Map<string, string>();
     this.rows().forEach((r) => r.options.forEach((o) => m.set(o.providerCode, o.providerName)));
@@ -202,7 +200,7 @@ export class BulkForward implements OnInit {
     const todo = this.ready();
     const ok = await firstValueFrom(this.dialogs.confirm({
       title: 'Forward shipments',
-      message: `Forward ${todo.length} shipment(s) to the chosen couriers for ₹${this.total().toFixed(2)} in all? Each is priced again and booked one after the other.`,
+      message: `Forward ${todo.length} shipment(s) to the chosen couriers? Each is priced again and booked one after the other.`,
       confirmLabel: 'Forward'
     }));
     if (!ok) return;
@@ -234,11 +232,11 @@ export class BulkForward implements OnInit {
   /** The result as a CSV file (opens in Excel). */
   download(): void {
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [['Shipment', 'Result', 'Courier', 'Service', 'Courier AWB', 'Our cost', 'Message', 'Label'].map(esc).join(',')];
+    const lines = [['Shipment', 'Result', 'Courier', 'Service', 'Courier AWB', 'Message', 'Label'].map(esc).join(',')];
     for (const r of this.rows()) {
       const x = r.result;
       lines.push([r.shipmentNumber, x ? this.label(x.outcome) : (r.blocked ? 'Not forwarded' : ''), x?.provider ?? '', x?.serviceName ?? '',
-        x?.awb ?? '', x?.cost ?? '', x?.message ?? r.blocked ?? '', x?.labelUrl ?? ''].map(esc).join(','));
+        x?.awb ?? '', x?.message ?? r.blocked ?? '', x?.labelUrl ?? ''].map(esc).join(','));
     }
     const url = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a');

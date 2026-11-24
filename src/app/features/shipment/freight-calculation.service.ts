@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { ApiService } from '@core/services/api.service';
+import { HttpContext } from '@angular/common/http';
+import { ApiService, SILENT_ERRORS } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
 import { FreightCalculationRequest, FreightCalculationResponse } from '@core/models/district-level-freight.model';
 
@@ -13,7 +14,9 @@ import { FreightCalculationRequest, FreightCalculationResponse } from '@core/mod
 export class FreightCalculationService {
   private readonly api = inject(ApiService);
 
-  calculate(body: FreightCalculationRequest) {
-    return this.api.post<FreightCalculationResponse>(API.districtLevelFreightCalculate, body);
+  /** `silent`: a service with no freight for this lane is expected (the caller leaves it out), so no error toast. */
+  calculate(body: FreightCalculationRequest, opts?: { silent?: boolean }) {
+    const context = opts?.silent ? new HttpContext().set(SILENT_ERRORS, true) : undefined;
+    return this.api.post<FreightCalculationResponse>(API.districtLevelFreightCalculate, body, context);
   }
 }

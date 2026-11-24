@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, provideRouter } from '@angular/router';
-import { DomesticCashBooking, actualKg, volumetricKg } from './domestic-cash-booking';
+import { DomesticCashBooking, ModeRate, actualKg, pricedModes, volumetricKg } from './domestic-cash-booking';
 
 describe('DomesticCashBooking', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] }));
@@ -81,6 +81,54 @@ describe('DomesticCashBooking', () => {
     expect((f.componentInstance as unknown as Record<string, any>)['gstPercent']()).toBe(0);
   });
 
+  const mode = (id: string, total: number | null, estimate: number, extra: Partial<ModeRate> = {}): ModeRate => ({
+    serviceTypeId: id, label: id, total, freight: 0, oda: 0, extras: 0, gst: 0, estimate, days: null, chargeable: 5, ...extra });
+
+  it('offers only the services with charges set up, cheapest first', () => {
+    const shown = pricedModes([mode('air', 300, 300), mode('none', null, 0, { error: 'No rate' }), mode('zero', 0, 0), mode('surface', 120, 120)]);
+    expect(shown.map((m) => m.serviceTypeId)).toEqual(['surface', 'air']);
+  });
+
+  it('notes on Cargo that up to 20 kg costs the same, only below 20 kg', () => {
+    const c = make();
+    expect(c['cargoNote'](mode('cargo', 500, 500, { cargo: true, chargeable: 7 }))).toBe(true);
+    expect(c['cargoNote'](mode('cargo', 500, 500, { cargo: true, chargeable: 20 }))).toBe(false);
+    expect(c['cargoNote'](mode('air', 500, 500, { chargeable: 7 }))).toBe(false);
+  });
+
+  it('adds FOV only when ticked: 0.2% of the package value, at least ₹100, with GST, and books it', () => {
+    const c = make();
+    c['gstPercent'].set(18);
+    c['d'].update((d: any) => ({ ...d, packageValue: '125000' }));
+    const m = mode('air', 1000, 1180, { freight: 1000, gst: 180 });
+    expect(c['totalOf'](m)).toBe(1180);
+    c['fovOn'].set(true);
+    expect(c['fov']()).toBe(250);
+    expect(c['totalOf'](m)).toBe(1180 + 250 + 45);
+    c['d'].update((d: any) => ({ ...d, packageValue: '5000' }));
+    expect(c['fov']()).toBe(100);
+    expect(c['buildRequest']().insuranceApplicable).toBe(true);
+  });
+
+  it('COD: asks for the collection amount, adds 2% (min ₹100) with GST, and books the amount', () => {
+    const c = make();
+    c['gstPercent'].set(18);
+    c['paymentOptions'].set([{ value: 'pm-paid', label: 'Paid (PAID)' }, { value: 'pm-cod', label: 'Cash on Delivery (COD)' }]);
+    c['paymentModeId'].set('pm-cod');
+    expect(c['stepError'](4)).toBe('Enter the COD collection amount.');
+    c['codAmount'].set('12500');
+    expect(c['stepError'](4)).toBeNull();
+    expect(c['codFee']()).toBe(250);
+    const m = mode('air', 1000, 1180, { freight: 1000, gst: 180 });
+    expect(c['totalOf'](m)).toBe(1180 + 250 + 45);
+    expect(c['buildRequest']().codAmount).toBe(12500);
+    c['codAmount'].set('900');
+    expect(c['codFee']()).toBe(100);
+    c['paymentModeId'].set('pm-paid');
+    expect(c['codFee']()).toBe(0);
+    expect(c['buildRequest']().codAmount).toBeNull();
+  });
+
   it('starts on Non-Document (Parcel)', () => {
     const c = make();
     expect(c['itemType']()).toBe('PARCEL');
@@ -135,6 +183,16 @@ describe('DomesticCashBooking', () => {
       c['d'].set({ packageDescription: 'Medicines', packageValue: '18000', pickupName: 'Sai Pharma', pickupAddress: 'MIDC', pickupContact: '9890011122',
         pickupAltContact: '', pickupEmail: '', deliveryName: 'City Care', deliveryAddress: 'Bandra', deliveryContact: '9819012345', deliveryAltContact: '', deliveryEmail: '' });
       expect(c['buildRequest']()).toMatchObject({ businessCustomerId: 'cust-9', paymentModeId: 'pm-tbb', serviceTypeId: 'svc-srf' });
+    });
+
+    it('COD on a credit booking switches the payment mode between COD and To Be Billed', () => {
+      const c = makeCredit();
+      c['paymentOptions'].set([{ value: 'pm-tbb', label: 'To Be Billed (TBB)' }, { value: 'pm-cod', label: 'Cash on Delivery (COD)' }]);
+      c['paymentModeId'].set('pm-tbb');
+      c['setCreditCod'](true);
+      expect(c['paymentModeId']()).toBe('pm-cod');
+      c['setCreditCod'](false);
+      expect(c['paymentModeId']()).toBe('pm-tbb');
     });
 
     it('Continue Inscan keeps the client and sender but clears the shipment', () => {

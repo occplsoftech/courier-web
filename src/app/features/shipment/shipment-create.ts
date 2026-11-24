@@ -27,6 +27,7 @@ import {
   ShipmentItemRequest, CreateShipmentRequest, PricingResponse, DeliveryType, DELIVERY_TYPES
 } from '@core/models/shipment.model';
 import { FreightCalculationResponse } from '@core/models/district-level-freight.model';
+import { codCharge, COD_MINIMUM, COD_PERCENT, fovCharge, isCodOption } from './fov';
 import { ItemEntryGrid } from './components/item-entry-grid';
 import { ChargeSummary } from './components/charge-summary';
 import { VoiceMicButton } from './components/voice-mic-button';
@@ -227,7 +228,7 @@ interface ServiceRate {
                   <input type="checkbox" [formControl]="c('insuranceApplicable')" />
                   <span>FOV Applicable</span>
                 </label>
-                <p class="hint pref-box__note">2% of Invoice Value, added to charges automatically.</p>
+                <p class="hint pref-box__note">0.2% of Invoice Value (or Declared Value), minimum ₹100, added to charges automatically.</p>
               </div>
             </div>
           </app-card>
@@ -538,12 +539,13 @@ interface ServiceRate {
                   applicableCharges: p.chargeBreakup.applicableCharges,
                   applicableChargeLines: p.chargeBreakup.applicableChargeLines,
                   gstAmount: p.chargeBreakup.gstAmount + gstOnOtherCharges() + gstOnOdaChargeDelta() + gstOnFreightDelta()
-                    + gstOnInsuranceChargeDelta() + gstOnDoorDeliveryCharge() + gstOnToPayCharge(),
+                    + gstOnInsuranceChargeDelta() + gstOnDoorDeliveryCharge() + gstOnToPayCharge() + gstOnCodCharge(),
                   discountAmount: p.chargeBreakup.discount, roundOff: computedRoundOff(),
                   otherCharges: otherCharges(),
                   appointmentDeliveryCharge: c('appointmentDelivery').value ? appointmentDeliveryCharge() : undefined,
                   doorDeliveryCharge: c('deliveryType').value === 'DOOR' ? doorDeliveryCharge() : undefined,
                   toPayCharge: toPayCharge(),
+                  codCharge: codFee(),
                   netAmount: manualNetAmount() ?? computedNetAmount()
                 }" [editable]="true" (netAmountChange)="onManualNetAmountChange($event)"
                   (otherChargesChange)="otherCharges.set($event)"
@@ -555,6 +557,11 @@ interface ServiceRate {
 
             <div class="sum__paymode">
               <app-select [control]="c('paymentModeId')" label="Payment Mode" [options]="paymentModeOptions()" placeholder="Select a payment mode" />
+              @if (isCod()) {
+                <label class="fld"><span class="fld__l">COD Collection Amount (₹)</span>
+                  <input class="fld__i" type="number" min="1" [value]="codAmount() || ''" (input)="codAmount.set(+$any($event.target).value || 0)" placeholder="What the rider collects" /></label>
+                <p class="hint">The rider collects this from the consignee for the shipper. COD charge {{ codPercent }}%, minimum ₹{{ codMin }}.</p>
+              }
             </div>
 
             @if (ewayBillReason(); as reason) {
@@ -1522,6 +1529,21 @@ export class ShipmentCreate implements OnInit {
     return label.endsWith('(TO_PAY)') ? this.toPayChargeSetting() : 0;
   }
 
+  /** Cash on Delivery: the amount the rider collects (typed here) and the COD charge on it — mirrors `ShipmentServiceImpl.codCharge`. */
+  protected readonly codAmount = signal(0);
+  protected readonly codPercent = COD_PERCENT;
+  protected readonly codMin = COD_MINIMUM;
+  protected isCod(): boolean {
+    const id = this.c('paymentModeId').value;
+    return isCodOption(this.paymentModeOptions().find((o) => o.value === id)?.label);
+  }
+  protected codFee(): number {
+    return this.isCod() ? codCharge(this.codAmount()) : 0;
+  }
+  protected gstOnCodCharge(): number {
+    return (this.codFee() * this.gstPercentage()) / 100;
+  }
+
   /** GST on {@link toPayCharge} at the booking branch's GST% — mirrors `copyCharge`'s
    *  `gstOnToPayCharge`. */
   protected gstOnToPayCharge(): number {
@@ -1564,7 +1586,7 @@ export class ShipmentCreate implements OnInit {
     return (this.freightDelta() * this.gstPercentage()) / 100;
   }
 
-  /** When the FOV (insurance) Applicable checkbox is on, FOV is 2% of Invoice Value instead
+  /** When the FOV (insurance) Applicable checkbox is on, FOV is 0.2% of Invoice Value (else Declared Value), minimum ₹100, instead
    *  of the Pricing Engine's own rate-driven `chargeBreakup.insuranceCharge` — mirrors
    *  `ShipmentServiceImpl.copyCharge`'s `finalInsuranceCharge`. Plain method, not
    *  `computed()` — same `FormControl.value`-staleness reason as {@link readyToPrice}. */
@@ -1572,7 +1594,7 @@ export class ShipmentCreate implements OnInit {
     const engineInsurance = this.pricing()?.chargeBreakup.insuranceCharge ?? 0;
     if (!this.c('insuranceApplicable').value) return engineInsurance;
     const invoiceValue = Number(this.c('invoiceValue').value) || 0;
-    return invoiceValue * 0.02;
+    return fovCharge(invoiceValue > 0 ? invoiceValue : Number(this.c('declaredValue').value) || 0);
   }
 
   /** Difference between {@link finalInsuranceCharge} and the engine's own figure — zero
@@ -1601,6 +1623,7 @@ export class ShipmentCreate implements OnInit {
       + appointmentCharge
       + doorCharge + this.gstOnDoorDeliveryCharge()
       + this.toPayCharge() + this.gstOnToPayCharge()
+      + this.codFee() + this.gstOnCodCharge()
       + this.insuranceChargeDelta() + this.gstOnInsuranceChargeDelta();
   }
 
@@ -2052,6 +2075,7 @@ export class ShipmentCreate implements OnInit {
       appointmentTimeSlot: v.appointmentDelivery ? (v.appointmentTimeSlot?.trim() || null) : null,
       appointmentDeliveryCharge: v.appointmentDelivery ? (this.appointmentDeliveryCharge() || null) : null,
       insuranceApplicable: v.insuranceApplicable || null,
+      codAmount: this.isCod() ? this.codAmount() || null : null,
       deliveryType: v.deliveryType,
       doorDeliveryCharge: v.deliveryType === 'DOOR' ? (this.doorDeliveryCharge() || null) : null,
       ...(this.isMsrtc ? { flowType: 'MSRTC' as const, deliveryBranchId: this.msrtcDeliveryBranchId() } : {}),
@@ -2128,7 +2152,7 @@ export class ShipmentCreate implements OnInit {
               insuranceCharge: this.finalInsuranceCharge(),
               gstAmount: p.chargeBreakup.gstAmount + this.gstOnOtherCharges() + this.gstOnOdaChargeDelta()
                 + this.gstOnFreightDelta() + this.gstOnInsuranceChargeDelta() + this.gstOnDoorDeliveryCharge()
-                + this.gstOnToPayCharge(),
+                + this.gstOnToPayCharge() + this.gstOnCodCharge(),
               // `roundOff`/`netAmount` deliberately exclude raw otherCharges/appointmentDeliveryCharge/
               // doorDeliveryCharge here (unlike the sidebar preview) — this file's own `total`
               // (performa-bill-print.util.ts `sheet()`) adds those three back on top of
@@ -2139,7 +2163,7 @@ export class ShipmentCreate implements OnInit {
               netAmount: p.chargeBreakup.netAmount + this.gstOnOtherCharges()
                 + this.odaChargeDelta() + this.gstOnOdaChargeDelta() + this.freightDelta() + this.gstOnFreightDelta()
                 + this.insuranceChargeDelta() + this.gstOnInsuranceChargeDelta() + this.gstOnDoorDeliveryCharge()
-                + this.gstOnToPayCharge()
+                + this.gstOnToPayCharge() + this.gstOnCodCharge()
                 + (this.computedRoundOff() - p.chargeBreakup.roundOff)
             },
             otherCharges: this.otherCharges(),
@@ -2148,6 +2172,7 @@ export class ShipmentCreate implements OnInit {
             appointmentTimeSlot: v.appointmentDelivery ? v.appointmentTimeSlot : null,
             doorDeliveryCharge: v.deliveryType === 'DOOR' ? this.doorDeliveryCharge() : undefined,
             toPayCharge: this.toPayCharge(),
+            codCharge: this.codFee(),
             remarks: v.remarks || null,
             createdByName: s.createdByName ?? null,
             invoiceValue: v.invoiceValue || null,

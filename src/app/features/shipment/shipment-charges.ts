@@ -36,7 +36,7 @@ import { ShipmentService } from './shipment.service';
             gstAmount: charges()!.gstAmount,
             discountAmount: charges()!.discountAmount, roundOff: charges()!.roundOff,
             otherCharges: charges()!.otherCharges, appointmentDeliveryCharge: charges()!.appointmentDeliveryCharge,
-            doorDeliveryCharge: charges()!.doorDeliveryCharge, toPayCharge: charges()!.toPayCharge,
+            doorDeliveryCharge: charges()!.doorDeliveryCharge, toPayCharge: charges()!.toPayCharge, codCharge: charges()!.codCharge,
             netAmount: charges()!.netAmount
           }" />
         </app-card>

@@ -30,7 +30,6 @@ describe('BulkForward', () => {
     await init;
     expect(c.rows().map((r) => r.choice)).toEqual(['D|Surface', 'S|Air', '']);
     expect(c.ready().length).toBe(2);
-    expect(c.total()).toBe(140);
     c.oneCourier('D');
     expect(c.rows().map((r) => r.choice)).toEqual(['D|Surface', 'D|Surface', '']);
     c.cheapestForAll();
