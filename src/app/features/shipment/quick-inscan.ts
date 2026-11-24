@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
@@ -12,6 +12,29 @@ export interface QuickInscanFields {
   awbNumber: string; consigneeName: string; fromPincode: string; toPincode: string; consigneeAddress: string; consigneePhone: string;
 }
 type Field = keyof QuickInscanFields;
+
+/** Locks and the values they keep live in this browser tab only (sessionStorage): kept across reloads, gone when the tab closes. */
+const SESSION_KEY = 'cs.quickInscan.locked';
+
+/** The locks saved for this tab, with the value each locked field keeps. */
+export function readLocked(): { locks: Partial<Record<Field, boolean>>; values: Partial<QuickInscanFields> } {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? { locks: parsed.locks ?? {}, values: parsed.values ?? {} } : { locks: {}, values: {} };
+  } catch {
+    return { locks: {}, values: {} };
+  }
+}
+
+function writeLocked(locks: Partial<Record<Field, boolean>>, v: QuickInscanFields): void {
+  const values: Partial<QuickInscanFields> = {};
+  (Object.keys(locks) as Field[]).filter((k) => locks[k]).forEach((k) => { (values as Record<string, string>)[k] = v[k]; });
+  try {
+    if (Object.keys(values).length) sessionStorage.setItem(SESSION_KEY, JSON.stringify({ locks, values }));
+    else sessionStorage.removeItem(SESSION_KEY);
+  } catch { /* storage unavailable: locks last this visit only */ }
+}
 
 const EMPTY: QuickInscanFields = {
   clientId: '', consignorName: '', parcelType: 'PARCEL', pieces: '', weightGrams: '', awbNumber: '',
@@ -33,7 +56,7 @@ const EMPTY: QuickInscanFields = {
       <header class="qi__head">
         <div>
           <h1 class="text-h1">Quick Inscan</h1>
-          <p class="text-caption">Credit-client parcels in one screen. Lock (<mat-icon class="inl">lock</mat-icon>) a field to keep it for the next parcel.</p>
+          <p class="text-caption">Credit-client parcels in one screen. Lock (<mat-icon class="inl">lock</mat-icon>) a field to keep it for the next parcel; locks stay until you unlock them or close this tab.</p>
         </div>
         <div class="qi__count"><strong>{{ done().length }}</strong><span>inscanned this session</span></div>
       </header>
@@ -77,7 +100,8 @@ const EMPTY: QuickInscanFields = {
 
           @if (error()) { <p class="err">{{ error() }}</p> }
           <div class="actions">
-            <span class="text-caption">{{ lockedCount() }} field(s) locked for the next parcel</span>
+            <span class="text-caption lk">{{ lockedCount() }} field(s) locked for the next parcel
+              @if (lockedCount()) { <button type="button" class="lk__all" (click)="unlockAll()"><mat-icon>lock_open</mat-icon>Unlock all</button> }</span>
             <app-button icon="qr_code_2" (pressed)="generate()">Generate AWB</app-button>
           </div>
         </form>
@@ -103,8 +127,8 @@ const EMPTY: QuickInscanFields = {
         <div class="row">
           @if (kind === 'client') {
             <select class="f__i" [id]="'qi-' + k" [value]="v().clientId" (change)="pickClient($any($event.target).value)">
-              <option value="">Select the credit client</option>
-              @for (c of clients(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+              <option value="" [selected]="!v().clientId">Select the credit client</option>
+              @for (c of clients(); track c.id) { <option [value]="c.id" [selected]="c.id === v().clientId">{{ c.name }}</option> }
             </select>
           } @else {
             <div class="f__wrap">
@@ -168,6 +192,10 @@ const EMPTY: QuickInscanFields = {
     .lock--on:hover { color: #fff; }
     .actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px;
       padding-top: 16px; border-top: 1px solid var(--surface-border); }
+    .lk { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .lk__all { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; padding: 0;
+      color: var(--brand-700); font: 600 15px var(--font-sans); }
+    .lk__all mat-icon { font-size: 17px; width: 17px; height: 17px; }
     .err { margin: 0; color: var(--danger); font: 500 16px var(--font-sans); }
     .muted { color: var(--content-muted); font: 400 16px var(--font-sans); margin: 0; }
     .done { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -189,8 +217,9 @@ export class QuickInscan {
     { value: 'DOCUMENT' as const, label: 'Document', icon: 'description' },
     { value: 'PARCEL' as const, label: 'Non-Document (Parcel)', icon: 'inventory_2' }
   ];
-  protected readonly v = signal<QuickInscanFields>({ ...EMPTY });
-  protected readonly locks = signal<Partial<Record<Field, boolean>>>({});
+  private readonly saved = readLocked();
+  protected readonly v = signal<QuickInscanFields>({ ...EMPTY, ...this.saved.values });
+  protected readonly locks = signal<Partial<Record<Field, boolean>>>(this.saved.locks);
   protected readonly clients = signal<{ id: string; name: string; contact: string; pincode: string }[]>([]);
   protected readonly fromCity = signal<string | null>(null);
   protected readonly toCity = signal<string | null>(null);
@@ -204,6 +233,8 @@ export class QuickInscan {
 
   constructor() {
     this.breadcrumb.set([{ label: 'Shipments', route: '/shipments' }, { label: 'Quick Inscan' }]);
+    // Keep the locked fields (and only those) in this tab's session storage as they change.
+    effect(() => writeLocked(this.locks(), this.v()));
     this.business.businessCustomers().subscribe({
       next: (p) => this.clients.set(p.content.map((c) => ({
         id: c.id, name: `${c.displayName} (${c.customerCode})`, contact: c.contactPerson || c.displayName, pincode: ''
@@ -237,6 +268,21 @@ export class QuickInscan {
 
   protected toggleLock(k: Field): void {
     this.locks.update((l) => ({ ...l, [k]: !l[k] }));
+  }
+
+  /** Unlock every field (and forget what they kept). */
+  protected unlockAll(): void {
+    this.locks.set({});
+  }
+
+  /** The next parcel: unlocked fields are cleared, locked ones keep their value. */
+  protected clearForNext(): void {
+    const l = this.locks();
+    this.v.update((s) => {
+      const next = { ...EMPTY };
+      (Object.keys(l) as Field[]).filter((k) => l[k]).forEach((k) => { (next as Record<string, string>)[k] = s[k]; });
+      return next;
+    });
   }
 
   /** Design preview: booking is wired once the design is approved. */
