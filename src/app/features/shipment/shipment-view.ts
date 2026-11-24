@@ -58,6 +58,9 @@ const TIMELINE_ICONS: Record<string, string> = {
 /** Shipment Details — the booking in full, with the sender/receiver resolved, and links
  *  to the three sub-resource pages (Charges, History, Documents) the backend exposes as
  *  their own endpoints. */
+import { ShipmentPayment } from '@core/models/shipment.model';
+import { RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult } from './components/razorpay-qr-dialog';
+
 @Component({
   selector: 'app-shipment-view',
   standalone: true,
@@ -361,6 +364,18 @@ const TIMELINE_ICONS: Record<string, string> = {
               <dt>Service Type</dt><dd>{{ serviceTypeLabel(shipment()!.serviceTypeId) }}</dd>
               <dt>Package Type</dt><dd>{{ packageTypeLabel(shipment()!.packageTypeId) }}</dd>
               <dt>Payment Mode</dt><dd>{{ paymentModeLabel(shipment()!.paymentModeId) }}</dd>
+              @if (counterPayment(); as cp) {
+                <dt>Paid By</dt>
+                <dd class="cpay">
+                  {{ cp.method === 'RAZORPAY' ? 'Razorpay QR' : cp.method === 'UPI_QR' ? 'UPI QR' : 'Cash' }}
+                  · ₹{{ cp.amount | number: '1.2-2' }}
+                  <span class="cpay__st" [class.cpay__st--due]="cp.status === 'PENDING'">{{ cp.status === 'PAID' ? 'Paid' : 'Payment pending' }}</span>
+                  @if (cp.reference) { <span class="cpay__ref">Ref {{ cp.reference }}</span> }
+                  @if (cp.status === 'PENDING' && cp.method === 'RAZORPAY' && shipment()!.status !== 'CANCELLED') {
+                    <app-button variant="stroked" icon="qr_code_2" (pressed)="showPaymentQr()">Show payment QR</app-button>
+                  }
+                </dd>
+              }
               <dt>Shipment Type</dt><dd>{{ shipment()!.shipmentType }}</dd>
               <dt>Delivery Type</dt><dd>{{ shipment()!.deliveryType === 'DOOR' ? 'Door Delivery' : 'Office Delivery' }}</dd>
               @if (shipment()!.appointmentDelivery) {
@@ -464,6 +479,10 @@ const TIMELINE_ICONS: Record<string, string> = {
     }
   `,
   styles: [`
+    .cpay { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .cpay__st { padding: 2px 10px; border-radius: 999px; font: 700 13px var(--font-sans); background: #e6f6ec; color: #16794a; }
+    .cpay__st--due { background: #fff6e0; color: #8a5a00; }
+    .cpay__ref { font: 400 13px var(--font-sans); color: var(--content-muted); }
     .mt-wrap { overflow-x:auto; }
     .mt { width:100%; border-collapse:collapse; font:400 16px var(--font-sans); }
     .mt th { text-align:left; padding:10px 12px; font-weight:600; font-size:15px; color:var(--content-muted);
@@ -698,6 +717,25 @@ export class ShipmentView implements OnInit {
 
   id = '';
 
+  /** How the customer paid a Paid booking (Razorpay QR / cash / UPI QR). */
+  readonly counterPayment = signal<ShipmentPayment | null>(null);
+
+  private loadCounterPayment(): void {
+    this.service.payment(this.id).pipe(catchError(() => of(null))).subscribe((p) => this.counterPayment.set(p));
+  }
+
+  /** Razorpay payment still due: show the QR again (a new one once it expired); it turns Paid by itself. */
+  protected showPaymentQr(): void {
+    const s = this.shipment();
+    if (!s) return;
+    this.matDialog.open<RazorpayQrDialog, RazorpayQrDialogData, RazorpayQrResult>(RazorpayQrDialog,
+      { data: { shipmentId: s.id, shipmentNumber: s.shipmentNumber }, disableClose: true, autoFocus: false })
+      .afterClosed().subscribe((result) => {
+        if (result === 'PAID') this.notify.success(`Payment received. Shipment ${s.shipmentNumber} is paid.`);
+        this.loadCounterPayment();
+      });
+  }
+
   ngOnInit(): void {
     this.id = this.route.snapshot.paramMap.get('id') ?? '';
     this.masters.options('branches').subscribe((o) => this.branchOptions.set(o));
@@ -716,6 +754,7 @@ export class ShipmentView implements OnInit {
         this.loading.set(false);
         this.loadDetails();
         this.loadPaymentMode();
+        this.loadCounterPayment();
         this.loadRelated();
         this.loadMovement(s.manifestId ?? null);
       },

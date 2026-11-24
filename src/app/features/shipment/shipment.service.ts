@@ -7,7 +7,8 @@ import {
   ShipmentItem, CreateShipmentRequest, UpdateShipmentRequest, AddShipmentDocumentRequest,
   PricingRequest, PricingResponse, TimelineStep, ShipmentDrs, ShipmentSearchRequest, ShipmentSummaryStats,
   BranchCommissionSummary, BranchPerformanceSummary, VendorAuditRow, BulkTrackResponse, PaymentModeChange,
-  ForwardOptions, ForwardResult, ResolveForwardResult, ServiceabilityCheck, BulkForwardOptionsRow, BulkForwardResultRow
+  ForwardOptions, ForwardResult, ResolveForwardResult, ServiceabilityCheck, BulkForwardOptionsRow, BulkForwardResultRow,
+  ShipmentPayment
 } from '@core/models/shipment.model';
 
 /**
@@ -62,6 +63,10 @@ export class ShipmentService {
 
   // ---- writes -----------------------------------------------------------------
   create(body: CreateShipmentRequest) { return this.api.post<ShipmentResponse>(API.shipments, body); }
+  /** How the customer paid a Paid booking; a pending Razorpay payment is checked with Razorpay first. Null when none. */
+  payment(id: string) { return this.api.get<ShipmentPayment | null>(`${API.shipments}/${id}/payment`); }
+  /** The Razorpay QR for the shipment's final amount (the open one, or a new one once it expired). */
+  openPaymentQr(id: string) { return this.api.post<ShipmentPayment>(`${API.shipments}/${id}/payment/qr`, {}); }
   update(id: string, body: UpdateShipmentRequest) {
     return this.api.put<ShipmentResponse>(`${API.shipments}/${id}`, body);
   }

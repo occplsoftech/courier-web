@@ -498,8 +498,35 @@ export interface ShipmentFields {
  *  delivery branch and moves branch to branch only. */
 export type FlowType = 'STANDARD' | 'MSRTC';
 
+/** How the customer pays a Paid booking at the counter. RAZORPAY books with the payment pending
+ *  (a Razorpay QR is shown next) and does not debit the branch wallet. */
+export type CounterPaymentMethod = 'RAZORPAY' | 'CASH' | 'UPI_QR';
+
+/** GET /shipments/{id}/payment — mirrors backend `ShipmentPaymentResponse`. */
+export interface ShipmentPayment {
+  id: string;
+  shipmentId: string;
+  shipmentNumber: string;
+  bookingBranchId: string;
+  method: CounterPaymentMethod;
+  status: 'PENDING' | 'PAID';
+  amount: number;
+  reference?: string | null;
+  /** Razorpay's QR image while it can still be paid. */
+  qrImageUrl?: string | null;
+  qrCloseBy?: string | null;
+  qrOpen: boolean;
+  paidAmount?: number | null;
+  paidAt?: string | null;
+  createdAt?: string | null;
+}
+
 export interface CreateShipmentRequest extends ShipmentFields {
   bookingBranchId: string;
+  /** Paid bookings only: how the customer pays (default CASH). */
+  paymentMethod?: CounterPaymentMethod | null;
+  /** UPI_QR: the UPI reference (UTR) from the customer's app, optional. */
+  paymentReference?: string | null;
   /** Omit for the normal flow. MSRTC requires `deliveryBranchId`. */
   flowType?: FlowType;
   deliveryBranchId?: string | null;
