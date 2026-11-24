@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
@@ -32,7 +31,7 @@ interface Row {
   selector: 'app-bulk-forward',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UiButton, RouterLink, DecimalPipe],
+  imports: [UiButton, RouterLink],
   template: `
     <div class="page">
       <header class="page__head">
