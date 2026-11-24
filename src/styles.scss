@@ -139,8 +139,31 @@ body {
   background: linear-gradient(180deg, var(--brand-500), var(--brand-700));
 }
 .page__head h1, .page__head .text-h1 { margin: 0; }
+// The page's menu icon in a brand tile before the title (set by AdminLayout; empty = the page has its own illustration).
+.page__head[data-icon]:not([data-icon='']) { padding-left: 90px; min-height: 84px; }
+.page__head[data-icon]:not([data-icon=''])::after {
+  content: attr(data-icon);
+  position: absolute;
+  left: 24px; top: 18px;
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  font-family: 'Material Icons';
+  font-weight: normal; font-style: normal;
+  font-size: 26px; line-height: 1;
+  letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr;
+  -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  box-shadow: 0 6px 14px rgba(214, 31, 69, .25);
+}
 .page__head .text-caption, .page__head p { margin: 4px 0 0; }
-@media (max-width: 640px) { .page__head { padding: 14px 16px 14px 20px; border-radius: 14px; } }
+@media (max-width: 640px) {
+  .page__head { padding: 14px 16px 14px 20px; border-radius: 14px; }
+  .page__head[data-icon]:not([data-icon='']) { padding-left: 70px; min-height: 68px; }
+  .page__head[data-icon]:not([data-icon=''])::after { left: 18px; top: 14px; width: 40px; height: 40px; font-size: 22px; border-radius: 12px; }
+}
 .page__actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 // Optional small illustration accent next to a page__head's title — used on a few
 // logistics-heavy pages (Loading Sheet, In Scan, THC, DRS, Delivery). Subtle, hidden on

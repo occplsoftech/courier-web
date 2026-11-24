@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, afterNextRender, inject
 import { Router, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { NavigationService } from '@core/navigation/navigation.service';
+import { pageIconFor } from '@core/navigation/page-icon';
 import { TourService } from '@core/services/tour.service';
 import { AuthService } from '@core/auth/auth.service';
 import { IdleTimeoutService } from '@core/auth/idle-timeout.service';
@@ -73,7 +74,10 @@ export class AdminLayout {
     this.destroyRef.onDestroy(() => this.idleTimeout.stop());
 
     // Sidebar/header DOM must be painted before driver.js can measure tour-step anchors.
-    afterNextRender(() => this.tour.maybeAutoStart());
+    afterNextRender(() => {
+      this.tour.maybeAutoStart();
+      this.watchPageHeaders();
+    });
 
     const mq = window.matchMedia('(max-width: 1024px)');
     const apply = (matches: boolean) => {
@@ -84,6 +88,23 @@ export class AdminLayout {
     const onChange = (e: MediaQueryListEvent) => apply(e.matches);
     mq.addEventListener('change', onChange);
     this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
+  }
+
+  /**
+   * Every page header shows its menu icon (see `.page__head[data-icon]` in styles.scss). Headers appear as pages load,
+   * so new ones are tagged as they are added; a page with its own illustration keeps that instead.
+   */
+  private watchPageHeaders(): void {
+    const main = document.querySelector('.shell__content');
+    if (!main) return;
+    const tag = () => main.querySelectorAll<HTMLElement>('.page__head:not([data-icon])').forEach((h) => {
+      if (h.querySelector('.page__head-ill')) { h.setAttribute('data-icon', ''); return; }
+      h.setAttribute('data-icon', pageIconFor(this.router.url));
+    });
+    const observer = new MutationObserver(tag);
+    observer.observe(main, { childList: true, subtree: true });
+    tag();
+    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   toggle(): void {
