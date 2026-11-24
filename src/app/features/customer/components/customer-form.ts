@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import {
   AbstractControl, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors,
   Validators
@@ -29,6 +29,10 @@ const TYPE_OPTS: SelectOption[] = CUSTOMER_TYPES.map((t) => ({
 
 const PAYMENT_OPTS: SelectOption[] = CUSTOMER_PAYMENT_MODES.map((m) => ({ value: m, label: PAYMENT_MODE_LABELS[m] }));
 const FREQUENCY_OPTS: SelectOption[] = BILLING_FREQUENCIES.map((m) => ({ value: m, label: BILLING_FREQUENCY_LABELS[m] }));
+
+
+/** DEFAULT: the company's zones (Zone Tariff) price the customer; CUSTOMIZE: the customer's own pricing zones do. */
+export type ZoneType = 'DEFAULT' | 'CUSTOMIZE';
 
 /** Checked on the trimmed value, same reasoning as BranchForm's `emailish`. */
 function emailish(control: AbstractControl): ValidationErrors | null {
@@ -111,6 +115,19 @@ function upperPattern(pattern: RegExp) {
         </div>
       </app-card>
 
+      @if (isBusiness()) {
+        <app-card title="Pricing Zone" subtitle="Which zones price this customer's bookings.">
+          <div class="zt" role="radiogroup" aria-label="Zone type">
+            @for (z of zoneTypes; track z.value) {
+              <label class="zt__opt" [class.zt__opt--on]="zoneType() === z.value">
+                <input type="radio" name="zoneType" [value]="z.value" [checked]="zoneType() === z.value" (change)="zoneType.set(z.value)" />
+                <span><strong>{{ z.label }}</strong><small>{{ z.hint }}</small></span>
+              </label>
+            }
+          </div>
+        </app-card>
+      }
+
       <app-card title="Billing Address" subtitle="Where invoices are addressed. Pickup and delivery addresses are added after the customer is created.">
         <div class="grid">
           <app-input [control]="c('billingAddressLine1')" label="Address Line 1" [maxLength]="255" />
@@ -158,6 +175,13 @@ function upperPattern(pattern: RegExp) {
       gap:16px; padding:14px 16px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
     .cform__note { font:500 16px var(--font-sans); color:var(--danger); }
     .cform__actions { display:flex; gap:10px; }
+    .zt { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .zt__opt { display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border:1px solid var(--surface-border); border-radius:12px; cursor:pointer; }
+    .zt__opt--on { border-color:var(--brand-600); background:var(--brand-50); }
+    .zt__opt input { margin-top:4px; accent-color:var(--brand-600); }
+    .zt__opt span { display:flex; flex-direction:column; gap:2px; font:400 17px var(--font-sans); color:var(--content-fg); }
+    .zt__opt small { color:var(--content-muted); font-size:15px; }
+    @media (max-width:760px){ .zt { grid-template-columns:1fr; } }
     @media (max-width:760px){ .grid { grid-template-columns:1fr; } }
   `]
 })
@@ -171,6 +195,14 @@ export class CustomerForm {
   readonly initialType = input<CustomerType>('INDIVIDUAL');
 
   readonly saved = output<CreateCustomerRequest | UpdateCustomerRequest>();
+  /** Business customers: DEFAULT = the company's zones (Zone Tariff); CUSTOMIZE = this customer's own pricing zones. */
+  readonly initialZoneType = input<ZoneType>('DEFAULT');
+  readonly zoneTypePicked = output<ZoneType>();
+  protected readonly zoneType = signal<ZoneType>('DEFAULT');
+  protected readonly zoneTypes: { value: ZoneType; label: string; hint: string }[] = [
+    { value: 'DEFAULT', label: 'Default', hint: "Priced from the company's zones (Zone Tariff)." },
+    { value: 'CUSTOMIZE', label: 'Customize', hint: "Priced from this customer's own pricing zones — you create them next." }
+  ];
   /** The brand logo already saved (a data URL), when editing. */
   readonly logoUrl = input<string | null>(null);
   /** The logo the user chose (a File) or removed (null); the page uploads it after saving the customer. */
@@ -189,6 +221,7 @@ export class CustomerForm {
 
   constructor() {
     effect(() => { const c = this.customer(); if (c && this.mode() === 'edit') this.hydrate(c); });
+    effect(() => { const z = this.initialZoneType(); untracked(() => this.zoneType.set(z)); });
     this.form.get('customerType')!.valueChanges.subscribe((v) => this.typeValue.set(v));
     effect(() => {
       const t = this.initialType();
@@ -270,6 +303,7 @@ export class CustomerForm {
       billingCity: trim(v.billingCity), billingState: trim(v.billingState), billingPincode: trim(v.billingPincode)
     };
 
+    if (this.isBusiness()) this.zoneTypePicked.emit(this.zoneType());
     if (this.isCreate()) {
       this.saved.emit({ customerCode: trim(v.customerCode), ...common });
     } else {

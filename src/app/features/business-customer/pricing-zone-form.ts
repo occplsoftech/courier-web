@@ -163,6 +163,9 @@ export class PricingZoneForm implements OnInit {
     if (this.isCreate()) {
       this.service.businessCustomers().subscribe((p) =>
         this.customerOpts.set(p.content.map((c) => ({ value: c.id, label: `${c.displayName} (${c.customerCode})` }))));
+      // Straight from creating a Customize customer: that customer is already chosen.
+      const preset = this.route.snapshot.queryParamMap.get('customerId');
+      if (preset) this.customerCtl.setValue(preset);
       this.loading.set(false);
     } else {
       this.reload(true);
