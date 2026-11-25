@@ -24,7 +24,10 @@ import { BusinessCustomerService, RateImportPreview } from './business-customer.
       <header class="page__head">
         <div><h1 class="text-h1">Import Customer Rates</h1>
           <p class="text-caption">Set up a customer's zones and rates for every service (AIR, SURFACE, CARGO, PREMIUM) from one Excel sheet.</p></div>
-        <div class="page__actions"><app-button variant="stroked" icon="download" (pressed)="template()">Download template</app-button></div>
+        <div class="page__actions">
+          <app-button variant="stroked" icon="table_view" (pressed)="structure()">Import rate structure (rate card)</app-button>
+          <app-button variant="stroked" icon="download" (pressed)="template()">Download template</app-button>
+        </div>
       </header>
 
       <app-card title="1 · Customer and file" subtitle="Choose the business customer, then the filled .xlsx file (up to 300 rows).">
@@ -152,4 +155,5 @@ export class CustomerRateImport implements OnInit {
 
   protected reset(): void { this.file.set(null); this.preview.set(null); this.done.set(null); }
   protected goList(): void { this.router.navigate(['/business-customer/rates']); }
+  protected structure(): void { this.router.navigate(['/business-customer/rates/structure-import']); }
 }

@@ -156,6 +156,8 @@ export const NAVIGATION: NavNode[] = [
       { id: 'business-customers', title: 'Customer', icon: 'contacts', route: '/business-customer/customers', permission: 'CUSTOMER_READ', roles: COMPANY_ONLY },
       { id: 'pricing-zones', title: 'Pricing Zone', icon: 'map', route: '/business-customer/pricing-zones', permission: 'PRICING_ZONE_READ', roles: COMPANY_ONLY },
       { id: 'customer-rates', title: 'Rate', icon: 'request_quote', route: '/business-customer/rates', permission: 'CUSTOMER_RATE_READ', roles: COMPANY_ONLY },
+      // The printed rate card (air courier + cargo tables) imported for one customer.
+      { id: 'customer-rate-structure-import', title: 'Import Rate Structure', icon: 'upload_file', route: '/business-customer/rates/structure-import', roles: COMPANY_ONLY },
       // Couriers per branch and per customer (13.2); branch managers manage their own branch.
       { id: 'courier-access', title: 'Courier access', icon: 'local_shipping', route: '/business-customer/courier-access', roles: COMPANY_AND_BRANCH },
       { id: 'business-billing', title: 'Billing', icon: 'receipt_long', route: '/business-customer/billing', permission: 'CUSTOMER_BILLING_READ', roles: COMPANY_ONLY }

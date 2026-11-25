@@ -11,6 +11,25 @@ export interface RateImportRow { row: number; zone: string | null; districts: st
 export interface RateImportPreview { rows: RateImportRow[]; okCount: number; errorCount: number; zoneCount: number; }
 export interface RateImportResult { zonesCreated: number; zonesReused: number; cardsSaved: number; }
 
+/** The service types the rate structure's tables price (any may be empty when that table is absent). */
+export interface StructureServices { airCourier: string; cargoSurface: string; cargoAir: string; }
+export interface StructureIssue { row: number | null; message: string; }
+export interface StructureAirRate { group: string; groupLabel: string; ratePerKg: number; }
+export interface StructureCargoRate { origin: string; originLabel: string; group: string; groupLabel: string; surface: number | null; air: number | null; }
+export interface StructurePreview {
+  airCourier: StructureAirRate[]; cargo: StructureCargoRate[]; cargoMinChargeableKg: number | null;
+  errors: StructureIssue[]; warnings: StructureIssue[];
+}
+export interface StructureImportResult { ratesSaved: number; airCourierRates: number; cargoSurfaceRates: number; cargoAirRates: number; }
+
+function structureQuery(customerId: string, s: StructureServices): string {
+  const q = new URLSearchParams({ customerId });
+  if (s.airCourier) q.set('airCourierServiceTypeId', s.airCourier);
+  if (s.cargoSurface) q.set('cargoSurfaceServiceTypeId', s.cargoSurface);
+  if (s.cargoAir) q.set('cargoAirServiceTypeId', s.cargoAir);
+  return q.toString();
+}
+
 function formOf(file: File): FormData { const f = new FormData(); f.append('file', file); return f; }
 
 /** Pricing zones and per-zone rate cards — mirrors the backend endpoints one-to-one. */
@@ -65,7 +84,14 @@ export class BusinessCustomerService {
   importTemplate() { return this.api.getBlob(`${API.customerRates}/import/template`); }
   importPreview(customerId: string, file: File) { return this.api.post<RateImportPreview>(`${API.customerRates}/import/preview?customerId=${customerId}`, formOf(file)); }
   importApply(customerId: string, file: File) { return this.api.post<RateImportResult>(`${API.customerRates}/import?customerId=${customerId}`, formOf(file)); }
-  calculate(body: CalculateRateRequest) { return this.api.post<CalculateRateResponse>(`${API.customerRates}/calculate`, body); }
+  structureTemplate() { return this.api.getBlob(`${API.customerRates}/structure/template`); }
+  structurePreview(customerId: string, services: StructureServices, file: File) {
+    return this.api.post<StructurePreview>(`${API.customerRates}/structure/preview?${structureQuery(customerId, services)}`, formOf(file));
+  }
+  structureApply(customerId: string, services: StructureServices, file: File) {
+    return this.api.post<StructureImportResult>(`${API.customerRates}/structure?${structureQuery(customerId, services)}`, formOf(file));
+  }
+    calculate(body: CalculateRateRequest) { return this.api.post<CalculateRateResponse>(`${API.customerRates}/calculate`, body); }
 }
 
 function qs(serviceTypeId?: string | null): string { return serviceTypeId ? `?serviceTypeId=${encodeURIComponent(serviceTypeId)}` : ''; }
