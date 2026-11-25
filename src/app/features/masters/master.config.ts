@@ -360,8 +360,8 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'name', header: 'Post office', sortable: true },
       { key: 'districtName', header: 'District', value: (r) => text(r['districtName']) },
       { key: 'stateName', header: 'State', value: (r) => text(r['stateName']) },
-      { key: 'zone', header: 'Zone', width: '80px', value: (r) => text(r['zone']) },
-      { key: 'regionalZoneName', header: 'Regional zone', width: '130px', value: (r) => text(r['regionalZoneName']) },
+      { key: 'zone', header: 'Zone', width: '140px', value: (r) => text(r['zone']) },
+      { key: 'regionalZoneName', header: 'Regional zone', width: '120px', value: (r) => text(r['regionalZoneName']) },
       { key: 'doc', header: 'Document', width: '120px', value: (r) => coverageText(r['doc']) },
       { key: 'surface', header: 'Surface', width: '120px', value: (r) => coverageText(r['surface']) },
       { key: 'air', header: 'Air', width: '120px', value: (r) => coverageText(r['air']) },
@@ -381,10 +381,10 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'pickupAvailable', label: 'Pickup', kind: 'boolean', initial: true, group: 'Availability' },
       { key: 'odaApplicable', label: 'ODA applicable', kind: 'boolean', initial: false, group: 'Availability',
         hint: 'Out-of-Delivery-Area — still served, just not on the standard network.' },
-      { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'WEST', group: 'Zones',
-        hint: 'Direction: NORTH, SOUTH, EAST, WEST or CENTRAL.' },
+      { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'PUNE', group: 'Zones',
+        hint: 'As in the pincode master: PUNE, X - PUNE, MAHARASHTRA, X - MAHARASHTRA, VIDHARBHA, REST OF INDIA or NORTH EAST.' },
       { key: 'regionalZoneId', label: 'Regional zone', kind: 'lookup', lookup: 'regional-zones', group: 'Zones',
-        hint: 'The pricing region. Zone Tariff zones can take a whole regional zone.' },
+        hint: 'NORTH, SOUTH, EAST, WEST or CENTRAL. A Zone Tariff zone can take a whole regional zone.' },
       ...coverageFields('doc', 'Document service'),
       ...coverageFields('surface', 'Surface service'),
       ...coverageFields('air', 'Air service')
@@ -395,7 +395,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'areaId', label: 'Area', kind: 'lookup', lookup: 'areas' },
       { key: 'serviceable', label: 'Serviceable only', kind: 'boolean' },
       { key: 'odaApplicable', label: 'ODA only', kind: 'boolean' },
-      { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'LOCAL' }
+      { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'PUNE' }
     ],
     exportColumns: ['code', 'name', 'areaName', 'districtName', 'stateName', 'zone', 'regionalZoneName', 'serviceable', 'doc', 'surface', 'air', 'codAvailable', 'prepaidAvailable', 'odaApplicable', 'status']
   },
@@ -404,7 +404,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
     key: 'regional-zones', global: true, writeRoles: [AppRole.SUPER_ADMIN, AppRole.COMPANY_ADMIN],
     apiPath: '/global-masters/regional-zones', singular: 'Regional zone', plural: 'Regional Zones',
     icon: 'travel_explore', group: 'Geography',
-    description: 'Pricing regions pincodes are grouped into, such as Pune, X - Pune or Rest of India. Each pincode names its regional zone; a Zone Tariff zone can take a whole regional zone.',
+    description: 'Regions pincodes are grouped into: NORTH, SOUTH, EAST, WEST and CENTRAL. Each pincode names its regional zone; a Zone Tariff zone can take a whole regional zone.',
     defaultSort: { field: 'displayOrder', direction: 'asc' },
     columns: [CODE_COLUMN, NAME_COLUMN, STATUS_COLUMN],
     fields: [...HEAD_FIELDS],
