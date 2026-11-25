@@ -340,12 +340,21 @@ export class MasterForm implements OnInit {
       if (field.transient) continue;
       if (editing && field.createOnly) continue;
       const value = this.form.get(field.key)?.value;
+      let out: unknown;
       if (field.kind === 'boolean') {
-        body[field.key] = !!value;
-      } else if (value === '' || value === undefined) {
-        body[field.key] = null;
+        out = !!value;
+      } else if (value === '' || value === undefined || value === null) {
+        out = null;
+      } else if (field.triState) {
+        out = value === 'true' || value === true;
       } else {
-        body[field.key] = value;
+        out = value;
+      }
+      if (field.nested) {
+        const parent = (body[field.nested.parent] ??= {}) as Record<string, unknown>;
+        parent[field.nested.prop] = out;
+      } else {
+        body[field.key] = out;
       }
     }
     if (editing) body['version'] = this.record()!.version;
@@ -376,11 +385,20 @@ export class MasterForm implements OnInit {
       const control = this.form.get(field.key);
       if (!control) continue;
 
-      const value = record[field.key];
-      control.setValue(field.kind === 'boolean' ? !!value : value ?? null, { emitEvent: false });
+      const value = fieldValue(field, record);
+      control.setValue(field.kind === 'boolean' ? !!value
+        : field.triState ? (value === true ? 'true' : value === false ? 'false' : '')
+        : value ?? null, { emitEvent: false });
 
       // Immutable once set, and shown rather than hidden so the rule is visible.
       if (field.createOnly) control.disable({ emitEvent: false });
     }
   }
+}
+
+/** A field's value in a record, one level down for a nested field. */
+export function fieldValue(field: MasterField, record: MasterRecord): unknown {
+  if (!field.nested) return record[field.key];
+  const parent = record[field.nested.parent] as Record<string, unknown> | null | undefined;
+  return parent ? parent[field.nested.prop] : undefined;
 }

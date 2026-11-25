@@ -147,4 +147,6 @@ export interface FreightCalculationResponse {
   customerZoneName?: string | null;
   /** Zone rate's docket + mathadi + pack + fuel + FOV (or the tariff's charges) — the minimum Other Charges. */
   customerExtraCharges?: number;
+  /** Destination pincode's delivery time in hours for this service's network (document, surface or air), when on file. */
+  tatHours?: number | null;
 }

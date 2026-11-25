@@ -218,4 +218,33 @@ describe('MasterForm', () => {
       expect('stateId' in payload!).toBe(false);
     });
   });
+
+  it('reads and writes a nested tri-state coverage field one level down', () => {
+    const def = {
+      ...countries,
+      fields: [
+        ...countries.fields,
+        { key: 'airServiceable', label: 'Delivers here', kind: 'select' as const, triState: true,
+          options: [{ value: '', label: 'Not set' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }],
+          nested: { parent: 'air', prop: 'serviceable' } },
+        { key: 'airTatHours', label: 'Hours', kind: 'number' as const, nested: { parent: 'air', prop: 'tatHours' } },
+        { key: 'docOda', label: 'ODA', kind: 'select' as const, triState: true,
+          options: [{ value: '', label: 'Not set' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }],
+          nested: { parent: 'doc', prop: 'oda' } }
+      ]
+    };
+    build(def, record({ air: { serviceable: false, oda: null, tatHours: 48 }, doc: null }));
+    expect(component.controlFor('airServiceable').value).toBe('false');
+    expect(component.controlFor('airTatHours').value).toBe(48);
+    expect(component.controlFor('docOda').value).toBe('');
+
+    let payload: Record<string, unknown> | undefined;
+    component.saved.subscribe((p) => (payload = p));
+    component.controlFor('airServiceable').setValue('true');
+    component.submit();
+
+    expect(payload!['air']).toEqual({ serviceable: true, tatHours: 48 });
+    expect(payload!['doc']).toEqual({ oda: null });
+    expect(payload!['airServiceable']).toBeUndefined();
+  });
 });

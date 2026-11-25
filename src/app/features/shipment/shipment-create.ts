@@ -1,3 +1,4 @@
+import { daysFor } from './delivery-days';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -1319,7 +1320,7 @@ export class ShipmentCreate implements OnInit {
       distinctUntilChanged(),
       switchMap(() => this.serviceRates$()),
       takeUntilDestroyed(this.destroyRef)
-    ).subscribe((rates) => { this.serviceRatesLoading.set(false); this.serviceRates.set(rates); });
+    ).subscribe((rates) => { this.serviceRatesLoading.set(false); this.serviceRates.set(rates); this.updateDeliveryPreview(); });
     this.freightTrigger$.pipe(
       debounceTime(500),
       switchMap(() => this.freightCalc$()),
@@ -1505,10 +1506,13 @@ export class ShipmentCreate implements OnInit {
     this.matchedFreightFactor.set(null);
   }
 
-  /** `bookingDate + serviceType.deliveryDays`, string arithmetic on the `yyyy-MM-dd` value
-   *  so it matches what the server stores regardless of local timezone. */
+  /** `bookingDate + days`, string arithmetic on the `yyyy-MM-dd` value so it matches what the server stores
+   *  regardless of local timezone. Days: the delivery pincode's delivery time for the chosen service when the pincode
+   *  master has one (as the server does), else the service type's own days. */
   private updateDeliveryPreview(): void {
-    const days = this.serviceTypeDeliveryDays().get(this.c('serviceTypeId').value ?? '');
+    const serviceId = this.c('serviceTypeId').value ?? '';
+    const rated = this.serviceRates()?.find((r) => r.serviceTypeId === serviceId && r.days != null);
+    const days = rated?.days ?? this.serviceTypeDeliveryDays().get(serviceId);
     const bookingDate = this.c('bookingDate').value as string | null;
     if (days == null || !bookingDate) {
       this.expectedDeliveryPreview.set(null);
@@ -1992,7 +1996,7 @@ export class ShipmentCreate implements OnInit {
         const estimate = Math.round(raw);
         return { serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: d.totalFreight as number | null,
           basis: d.weightSlabLabel ?? undefined, freight, oda, extras, gst, estimate, roundOff: Math.round((estimate - raw) * 100) / 100,
-          days: this.serviceTypeDeliveryDays().get(String(svc.value)) ?? null };
+          days: daysFor(d.tatHours, this.serviceTypeDeliveryDays().get(String(svc.value)) ?? null) };
       }),
       catchError((e: HttpErrorResponse) => of<ServiceRate>({ serviceTypeId: String(svc.value), label: svc.label.replace(/\s*\(.*\)$/, ''), total: null,
         error: e?.error?.message ?? 'No rate for this destination.' }))

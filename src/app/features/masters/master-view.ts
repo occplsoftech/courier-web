@@ -1,3 +1,4 @@
+import { fieldValue } from './components/master-form';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -201,8 +202,13 @@ export class MasterView {
       const name = row[nameKey];
       return name ? String(name) : '—';
     }
-    const value = row[field.key];
+    const value = fieldValue(field, row);
     if (field.kind === 'boolean') return value ? 'Yes' : 'No';
+    if (field.triState) return value === true ? 'Yes' : value === false ? 'No' : '—';
+    if (field.kind === 'select') {
+      const option = field.options?.find((o) => o.value === value);
+      if (option && option.value !== '') return option.label;
+    }
     return value === null || value === undefined || value === '' ? '—' : String(value);
   }
 

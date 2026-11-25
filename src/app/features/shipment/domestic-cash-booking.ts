@@ -1,3 +1,4 @@
+import { daysFor } from './delivery-days';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, ElementRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet, UpperCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -1112,7 +1113,8 @@ export class DomesticCashBooking implements OnInit {
           const extras = Number(r.customerExtraCharges ?? 0);
           const gst = Math.round((freight + oda + extras) * this.gstPercent()) / 100;
           return { serviceTypeId: String(svc.value), label, total: r.totalFreight, freight, oda, extras, gst,
-            estimate: Math.round(freight + oda + extras + gst), days, basis: r.weightSlabLabel, chargeable, cargo };
+            estimate: Math.round(freight + oda + extras + gst), days: daysFor(r.tatHours, days), basis: r.weightSlabLabel,
+            chargeable, cargo };
         }),
         catchError((e: HttpErrorResponse) => of<ModeRate>({ serviceTypeId: String(svc.value), label, total: null,
           error: e?.error?.message ?? 'No rate for this destination.', freight: 0, oda: 0, extras: 0, gst: 0, estimate: 0, days, chargeable }))
