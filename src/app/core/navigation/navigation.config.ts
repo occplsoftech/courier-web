@@ -169,6 +169,8 @@ export const NAVIGATION: NavNode[] = [
     id: 'zone-tariff', title: 'Zone Tariff', icon: 'travel_explore', order: 2.65,
     children: [
       { id: 'tariff-zones', title: 'Zones', icon: 'map', route: '/zone-tariff/zones', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
+      // Regions pincodes are grouped into (NORTH, SOUTH…): a global master list, shown here because tariff zones use it.
+      { id: 'global-regional-zones', title: 'Regional Zone', icon: 'travel_explore', route: '/masters/regional-zones', roles: GLOBAL_MASTER_READERS },
       { id: 'tariff-rate-cards', title: 'Rate Cards', icon: 'request_quote', route: '/zone-tariff/rate-cards', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
       { id: 'tariff-calculator', title: 'Calculator', icon: 'calculate', route: '/zone-tariff/calculator', roles: COMPANY_AND_BRANCH }
     ]
@@ -224,8 +226,6 @@ export const NAVIGATION: NavNode[] = [
       { id: 'global-cities', title: 'City', icon: 'location_city', route: '/masters/cities', roles: PLATFORM },
       { id: 'global-areas', title: 'Area', icon: 'pin_drop', route: '/masters/areas', roles: PLATFORM },
       { id: 'global-pincodes', title: 'Pincode', icon: 'markunread_mailbox', route: '/masters/pincodes', roles: GLOBAL_MASTER_READERS },
-      // Pricing regions pincodes are grouped into (V171). Global like the pincodes, and written by the same people.
-      { id: 'global-regional-zones', title: 'Regional Zone', icon: 'travel_explore', route: '/masters/regional-zones', roles: GLOBAL_MASTER_READERS },
       // Which branch serves which pincode — company-owned (a branch is the company's own),
       // unlike the shared geography list above it. COMPANY_ADMIN only, same tier as the
       // company's own six catalogues below.
