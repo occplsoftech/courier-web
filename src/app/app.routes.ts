@@ -294,6 +294,11 @@ export const routes: Routes = [
       // Zone Tariff: company zones, rate cards (slabs + charges) and the calculator. Writes are
       // COMPANY_ADMIN on the server; the calculator is a read any booking user may run.
       {
+        // The pincode master sheet as provided, read only (super admin and company admin, like the pincodes).
+        path: 'zone-tariff/pincode-sheet', title: 'Pincode Master Sheet', canActivate: [roleGuard], data: { roles: MASTERS_READERS },
+        loadComponent: () => import('@features/zone-tariff/pincode-sheet').then((m) => m.PincodeSheet)
+      },
+      {
         path: 'zone-tariff/zones', title: 'Tariff Zones', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
         loadComponent: () => import('@features/zone-tariff/tariff-zone-list').then((m) => m.TariffZoneList)
       },

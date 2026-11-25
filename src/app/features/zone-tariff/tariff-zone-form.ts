@@ -8,13 +8,15 @@ import { NotificationService } from '@core/services/notification.service';
 import { PermissionService } from '@core/auth/permission.service';
 import { AppRole } from '@core/models/role.model';
 import {
-  LocationScope, SCOPE_LABELS, TariffLocationRequest, TariffZone, ZONE_USAGE_LABELS, ZoneUsage
+  LocationScope, SCOPE_LABELS, TariffLocation, TariffLocationRequest, TariffZone, ZONE_USAGE_LABELS, ZoneUsage
 } from '@core/models/zone-tariff.model';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiInput } from '@shared/components/ui-input/ui-input';
 import { UiSelect, SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { UiLoader } from '@shared/components/ui-loader/ui-loader';
+import { UiPagination } from '@shared/components/ui-pagination/ui-pagination';
+import { Page } from '@core/models/page.model';
 import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { CustomerService } from '@features/customer/customer.service';
 import { ZoneTariffService } from './zone-tariff.service';
@@ -24,6 +26,8 @@ interface PendingLocation { request: TariffLocationRequest; key: string; label: 
 
 const USAGE_OPTS: SelectOption[] = (Object.keys(ZONE_USAGE_LABELS) as ZoneUsage[]).map((u) => ({ value: u, label: ZONE_USAGE_LABELS[u] }));
 const SCOPE_OPTS: SelectOption[] = (Object.keys(SCOPE_LABELS) as LocationScope[]).map((s) => ({ value: s, label: SCOPE_LABELS[s] }));
+/** Places per page on the zone page. */
+const PLACES_PAGE = 50;
 const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_ZONE: 'travel_explore', DISTRICT: 'map', CITY: 'location_city', PINCODE: 'pin_drop' };
 
 /**
@@ -38,7 +42,7 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_Z
   selector: 'app-tariff-zone-form',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, UiCard, UiInput, UiSelect, UiButton, UiLoader, StatusBadge, MatIconModule],
+  imports: [ReactiveFormsModule, UiCard, UiInput, UiSelect, UiButton, UiLoader, UiPagination, StatusBadge, MatIconModule],
   template: `
     <div class="page">
       <header class="page__head">
@@ -87,7 +91,12 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_Z
             </div>
           }
 
-          @if (rows().length === 0) {
+          @if (!isCreate()) {
+            <p class="count">{{ zone()?.locationCount ?? 0 }} {{ (zone()?.locationCount ?? 0) === 1 ? 'place' : 'places' }}</p>
+          }
+          @if (placesLoading()) {
+            <app-loader [minHeight]="120" />
+          } @else if (rows().length === 0) {
             <p class="empty">No places yet.</p>
           } @else {
             <ul class="locs">
@@ -102,6 +111,9 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_Z
                 </li>
               }
             </ul>
+            @if (!isCreate() && placesPage(); as pg) {
+              @if (pg.totalPages > 1) { <app-pagination [page]="pg" (pageChange)="loadPlaces($event)" /> }
+            }
           }
         </app-card>
 
@@ -117,6 +129,7 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_Z
   styles: [`
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
     .picker { display:grid; grid-template-columns:minmax(0,160px) repeat(3,minmax(0,1fr)) auto; gap:12px 16px; align-items:end; margin-bottom:16px; }
+    .count { margin:0 0 12px; font:500 15px var(--font-sans); color:var(--content-muted); }
     .empty { font:400 17px var(--font-sans); color:var(--content-muted); text-align:center; padding:16px; }
     .locs { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
     .loc { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--surface-border); border-radius:var(--r-field); background:var(--surface); }
@@ -186,13 +199,32 @@ export class TariffZoneForm implements OnInit {
   /** One display model for both modes: saved locations (manage) or pending ones (create). */
   protected readonly rows = computed(() => this.isCreate()
     ? this.pending().map((p) => ({ key: p.key, scope: p.scope, label: p.label }))
-    : (this.zone()?.locations ?? []).map((l) => ({ key: l.id!, scope: l.scope, label: l.label })));
+    : (this.placesPage()?.content ?? []).map((l) => ({ key: l.id!, scope: l.scope, label: l.label })));
+
+  /** Manage mode: the zone's places, one page at a time (a zone can hold thousands). */
+  protected readonly placesPage = signal<Page<TariffLocation> | null>(null);
+  protected readonly placesLoading = signal(false);
+  private placesIndex = 0;
+
+  protected loadPlaces(page = this.placesIndex): void {
+    if (!this.zoneId) return;
+    this.placesIndex = page;
+    this.placesLoading.set(true);
+    this.service.zoneLocations(this.zoneId, page, PLACES_PAGE).subscribe({
+      next: (p) => {
+        // Removing the last place of the last page: step back a page.
+        if (p.content.length === 0 && page > 0) { this.loadPlaces(page - 1); return; }
+        this.placesPage.set(p); this.placesLoading.set(false);
+      },
+      error: () => { this.placesPage.set(null); this.placesLoading.set(false); }
+    });
+  }
 
   ngOnInit(): void {
     this.breadcrumb.set([
       { label: 'Zone Tariff' }, { label: 'Zones', route: '/zone-tariff/zones' }, { label: this.isCreate() ? 'New' : 'Manage' }
     ]);
-    if (this.isCreate()) this.loading.set(false); else this.reload(true);
+    if (this.isCreate()) this.loading.set(false); else { this.reload(true); this.loadPlaces(0); }
 
     // Cascading geography pickers: first country (the platform catalogue is India-only today).
     this.geo.countries().subscribe((cs) => {
@@ -277,7 +309,7 @@ export class TariffZoneForm implements OnInit {
     }
     this.adding.set(true);
     this.service.addLocations(this.zoneId!, picked.map((p) => p.request)).subscribe({
-      next: (z) => { this.zone.set(z); this.adding.set(false); this.cityCtl.setValue(''); this.pinsCtl.setValue(''); this.notify.success(picked.length > 1 ? `${picked.length} places added.` : 'Place added.'); },
+      next: (z) => { this.zone.set(z); this.adding.set(false); this.cityCtl.setValue(''); this.pinsCtl.setValue(''); this.loadPlaces(); this.notify.success(picked.length > 1 ? `${picked.length} places added.` : 'Place added.'); },
       error: (e: HttpErrorResponse) => { this.adding.set(false); this.notify.error(e.error?.message ?? 'Could not add the place.'); }
     });
   }
@@ -285,7 +317,7 @@ export class TariffZoneForm implements OnInit {
   protected removeRow(key: string): void {
     if (this.isCreate()) { this.pending.update((l) => l.filter((p) => p.key !== key)); return; }
     this.service.removeLocation(this.zoneId!, key).subscribe({
-      next: (z) => { this.zone.set(z); this.notify.success('Place removed.'); },
+      next: (z) => { this.zone.set(z); this.loadPlaces(); this.notify.success('Place removed.'); },
       error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not remove the place.')
     });
   }

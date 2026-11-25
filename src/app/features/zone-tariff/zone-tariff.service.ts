@@ -3,7 +3,7 @@ import { ApiService } from '@core/services/api.service';
 import { API } from '@core/config/api-endpoints';
 import {
   ChargeRequest, CreateTariffZoneRequest, LaneRequest, OptionsRequest, OptionsResponse, QuoteRequest, QuoteResponse, RateCard, RateCardRequest, TariffImportResult,
-  TariffLocationRequest, TariffStatus, TariffZone, TariffZoneStatus, UpdateTariffZoneRequest, ZoneResolution, ZoneUsage
+  TariffLocation, TariffLocationRequest, TariffStatus, TariffZone, TariffZoneStatus, UpdateTariffZoneRequest, ZoneResolution, ZoneUsage
 } from '@core/models/zone-tariff.model';
 
 /** Zone tariff zones, rate cards (lanes, charges) and quotes — mirrors the backend endpoints one-to-one. */
@@ -16,6 +16,10 @@ export class ZoneTariffService {
     return this.api.get<TariffZone[]>(API.tariffZones, filter);
   }
   zone(id: string) { return this.api.get<TariffZone>(`${API.tariffZones}/${id}`); }
+  /** One page of a zone's places (the zone itself carries only `locationCount`). */
+  zoneLocations(id: string, page: number, size = 50) {
+    return this.api.page<TariffLocation>(`${API.tariffZones}/${id}/locations`, { page, size });
+  }
   createZone(body: CreateTariffZoneRequest) { return this.api.post<TariffZone>(API.tariffZones, body); }
   updateZone(id: string, body: UpdateTariffZoneRequest) { return this.api.put<TariffZone>(`${API.tariffZones}/${id}`, body); }
   addLocations(zoneId: string, locations: TariffLocationRequest[]) {

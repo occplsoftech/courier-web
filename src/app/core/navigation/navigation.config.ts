@@ -171,6 +171,8 @@ export const NAVIGATION: NavNode[] = [
       { id: 'tariff-zones', title: 'Zones', icon: 'map', route: '/zone-tariff/zones', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
       // Regions pincodes are grouped into (NORTH, SOUTH…): a global master list, shown here because tariff zones use it.
       { id: 'global-regional-zones', title: 'Regional Zone', icon: 'travel_explore', route: '/masters/regional-zones', roles: GLOBAL_MASTER_READERS },
+      // The pincode master Excel sheet, row for row, read only.
+      { id: 'pincode-sheet', title: 'Pincode Master Sheet', icon: 'table_view', route: '/zone-tariff/pincode-sheet', roles: GLOBAL_MASTER_READERS },
       { id: 'tariff-rate-cards', title: 'Rate Cards', icon: 'request_quote', route: '/zone-tariff/rate-cards', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
       { id: 'tariff-calculator', title: 'Calculator', icon: 'calculate', route: '/zone-tariff/calculator', roles: COMPANY_AND_BRANCH }
     ]
