@@ -16,16 +16,31 @@ describe('Scan', () => {
     expect(destinationOf({ nextLocationId: null, deliveryBranchId: null })).toBeNull();
   });
 
-  it('outscans only parcels going to one branch, and never ones without a route', () => {
+  it('Assign to Branch: any branch can be chosen; a parcel with a route pre-fills it, a different choice is only a warning', () => {
     const c = make();
     c['lists'].set({ out: [s('a'), s('b'), s('c', { nextLocationId: 'br3', deliveryBranchId: 'br3' }), s('d', { nextLocationId: null, deliveryBranchId: null })], in: [], del: [] });
+    c['selected'].set(new Set(['d']));
+    expect(c['outDestinationError']()).toBeNull();          // no route yet: just pick the Branch
     c['selected'].set(new Set(['a', 'b']));
     expect(c['outDestination']()).toBe('br2');
-    expect(c['outDestinationError']()).toBeNull();
+    c['toBranchId'].set('br9');
+    expect(c['outDestinationError']()).toContain('instead');
     c['selected'].set(new Set(['a', 'c']));
-    expect(c['outDestinationError']()).toContain('one branch');
-    c['selected'].set(new Set(['a', 'd']));
-    expect(c['outDestinationError']()).toContain('no route');
+    expect(c['outDestinationError']()).toContain('different next branches');
+  });
+
+  it('Assign checks the Branch, vehicle and driver, the delivery boy, and the RTO message before calling the server', () => {
+    const c = make();
+    c['lists'].set({ out: [s('d', { nextLocationId: null, deliveryBranchId: null })], in: [], del: [] });
+    c['selected'].set(new Set(['d']));
+    c['outscan']();
+    expect(c['actionError']()).toContain('branch');
+    c['toBranchId'].set('br2'); c['outscan']();
+    expect(c['actionError']()).toContain('vehicle');
+    c['setOutAction']('delivery'); c['assignLocalDelivery']();
+    expect(c['actionError']()).toContain('delivery boy');
+    c['setOutAction']('rto'); c['assignRto']();
+    expect(c['actionError']()).toContain('message');
   });
 
   it('a scanned AWB or tracking number selects that row; others are explained', () => {

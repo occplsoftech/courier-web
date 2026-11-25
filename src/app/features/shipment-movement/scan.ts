@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -120,25 +120,57 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
         @if (selected().size) {
           <aside class="card side">
             @if (tab() === 'out') {
-              <h2 class="sec">Outscan {{ selected().size }} parcel(s)</h2>
-              <p class="text-caption">Creates the loading sheet and dispatches the trip (THC) in one step.</p>
-              @if (outDestinationError(); as e) { <p class="err">{{ e }}</p> }
-              @else {
-                <label class="f"><span class="f__l">To Branch</span><span class="ro">{{ branchName(outDestination()!) }}</span></label>
-                <div class="g2">
-                  <label class="f"><span class="f__l">Vehicle <b class="req">*</b></span>
-                    <select class="in" id="sc-vehicle" [value]="vehicleId()" (change)="vehicleId.set($any($event.target).value)">
-                      <option value="">Select vehicle</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                    </select></label>
-                  <label class="f"><span class="f__l">Driver <b class="req">*</b></span>
-                    <select class="in" id="sc-driver" [value]="driverId()" (change)="driverId.set($any($event.target).value)">
-                      <option value="">Select driver</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                    </select></label>
-                  <label class="f"><span class="f__l">Bags Count</span><input class="in" id="sc-bags" inputmode="numeric" [value]="bags()" (input)="bags.set(digits($event, 4))" /></label>
-                  <label class="f"><span class="f__l">Remarks</span><input class="in" id="sc-remarks" [value]="remarks()" (input)="remarks.set($any($event.target).value)" placeholder="Optional" /></label>
-                </div>
-                <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
-                  <app-button icon="outbox" [loading]="busy()" (pressed)="outscan()">Outscan</app-button></div>
+              <h2 class="sec">Assign {{ selected().size }} parcel(s)</h2>
+              <div class="seg seg--wide" role="radiogroup" aria-label="Action" style="grid-template-columns:repeat(3,1fr);display:grid">
+                <button type="button" class="pill" id="sc-act-branch" [class.pill--on]="outAction() === 'branch'" (click)="setOutAction('branch')"><mat-icon>outbox</mat-icon>To Branch</button>
+                <button type="button" class="pill" id="sc-act-delivery" [class.pill--on]="outAction() === 'delivery'" (click)="setOutAction('delivery')"><mat-icon>directions_run</mat-icon>Delivery</button>
+                <button type="button" class="pill" id="sc-act-rto" [class.pill--on]="outAction() === 'rto'" (click)="setOutAction('rto')"><mat-icon>undo</mat-icon>RTO</button>
+              </div>
+              @switch (outAction()) {
+                @case ('branch') {
+                  <p class="text-caption">Creates the loading sheet to the branch and dispatches the trip (THC) in one step.</p>
+                  @if (outDestinationError(); as e) { <p class="warn">{{ e }}</p> }
+                  <div class="g2">
+                    <label class="f" style="grid-column:1/-1"><span class="f__l">Branch <b class="req">*</b></span>
+                      <select class="in" id="sc-branch" [value]="toBranchId()" (change)="toBranchId.set($any($event.target).value)">
+                        <option value="">Select branch or hub</option>@for (o of branchOptions(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                      </select></label>
+                    <label class="f"><span class="f__l">Vehicle <b class="req">*</b></span>
+                      <select class="in" id="sc-vehicle" [value]="vehicleId()" (change)="vehicleId.set($any($event.target).value)">
+                        <option value="">Select vehicle</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                      </select></label>
+                    <label class="f"><span class="f__l">Driver <b class="req">*</b></span>
+                      <select class="in" id="sc-driver" [value]="driverId()" (change)="driverId.set($any($event.target).value)">
+                        <option value="">Select driver</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                      </select></label>
+                    <label class="f"><span class="f__l">Forwarding No.</span><input class="in" id="sc-fwd" [value]="forwardingNo()" (input)="forwardingNo.set($any($event.target).value)" placeholder="Optional" maxlength="40" /></label>
+                    <label class="f"><span class="f__l">Bags Count</span><input class="in" id="sc-bags" inputmode="numeric" [value]="bags()" (input)="bags.set(digits($event, 4))" /></label>
+                    <label class="f" style="grid-column:1/-1"><span class="f__l">Remarks</span><input class="in" id="sc-remarks" [value]="remarks()" (input)="remarks.set($any($event.target).value)" placeholder="Optional" /></label>
+                  </div>
+                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
+                    <app-button icon="outbox" [loading]="busy()" (pressed)="outscan()">Assign</app-button></div>
+                }
+                @case ('delivery') {
+                  <p class="text-caption">Local delivery straight from this branch: creates the DRS, no transfer.</p>
+                  <div class="g2">
+                    <label class="f"><span class="f__l">Delivery Boy <b class="req">*</b></span>
+                      <select class="in" id="sc-local-boy" [value]="deliveryUserId()" (change)="deliveryUserId.set($any($event.target).value)">
+                        <option value="">Select delivery boy</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                      </select></label>
+                    <label class="f"><span class="f__l">Vehicle</span>
+                      <select class="in" [value]="drsVehicleId()" (change)="drsVehicleId.set($any($event.target).value)">
+                        <option value="">Optional</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                      </select></label>
+                  </div>
+                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
+                    <app-button icon="directions_run" [loading]="busy()" (pressed)="assignLocalDelivery()">Assign · Create DRS</app-button></div>
+                }
+                @case ('rto') {
+                  <p class="text-caption">Returned to the sender before it leaves this branch. The booking stays charged; cancel it instead to undo the booking.</p>
+                  <label class="f"><span class="f__l">Message <b class="req">*</b></span><input class="in" id="sc-rto-msg" [value]="rtoMessage()" (input)="rtoMessage.set($any($event.target).value)" placeholder="Why it goes back" maxlength="300" /></label>
+                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
+                    <app-button icon="undo" [loading]="busy()" (pressed)="assignRto()">Assign RTO</app-button></div>
+                }
               }
             }
             @if (tab() === 'in') {
@@ -349,17 +381,40 @@ export class Scan {
     const dests = new Set(this.selectedRows().map((s) => destinationOf(s)));
     return dests.size === 1 ? [...dests][0] : null;
   });
+  /** Only a warning: the Branch chosen below decides where the trip goes (as on the earlier portal). */
   protected readonly outDestinationError = computed(() => {
     const rows = this.selectedRows();
-    if (!rows.length) return null;
-    if (rows.some((s) => !destinationOf(s))) return 'Some selected parcels have no route yet (no next branch). Send those from Loading Sheet (hub).';
-    return this.outDestination() ? null : 'Select parcels going to one branch: one outscan is one trip to one branch.';
+    const routed = new Set(rows.map((s) => destinationOf(s)).filter((d): d is string => !!d));
+    if (routed.size > 1) return 'The selected parcels already have different next branches; they will all go to the Branch chosen here.';
+    const chosen = this.toBranchId();
+    if (chosen && routed.size === 1 && !routed.has(chosen)) return `These parcels were routed to ${this.branchName([...routed][0])}; they will go to the Branch chosen here instead.`;
+    return null;
   });
+
+  // Assign (Pending Outscan): To Branch / Delivery / RTO, as on the earlier portal
+  protected readonly outAction = signal<'branch' | 'delivery' | 'rto'>('branch');
+  protected readonly toBranchId = signal('');
+  protected readonly forwardingNo = signal('');
+  protected readonly rtoMessage = signal('');
+  private readonly branchTypes = signal<Map<string, string>>(new Map());
+  protected readonly branchOptions = signal<Opt[]>([]);
+  protected setOutAction(a: 'branch' | 'delivery' | 'rto'): void { this.outAction.set(a); this.actionError.set(null); }
 
   constructor() {
     inject(BreadcrumbService).set([{ label: 'Operations' }, { label: 'Scan' }]);
-    this.masters.branchDirectory().subscribe((list) =>
-      this.branchNames.set(new Map(list.map((b) => [b.id, `${b.branchName} (${b.branchCode})`]))));
+    this.masters.branchDirectory().subscribe((list) => {
+      this.branchNames.set(new Map(list.map((b) => [b.id, `${b.branchName} (${b.branchCode})`])));
+      this.branchTypes.set(new Map(list.map((b) => [b.id, String(b.branchType ?? '')])));
+      this.branchOptions.set(list
+        .filter((b) => b.id !== this.branchId && b.branchType !== 'PICKUP_DELIVERY_PARTNER')
+        .sort((a, b) => (a.branchType === 'HUB' ? 0 : 1) - (b.branchType === 'HUB' ? 0 : 1) || a.branchName.localeCompare(b.branchName))
+        .map((b) => ({ value: b.id, label: `${b.branchName} (${b.branchCode})${b.branchType === 'HUB' ? ' · Hub' : ''}` })));
+    });
+    // A parcel that already has its next branch pre-fills Branch, as it did before.
+    effect(() => {
+      const dest = this.outDestination();
+      untracked(() => { if (dest && !this.toBranchId()) this.toBranchId.set(dest); });
+    });
     this.vehicleService.list(true).subscribe({ next: (v) => this.vehicles.set(v.map((x) => ({ value: x.id, label: x.vehicleNumber }))), error: () => undefined });
     this.movement.userOptions().subscribe({ next: (u) => this.users.set(u.map((x) => ({ value: x.id, label: x.label }))), error: () => undefined });
     this.reload();
@@ -444,16 +499,18 @@ export class Scan {
 
   /** Outscan: a loading sheet to the parcels' branch, then the trip dispatched with the vehicle and driver. */
   protected outscan(): void {
-    const dest = this.outDestination();
+    const dest = this.toBranchId();
     const rows = this.selectedRows();
-    if (this.outDestinationError() || !dest) return;
+    if (!dest) { this.actionError.set('Select the branch the parcels go to.'); return; }
     if (!this.vehicleId() || !this.driverId()) { this.actionError.set('Select the vehicle and the driver.'); return; }
-    const note = [this.bags() ? `Bags: ${this.bags()}` : '', this.remarks().trim()].filter(Boolean).join(' · ') || null;
+    const note = [this.forwardingNo().trim() ? `Forwarding No: ${this.forwardingNo().trim()}` : '', this.bags() ? `Bags: ${this.bags()}` : '',
+      this.remarks().trim()].filter(Boolean).join(' · ') || null;
+    const hub = this.branchTypes().get(dest) === 'HUB';
     this.busy.set(true);
     this.actionError.set(null);
     let sheet: Manifest | null = null;
     this.manifests.create({ bookingBranchId: this.branchId!, deliveryBranchId: dest, deliveryMode: 'BRANCH_DELIVERY', destinationCity: null,
-      shipmentIds: rows.map((s) => s.id), remarks: note }).pipe(
+      shipmentIds: rows.map((s) => s.id), remarks: note, hubTransfer: hub }).pipe(
       switchMap((m) => { sheet = m; return this.movement.dispatch({ manifestId: m.id, vehicleId: this.vehicleId(), driverUserId: this.driverId(),
         departureTime: null, fuelCost: null, driverAdvance: null, tollAmount: null, otherAmount: null }); })
     ).subscribe({
@@ -473,6 +530,47 @@ export class Scan {
         if (made) this.afterAction(false);
       }
     });
+  }
+
+  /** Assign to Delivery: the booking branch delivers local parcels itself (a DRS, no transfer). */
+  protected assignLocalDelivery(): void {
+    const rows = this.selectedRows();
+    if (!this.deliveryUserId()) { this.actionError.set('Select the delivery boy.'); return; }
+    this.busy.set(true);
+    this.actionError.set(null);
+    this.movement.outForDelivery({ shipmentIds: rows.map((s) => s.id), deliveryUserId: this.deliveryUserId(),
+      vehicleId: this.drsVehicleId() || null }).subscribe({
+      next: (r) => {
+        this.busy.set(false);
+        if (r.failureCount) {
+          const bad = r.results.filter((x) => !x.success).map((x) => `${x.reference}: ${x.message ?? 'failed'}`);
+          this.actionError.set(`${r.failureCount} of ${r.results.length} not assigned — ${bad.join('; ')}`);
+        }
+        if (r.successCount) this.lastDone.set({ text: `${r.successCount} parcel(s) out for delivery from this branch${r.drsNumber ? ' — DRS ' + r.drsNumber : ''}. Update them in Pending Delivery.` });
+        this.afterAction(!r.failureCount);
+      },
+      error: (e: HttpErrorResponse) => { this.busy.set(false); this.actionError.set(e.error?.message ?? 'Could not create the DRS.'); }
+    });
+  }
+
+  /** Assign to RTO: returned to the sender before leaving this branch. */
+  protected assignRto(): void {
+    const rows = this.selectedRows();
+    const why = this.rtoMessage().trim();
+    if (!why) { this.actionError.set('Enter the message: why it goes back to the sender.'); return; }
+    this.busy.set(true);
+    this.actionError.set(null);
+    forkJoin(rows.map((s) => this.movement.returnToSender(s.id, why).pipe(
+      map(() => ({ ref: s.shipmentNumber, ok: true, msg: '' })),
+      catchError((e: HttpErrorResponse) => of({ ref: s.shipmentNumber, ok: false, msg: e.error?.message ?? 'failed' })))))
+      .subscribe((res) => {
+        this.busy.set(false);
+        const bad = res.filter((x) => !x.ok);
+        if (bad.length) this.actionError.set(`${bad.length} of ${res.length} not returned — ${bad.map((x) => `${x.ref}: ${x.msg}`).join('; ')}`);
+        const ok = res.length - bad.length;
+        if (ok) { this.lastDone.set({ text: `${ok} parcel(s) returned to the sender.` }); this.rtoMessage.set(''); }
+        this.afterAction(!bad.length);
+      });
   }
 
   /** Inscan: receives the selected parcels at this branch. */
