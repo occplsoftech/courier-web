@@ -35,6 +35,16 @@ export interface MasterField {
   key: string;
   label: string;
   kind: MasterFieldKind;
+  /**
+   * The value lives one level down in the record and the payload, as `record[parent][prop]`
+   * (a pincode's document / surface / air coverage). `key` stays a flat form-control name.
+   */
+  nested?: { parent: string; prop: string };
+  /**
+   * `select` only: options are '', 'true' and 'false', sent as null / true / false. For a
+   * yes / no that may also be "not set", which a toggle cannot show.
+   */
+  triState?: boolean;
   required?: boolean;
   /** Set once and never editable — the code, because operational data quotes it. */
   createOnly?: boolean;
@@ -111,6 +121,7 @@ export type MasterKey =
   | 'cities'
   | 'areas'
   | 'pincodes'
+  | 'regional-zones'
   | 'vehicle-types'
   | 'package-types'
   | 'service-types'
@@ -187,6 +198,32 @@ const ORDER_FIELD: MasterField = {
 const HEAD_FIELDS = [CODE_FIELD, NAME_FIELD, DESCRIPTION_FIELD, ORDER_FIELD];
 
 const option = (value: string) => ({ value, label: value.replace(/_/g, ' ') });
+
+/** Tri-state yes / no for nullable flags: blank means "use the pincode's own flag". */
+const TRI_STATE: MasterFieldOption[] = [
+  { value: '', label: 'Not set' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }
+];
+
+/** One delivery network's coverage at a pincode (V171): delivers, ODA, promised hours. */
+function coverageFields(parent: 'doc' | 'surface' | 'air', group: string): MasterField[] {
+  return [
+    { key: `${parent}Serviceable`, label: 'Delivers here', kind: 'select', options: TRI_STATE, triState: true,
+      nested: { parent, prop: 'serviceable' }, group,
+      hint: parent === 'doc' ? 'Not set: the pincode\'s own Serviceable switch decides.' : undefined },
+    { key: `${parent}Oda`, label: 'ODA', kind: 'select', options: TRI_STATE, triState: true,
+      nested: { parent, prop: 'oda' }, group },
+    { key: `${parent}TatHours`, label: 'Delivery time (hours)', kind: 'number', min: 1, max: 2400,
+      nested: { parent, prop: 'tatHours' }, group, placeholder: '48' }
+  ];
+}
+
+/** "Yes · ODA · 48 h" for a list column; a dash when the network has no data. */
+function coverageText(c: unknown): string {
+  const v = (c ?? {}) as { serviceable?: boolean | null; oda?: boolean | null; tatHours?: number | null };
+  if (v.serviceable == null && v.oda == null && v.tatHours == null) return '—';
+  if (v.serviceable === false) return 'No service';
+  return [v.oda ? 'ODA' : 'Yes', v.tatHours != null ? `${v.tatHours} h` : null].filter(Boolean).join(' · ');
+}
 
 function transitLabel(days: number, hours: number): string {
   const h = hours || 0;
@@ -321,12 +358,13 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
     columns: [
       { key: 'code', header: 'Pincode', sortable: true, width: '120px' },
       { key: 'name', header: 'Post office', sortable: true },
-      { key: 'areaName', header: 'Area', value: (r) => text(r['areaName']) },
       { key: 'districtName', header: 'District', value: (r) => text(r['districtName']) },
       { key: 'stateName', header: 'State', value: (r) => text(r['stateName']) },
-      { key: 'serviceable', header: 'Serviceable', kind: 'boolean', width: '120px', value: (r) => yesNo(r['serviceable']) },
-      { key: 'codAvailable', header: 'COD', kind: 'boolean', width: '80px', value: (r) => yesNo(r['codAvailable']) },
-      { key: 'odaApplicable', header: 'ODA', kind: 'boolean', width: '80px', value: (r) => yesNo(r['odaApplicable']) },
+      { key: 'zone', header: 'Zone', width: '80px', value: (r) => text(r['zone']) },
+      { key: 'regionalZoneName', header: 'Regional zone', width: '130px', value: (r) => text(r['regionalZoneName']) },
+      { key: 'doc', header: 'Document', width: '120px', value: (r) => coverageText(r['doc']) },
+      { key: 'surface', header: 'Surface', width: '120px', value: (r) => coverageText(r['surface']) },
+      { key: 'air', header: 'Air', width: '120px', value: (r) => coverageText(r['air']) },
       STATUS_COLUMN
     ],
     fields: [
@@ -342,7 +380,14 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'prepaidAvailable', label: 'Prepaid', kind: 'boolean', initial: true, group: 'Availability' },
       { key: 'pickupAvailable', label: 'Pickup', kind: 'boolean', initial: true, group: 'Availability' },
       { key: 'odaApplicable', label: 'ODA applicable', kind: 'boolean', initial: false, group: 'Availability',
-        hint: 'Out-of-Delivery-Area — still served, just not on the standard network.' }
+        hint: 'Out-of-Delivery-Area — still served, just not on the standard network.' },
+      { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'WEST', group: 'Zones',
+        hint: 'Direction: NORTH, SOUTH, EAST, WEST or CENTRAL.' },
+      { key: 'regionalZoneId', label: 'Regional zone', kind: 'lookup', lookup: 'regional-zones', group: 'Zones',
+        hint: 'The pricing region. Zone Tariff zones can take a whole regional zone.' },
+      ...coverageFields('doc', 'Document service'),
+      ...coverageFields('surface', 'Surface service'),
+      ...coverageFields('air', 'Air service')
     ],
     filters: [
       { key: 'stateId', label: 'State', kind: 'lookup', lookup: 'states' },
@@ -352,7 +397,18 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'odaApplicable', label: 'ODA only', kind: 'boolean' },
       { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'LOCAL' }
     ],
-    exportColumns: ['code', 'name', 'areaName', 'districtName', 'stateName', 'serviceable', 'codAvailable', 'prepaidAvailable', 'odaApplicable', 'status']
+    exportColumns: ['code', 'name', 'areaName', 'districtName', 'stateName', 'zone', 'regionalZoneName', 'serviceable', 'doc', 'surface', 'air', 'codAvailable', 'prepaidAvailable', 'odaApplicable', 'status']
+  },
+
+  'regional-zones': {
+    key: 'regional-zones', global: true, writeRoles: [AppRole.SUPER_ADMIN, AppRole.COMPANY_ADMIN],
+    apiPath: '/global-masters/regional-zones', singular: 'Regional zone', plural: 'Regional Zones',
+    icon: 'travel_explore', group: 'Geography',
+    description: 'Pricing regions pincodes are grouped into, such as Pune, X - Pune or Rest of India. Each pincode names its regional zone; a Zone Tariff zone can take a whole regional zone.',
+    defaultSort: { field: 'displayOrder', direction: 'asc' },
+    columns: [CODE_COLUMN, NAME_COLUMN, STATUS_COLUMN],
+    fields: [...HEAD_FIELDS],
+    exportColumns: ['code', 'name', 'status']
   },
 
   'vehicle-types': {
@@ -416,6 +472,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'priority', header: 'Priority', align: 'right', width: '100px', value: (r) => text(r['priority']) },
       { key: 'volumetricDivisor', header: 'Vol. divisor', align: 'right', width: '120px',
         value: (r) => text(r['volumetricDivisor'] ?? 5000) },
+      { key: 'network', header: 'Network', width: '100px', value: (r) => r['network'] === 'AIR' ? 'Air' : 'Surface' },
       STATUS_COLUMN
     ],
     fields: [
@@ -428,10 +485,13 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'priority', label: 'Priority', kind: 'number', min: 0, group: 'Promise',
         hint: 'Higher wins when more than one service can carry a shipment.' },
       { key: 'volumetricDivisor', label: 'Volumetric divisor', kind: 'number', min: 1, group: 'Weight',
-        hint: 'Volumetric weight = L×W×H (cm) ÷ this. Air is usually 5000, Surface 4000. Empty uses 5000.' }
+        hint: 'Volumetric weight = L×W×H (cm) ÷ this. Air is usually 5000, Surface 4000. Empty uses 5000.' },
+      { key: 'network', label: 'Network', kind: 'select', group: 'Weight',
+        options: [{ value: 'SURFACE', label: 'Surface' }, { value: 'AIR', label: 'Air' }],
+        hint: 'Which pincode coverage parcels on this service are checked against. Documents always use Document coverage. Empty is Surface.' }
     ],
     filters: [{ key: 'express', label: 'Express only', kind: 'boolean' }],
-    exportColumns: ['code', 'name', 'deliveryDays', 'express', 'cutoffTime', 'priority', 'volumetricDivisor', 'status']
+    exportColumns: ['code', 'name', 'deliveryDays', 'express', 'cutoffTime', 'priority', 'volumetricDivisor', 'network', 'status']
   },
 
   'payment-modes': {

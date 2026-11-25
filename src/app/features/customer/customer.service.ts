@@ -72,6 +72,7 @@ export class CustomerService {
   cities(districtId: string) { return this.geography('cities', { districtId }); }
   areas(cityId: string) { return this.geography('areas', { cityId }); }
   pincodes(areaId: string) { return this.geography('pincodes', { areaId }); }
+  regionalZones() { return this.geography('regional-zones'); }
 
   private geography(path: string, filter?: Record<string, string>): Observable<GeographyOption[]> {
     return this.api

@@ -30,20 +30,20 @@ describe('master definitions', () => {
     }
   });
 
-  it('marks exactly the six geography lists as global', () => {
+  it('marks exactly the six geography lists and regional zones as global', () => {
     // A list that quietly flips tier changes who may write it for every company at once,
     // so the set is asserted rather than left to whoever edits the file next.
     const global = MASTER_KEYS.filter((key) => MASTER_DEFINITIONS[key].global);
     expect(global.sort()).toEqual(
-      ['areas', 'cities', 'countries', 'districts', 'pincodes', 'states']
+      ['areas', 'cities', 'countries', 'districts', 'pincodes', 'regional-zones', 'states']
     );
   });
 
-  it('covers all twelve master lists', () => {
-    expect(MASTER_KEYS).toHaveLength(12);
+  it('covers all thirteen master lists', () => {
+    expect(MASTER_KEYS).toHaveLength(13);
     expect(MASTER_KEYS).toEqual(
       expect.arrayContaining([
-        'countries', 'states', 'districts', 'cities', 'areas', 'pincodes',
+        'countries', 'states', 'districts', 'cities', 'areas', 'pincodes', 'regional-zones',
         'vehicle-types', 'package-types', 'service-types', 'payment-modes',
         'weight-slabs', 'routes'
       ])

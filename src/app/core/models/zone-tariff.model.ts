@@ -2,7 +2,7 @@
 
 export type ZoneUsage = 'FROM' | 'TO' | 'BOTH';
 export type TariffZoneStatus = 'ACTIVE' | 'INACTIVE';
-export type LocationScope = 'STATE' | 'DISTRICT' | 'CITY' | 'PINCODE';
+export type LocationScope = 'STATE' | 'REGIONAL_ZONE' | 'DISTRICT' | 'CITY' | 'PINCODE';
 export type TariffStatus = 'ACTIVE' | 'INACTIVE';
 export type SlabRateType = 'FIXED' | 'PER_EXTRA_KG';
 export type TotalRounding = 'NONE' | 'NEAREST_RUPEE' | 'UP_RUPEE';
@@ -13,7 +13,7 @@ export const ZONE_USAGE_LABELS: Record<ZoneUsage, string> = {
   FROM: 'From (shipments start here)', TO: 'To (shipments delivered here)', BOTH: 'Both'
 };
 export const SCOPE_LABELS: Record<LocationScope, string> = {
-  STATE: 'State', DISTRICT: 'District', CITY: 'City', PINCODE: 'Pincode'
+  STATE: 'State', REGIONAL_ZONE: 'Regional zone', DISTRICT: 'District', CITY: 'City', PINCODE: 'Pincode'
 };
 export const ROUNDING_LABELS: Record<TotalRounding, string> = {
   NONE: 'No rounding', NEAREST_RUPEE: 'Nearest rupee', UP_RUPEE: 'Up to the next rupee'
@@ -35,6 +35,7 @@ export interface TariffLocation {
   districtId: string | null; districtName: string | null;
   cityId: string | null; cityName: string | null;
   pincode: string | null;
+  regionalZoneId?: string | null; regionalZoneName?: string | null;
 }
 
 export interface TariffZone {
@@ -60,6 +61,7 @@ export interface TariffLocationRequest {
   districtId?: string | null;
   cityId?: string | null;
   pincode?: string | null;
+  regionalZoneId?: string | null;
 }
 
 export interface TariffZoneRequest {
@@ -199,8 +201,10 @@ export interface QuoteResponse {
   serviceTypeId: string;
   serviceTypeCode: string;
   serviceTypeName: string;
-  /** The service type's promised transit days, if set. */
+  /** Promised transit days: from the delivery pincode's TAT for this service when on file, else the service type's. */
   deliveryDays: number | null;
+  /** The delivery pincode's TAT in hours for this service's network (document, surface or air), when on file. */
+  tatHours?: number | null;
   packageTypeId: string;
   packageTypeCode: string;
   oda: boolean;

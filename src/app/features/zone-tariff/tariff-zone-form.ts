@@ -24,13 +24,14 @@ interface PendingLocation { request: TariffLocationRequest; key: string; label: 
 
 const USAGE_OPTS: SelectOption[] = (Object.keys(ZONE_USAGE_LABELS) as ZoneUsage[]).map((u) => ({ value: u, label: ZONE_USAGE_LABELS[u] }));
 const SCOPE_OPTS: SelectOption[] = (Object.keys(SCOPE_LABELS) as LocationScope[]).map((s) => ({ value: s, label: SCOPE_LABELS[s] }));
-const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', DISTRICT: 'map', CITY: 'location_city', PINCODE: 'pin_drop' };
+const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', REGIONAL_ZONE: 'travel_explore', DISTRICT: 'map', CITY: 'location_city', PINCODE: 'pin_drop' };
 
 /**
  * Create / manage one tariff zone. Create posts the zone with its locations in one call; manage edits the zone and
  * adds/removes locations live, so the server's "already in zone X" rule answers immediately.
  *
- * A location is a whole state, a district, a city, or pincodes (several at once, separated by commas or spaces).
+ * A location is a whole state, a regional zone (a group of pincodes from the pincode master), a district, a city,
+ * or pincodes (several at once, separated by commas or spaces).
  * A city can sit in METRO while its state sits in another zone: the most specific location wins.
  */
 @Component({
@@ -65,12 +66,14 @@ const SCOPE_ICONS: Record<LocationScope, string> = { STATE: 'public', DISTRICT: 
           </div>
         </app-card>
 
-        <app-card title="Places in this zone" subtitle="A state, district, city or pincodes. A place can be in only one to zone and one from zone.">
+        <app-card title="Places in this zone" subtitle="A state, regional zone, district, city or pincodes. A place can be in only one to zone and one from zone.">
           @if (canWrite()) {
             <div class="picker">
               <app-select [control]="scopeCtl" label="Add a" [options]="scopeOpts" />
               @if (scopeCtl.value === 'PINCODE') {
                 <app-input [control]="pinsCtl" label="Pincodes" placeholder="411030, 411031 …" />
+              } @else if (scopeCtl.value === 'REGIONAL_ZONE') {
+                <app-select [control]="regionCtl" label="Regional zone" [options]="regionOpts()" placeholder="Select a regional zone" />
               } @else {
                 <app-select [control]="stateCtl" label="State" [options]="stateOpts()" placeholder="Select a state" />
                 @if (scopeCtl.value !== 'STATE') {
@@ -154,12 +157,14 @@ export class TariffZoneForm implements OnInit {
   protected readonly districtCtl = new FormControl<string>('', { nonNullable: true });
   protected readonly cityCtl = new FormControl<string>('', { nonNullable: true });
   protected readonly pinsCtl = new FormControl<string>('', { nonNullable: true });
+  protected readonly regionCtl = new FormControl<string>('', { nonNullable: true });
 
   protected readonly usageOpts = USAGE_OPTS;
   protected readonly scopeOpts = SCOPE_OPTS;
   protected readonly stateOpts = signal<SelectOption[]>([]);
   protected readonly districtOpts = signal<SelectOption[]>([]);
   protected readonly cityOpts = signal<SelectOption[]>([]);
+  protected readonly regionOpts = signal<SelectOption[]>([]);
   /** Bumped on every picker change so `canAdd` (a computed) re-reads the controls. */
   private readonly pickerTick = signal(0);
 
@@ -174,6 +179,7 @@ export class TariffZoneForm implements OnInit {
       case 'DISTRICT': return !!this.districtCtl.value;
       case 'CITY': return !!this.cityCtl.value;
       case 'PINCODE': return this.pincodes().length > 0;
+      case 'REGIONAL_ZONE': return !!this.regionCtl.value;
     }
   });
 
@@ -202,7 +208,11 @@ export class TariffZoneForm implements OnInit {
       if (id) this.geo.cities(id).subscribe((c) => this.cityOpts.set(c.map((o) => ({ value: o.id, label: o.label }))));
       this.pickerTick.update((n) => n + 1);
     });
-    for (const ctl of [this.cityCtl, this.pinsCtl, this.scopeCtl]) ctl.valueChanges.subscribe(() => this.pickerTick.update((n) => n + 1));
+    this.geo.regionalZones().subscribe({
+      next: (r) => this.regionOpts.set(r.map((o) => ({ value: o.id, label: o.label }))),
+      error: () => this.regionOpts.set([])
+    });
+    for (const ctl of [this.cityCtl, this.pinsCtl, this.scopeCtl, this.regionCtl]) ctl.valueChanges.subscribe(() => this.pickerTick.update((n) => n + 1));
   }
 
   private reload(first = false): void {
@@ -246,6 +256,10 @@ export class TariffZoneForm implements OnInit {
       }
       case 'PINCODE':
         return this.pincodes().map((p) => ({ scope, key: `P:${p}`, label: p, request: { scope, pincode: p } }));
+      case 'REGIONAL_ZONE': {
+        const r = this.optionLabel(this.regionOpts(), this.regionCtl.value);
+        return [{ scope, key: `R:${this.regionCtl.value}`, label: r, request: { scope, regionalZoneId: this.regionCtl.value } }];
+      }
     }
   }
 
