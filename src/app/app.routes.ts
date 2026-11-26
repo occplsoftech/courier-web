@@ -323,6 +323,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/zone-tariff/rate-card-form').then((m) => m.RateCardForm)
       },
       {
+        // The All to All Rate Calculator is now a tab of the calculator; the old link opens that tab.
+        path: 'zone-tariff/all-rates', redirectTo: '/zone-tariff/calculator?tab=all'
+      },
+      {
         path: 'zone-tariff/calculator', title: 'Tariff Calculator', canActivate: [roleGuard], data: { roles: RATE_READERS },
         loadComponent: () => import('@features/zone-tariff/tariff-quote').then((m) => m.TariffQuote)
       },

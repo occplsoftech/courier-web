@@ -176,6 +176,7 @@ export const NAVIGATION: NavNode[] = [
       // The pincode master Excel sheet, row for row, read only.
       { id: 'pincode-sheet', title: 'Pincode Master Sheet', icon: 'table_view', route: '/zone-tariff/pincode-sheet', roles: GLOBAL_MASTER_READERS },
       { id: 'tariff-rate-cards', title: 'Rate Cards', icon: 'request_quote', route: '/zone-tariff/rate-cards', permission: 'TARIFF_READ', roles: COMPANY_ONLY },
+      // Two tabs: Domestic Rate Calculator (zone tariff) and All to All Rate Calculator (any pincodes, every service).
       { id: 'tariff-calculator', title: 'Calculator', icon: 'calculate', route: '/zone-tariff/calculator', roles: COMPANY_AND_BRANCH }
     ]
   },
