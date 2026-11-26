@@ -401,7 +401,7 @@ export class Scan {
   protected setOutAction(a: 'branch' | 'delivery' | 'rto'): void { this.outAction.set(a); this.actionError.set(null); }
 
   constructor() {
-    inject(BreadcrumbService).set([{ label: 'Operations' }, { label: 'Scan' }]);
+    inject(BreadcrumbService).set([{ label: 'OCCPL Operation' }, { label: 'Scan' }]);
     this.masters.branchDirectory().subscribe((list) => {
       this.branchNames.set(new Map(list.map((b) => [b.id, `${b.branchName} (${b.branchCode})`])));
       this.branchTypes.set(new Map(list.map((b) => [b.id, String(b.branchType ?? '')])));
