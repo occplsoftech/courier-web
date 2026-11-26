@@ -986,6 +986,10 @@ export interface DeliverRequest {
   otp?: string | null;
   signatureUrl?: string | null;
   photoUrl?: string | null;
+  /** Delivery Updation: the receiver's relation, the proof, and a past delivered date (yyyy-MM-dd; empty = now). */
+  receiverRelation?: string | null;
+  proofType?: DeliveryProof | null;
+  deliveredOn?: string | null;
 }
 
 /** Body of POST /shipment-movement/{shipmentId}/override-status. Only the fields the
@@ -1146,7 +1150,8 @@ export interface ResolveForwardResult { shipmentId: string; outcome: 'CLEARED' |
 // ---- failed delivery attempts (Phase 10.2) -------------------------------------------------------------------------------
 
 export type UndeliveredReason = 'RECEIVER_NOT_AVAILABLE' | 'ADDRESS_INCORRECT' | 'REFUSED' | 'PREMISES_CLOSED'
-  | 'RESCHEDULE_REQUESTED' | 'COD_NOT_READY' | 'OTHER';
+  | 'RESCHEDULE_REQUESTED' | 'COD_NOT_READY' | 'CUSTOMER_INSTRUCTION' | 'HOLD' | 'MISROUTE' | 'NO_SERVICE' | 'SHIFTED'
+  | 'OTHER';
 
 export const UNDELIVERED_REASONS: { value: UndeliveredReason; label: string }[] = [
   { value: 'RECEIVER_NOT_AVAILABLE', label: 'Receiver not available' },
@@ -1155,8 +1160,26 @@ export const UNDELIVERED_REASONS: { value: UndeliveredReason; label: string }[] 
   { value: 'PREMISES_CLOSED', label: 'Premises closed' },
   { value: 'RESCHEDULE_REQUESTED', label: 'Receiver asked to deliver later' },
   { value: 'COD_NOT_READY', label: 'COD amount not ready' },
+  { value: 'CUSTOMER_INSTRUCTION', label: "As per the customer's instruction" },
+  { value: 'HOLD', label: 'On hold' },
+  { value: 'MISROUTE', label: 'Misrouted' },
+  { value: 'NO_SERVICE', label: 'No service' },
+  { value: 'SHIFTED', label: 'Receiver shifted' },
   { value: 'OTHER', label: 'Other' }
 ];
+
+/** How a delivery was proved (Delivery Updation). */
+export type DeliveryProof = 'DROP' | 'SIGNATURE' | 'STAMP_AND_SIGN';
+
+/** One row of GET /shipment-movement/delivery-updation. */
+export interface DeliveryUpdationRow {
+  shipmentId: string; trackingNumber: string | null; shipmentNumber: string | null; bookingDate: string | null;
+  packageType: string | null; bookingBranch: string | null; destination: string | null; consignee: string | null;
+  status: ShipmentStatus | null; deliveryUserId: string | null; deliveryPerson: string | null; drsNumber: string | null;
+  forwardingNumber: string | null; outForDeliveryAt: string | null; assignedBy: string | null;
+  deliveredAt: string | null; proofType: DeliveryProof | null; proofLabel: string | null; receivedBy: string | null;
+  relation: string | null; remarks: string | null; updatedBy: string | null; photoUrl: string | null;
+}
 
 /** The last failed delivery attempt; `open` until it is sent out again, delivered or returned. */
 export interface ShipmentUndeliveredInfo {
