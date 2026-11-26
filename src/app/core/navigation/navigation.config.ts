@@ -265,6 +265,18 @@ export const NAVIGATION: NavNode[] = [
   },
 
   {
+    // OCCPL's own counter flow, as on the earlier OCCPL portal: cash and credit booking, quick booking, and Scan
+    // (outscan / inscan / delivery) together in one group.
+    id: 'occpl-operation', title: 'OCCPL Operation', icon: 'rocket_launch', order: 4.9,
+    children: [
+      { id: 'domestic-cash-booking', title: 'Domestic (CASH) Shipment', icon: 'receipt_long', route: '/shipments/domestic-cash', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
+      { id: 'credit-booking', title: 'Credit Shipment', icon: 'credit_card', route: '/shipments/credit', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
+      { id: 'quick-booking', title: 'Quick Booking', icon: 'bolt', route: '/shipments/quick-booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
+      { id: 'scan', title: 'Scan', icon: 'qr_code_scanner', route: '/movement/scan', permission: 'TRACKING_CREATE', roles: OPS_BOOKING },
+    ]
+  },
+
+  {
     id: 'operations', title: 'Operations', icon: 'local_shipping', order: 5,
     children: [
       // Booking is the counter desk's job (SHIPMENT_CREATE); manifest through delivery is
@@ -275,14 +287,10 @@ export const NAVIGATION: NavNode[] = [
       // branch (OPS_DELIVERY_DESK) — see MEMORY/modules/shipment-movement.md.
       // 'sorting' has no module behind it yet and stays aspirational.
       { id: 'booking', title: 'Shipment Booking', icon: 'add_box', route: '/shipments/new', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
-      { id: 'domestic-cash-booking', title: 'Domestic (CASH) Shipment', icon: 'receipt_long', route: '/shipments/domestic-cash', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
-      { id: 'credit-booking', title: 'Credit Shipment', icon: 'credit_card', route: '/shipments/credit', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
-      { id: 'quick-booking', title: 'Quick Booking', icon: 'bolt', route: '/shipments/quick-booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       // Same booking screen, customer picked first — see ShipmentCreate.isBusinessBooking.
       { id: 'business-booking', title: 'Business Customer Booking', icon: 'business_center', route: '/business-customer/booking', permission: 'SHIPMENT_CREATE', roles: OPS_BOOKING },
       { id: 'shipment-search', title: 'Shipment Search', icon: 'search', route: '/shipments', permission: 'SHIPMENT_READ', roles: OPS_SHIPMENT_READERS },
       { id: 'track', title: 'Track Shipment', icon: 'my_location', route: '/track', permission: 'SHIPMENT_READ', roles: OPS_SHIPMENT_READERS },
-      { id: 'scan', title: 'Scan', icon: 'qr_code_scanner', route: '/movement/scan', permission: 'TRACKING_CREATE', roles: OPS_BOOKING },
       { id: 'manifest', title: 'Loading Sheet', icon: 'qr_code_scanner', route: '/movement/loading-sheet', permission: 'TRACKING_CREATE', roles: OPS_BOOKING },
       { id: 'dispatch', title: 'Trip Hire Challan (THC)', icon: 'outbound', route: '/movement/trip-hire-challan', permission: 'MANIFEST_DISPATCH', roles: OPS_BOOKING },
       { id: 'receive', title: 'In Scan', icon: 'move_to_inbox', route: '/movement/in-scan', permission: 'MANIFEST_RECEIVE', roles: OPS_DELIVERY_DESK },
