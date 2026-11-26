@@ -15,7 +15,8 @@ const EXPAND_KEY = 'cs.sidebar.expanded';
  *  Operations only the booking + delivery-desk leaves, are all its sidebar shows. */
 const PARTNER_GROUPS = new Set(['dashboard', 'pdp-management', 'operations', 'finance', 'reports']);
 const PARTNER_OPERATIONS = new Set([
-  'booking', 'shipment-search', 'track', 'receive', 'pending-delivery', 'out-for-delivery', 'delivery'
+  'booking', 'shipment-search', 'track', 'receive', 'pending-delivery', 'out-for-delivery', 'delivery',
+  'delivery-updation'
 ]);
 
 /**
