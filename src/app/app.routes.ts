@@ -726,6 +726,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/shipment-movement/returns-queue').then((m) => m.ReturnsQueue)
       },
       {
+        path: 'movement/delivery-updation', title: 'Delivery Updation', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
+        loadComponent: () => import('@features/shipment-movement/delivery-updation').then((m) => m.DeliveryUpdation)
+      },
+      {
         path: 'movement/delivery', title: 'Delivery', canActivate: [roleGuard], data: { roles: MOVEMENT_WRITERS },
         loadComponent: () => import('@features/shipment-movement/delivery').then((m) => m.Delivery)
       },

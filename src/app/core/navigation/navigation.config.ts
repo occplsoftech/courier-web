@@ -297,6 +297,8 @@ export const NAVIGATION: NavNode[] = [
       { id: 'pending-delivery', title: 'Pending Delivery', icon: 'pending_actions', route: '/movement/pending-delivery', permission: 'DELIVERY_ASSIGN', roles: OPS_DELIVERY_DESK },
       { id: 'out-for-delivery', title: 'Generate DRS', icon: 'directions_run', route: '/movement/out-for-delivery', permission: 'DELIVERY_ASSIGN', roles: OPS_DELIVERY_DESK },
       { id: 'delivery', title: 'Delivery', icon: 'task_alt', route: '/movement/delivery', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
+      // As in the previous software: pending for delivery, update a whole DRS, delivered.
+      { id: 'delivery-updation', title: 'Delivery Updation', icon: 'local_shipping', route: '/movement/delivery-updation', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
       { id: 'undelivered', title: 'Undelivered Shipments', icon: 'report', route: '/movement/undelivered', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },
       // Parcels going back to their sender (Phase 12.1): Load Sheet to the booking branch, then hand back.
       { id: 'returns', title: 'Returns (RTO)', icon: 'assignment_return', route: '/movement/returns', permission: 'DELIVERY_DELIVER', roles: OPS_DELIVERY_DESK },

@@ -5,7 +5,7 @@ import { API } from '@core/config/api-endpoints';
 import { ReturnCase, UndeliveredCase,
   BulkMovementResult, DispatchManifestRequest, DispatchManifestResponse,
   InScanRequest, OutForDeliveryRequest, DeliverRequest, ShipmentResponse,
-  DrsSummary, DrsDetail, OverrideStatusRequest, OverrideStatusResponse
+  DrsSummary, DrsDetail, OverrideStatusRequest, OverrideStatusResponse, DeliveryUpdationRow
 } from '@core/models/shipment.model';
 import { UserService, Lookup } from '@features/users/user.service';
 
@@ -89,6 +89,12 @@ export class ShipmentMovementService {
   overrideStatus(shipmentId: string, body: OverrideStatusRequest) {
     return this.api.post<OverrideStatusResponse>(
       `${API.shipmentMovement}/${shipmentId}/override-status`, body);
+  }
+
+  /** Delivery Updation lists: PENDING (out for delivery) or DELIVERED, paged and searchable. */
+  deliveryUpdation(tab: 'PENDING' | 'DELIVERED', search: string, page: number, size = 20) {
+    return this.api.page<DeliveryUpdationRow>(`${API.shipmentMovement}/delivery-updation`,
+      { tab, search: search || undefined, page, size });
   }
 
   /** Uploads one POD file (photo or signature capture) to the configured object store and
