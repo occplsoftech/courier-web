@@ -2,18 +2,36 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable, catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { MatIconModule } from '@angular/material/icon';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { OptionsResponse, QuoteResponse } from '@core/models/zone-tariff.model';
+import { ApiService } from '@core/services/api.service';
+import { BusinessCustomerService } from '@features/business-customer/business-customer.service';
 import { ZoneTariffService } from './zone-tariff.service';
+
+/** One service's price from the all to all calculator, or why it has none. */
+export interface AllRateRow {
+  serviceTypeId: string; serviceTypeCode: string; serviceTypeName: string;
+  source: string | null; basis: string | null; chargeableWeight: number | null;
+  freight: number | null; otherCharges: number | null; gst: number | null; total: number | null;
+  deliveryDays: number | null; tatHours: number | null; error: string | null;
+}
+export interface AllRateResult {
+  fromPincode: string; toPincode: string; weightKg: number; packageTypeId: string; packageTypeName: string;
+  gstPercent: number; rows: AllRateRow[];
+}
 
 type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'; text: string };
 
 /**
- * Tariff calculator, laid out like the e-commerce portal's rate calculator: two pincodes and the package give every
+ * Rate calculator, two tabs in one look. Domestic: the zone tariff calculator. All to all: any pincode to any pincode on
+ * every service, priced the way a booking would be (a business customer's rate structure or pricing zone, else the zone
+ * tariff), via POST /rate-calculator.
+ *
+ * Domestic tab, laid out like the e-commerce portal's rate calculator: two pincodes and the package give every
  * option the zone tariff has — each service type and package type to the delivery zone — at a glance, cheapest first,
  * with the breakup one click away. The zone under each pincode shows as soon as six digits are typed. "Book" opens
  * Shipment Booking with the delivery pincode, service, package and weight filled in. Nothing is saved here.
@@ -28,13 +46,22 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
       <header class="calc__title">
         <span class="calc__badge"><mat-icon>calculate</mat-icon></span>
         <div>
-          <h1>Tariff calculator</h1>
-          <p>Every option on your zone tariff · freight, charges and GST</p>
+          <h1>{{ tab() === 'all' ? 'All to all rate calculator' : 'Domestic rate calculator' }}</h1>
+          <p>{{ tab() === 'all'
+            ? 'Any pincode to any pincode, every service · customer rates, zone tariff, GST'
+            : 'Every option on your zone tariff · freight, charges and GST' }}</p>
         </div>
       </header>
 
+      <nav class="tabs" role="tablist" aria-label="Calculator">
+        <button type="button" role="tab" class="tab" [class.tab--on]="tab() === 'domestic'" [attr.aria-selected]="tab() === 'domestic'"
+                (click)="setTab('domestic')"><mat-icon>local_shipping</mat-icon> Domestic Rate Calculator</button>
+        <button type="button" role="tab" class="tab" [class.tab--on]="tab() === 'all'" [attr.aria-selected]="tab() === 'all'"
+                (click)="setTab('all')"><mat-icon>price_check</mat-icon> All to All Rate Calculator</button>
+      </nav>
+
       <form class="bar" [formGroup]="form" (ngSubmit)="check()" novalidate>
-        <div class="bar__row">
+        <div class="bar__row" [class.bar__row--all]="tab() === 'all'">
           <div class="f f--wide">
             <label for="tc-from">From pincode</label>
             <input id="tc-from" [class.ok]="from().state === 'ok'" formControlName="originPincode" inputmode="numeric" maxlength="6" placeholder="Pickup" autocomplete="off" />
@@ -49,10 +76,19 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
               @if (to().state !== 'idle') { @if (to().state === 'ok') { <mat-icon>check_circle</mat-icon> } {{ text(to()) }} }
             </p>
           </div>
-          <div class="f">
-            <label for="tc-boxes">Boxes</label>
-            <input id="tc-boxes" type="number" min="1" max="999" step="1" formControlName="pieces" inputmode="numeric" />
-          </div>
+          @if (tab() === 'all') {
+            <div class="f">
+              <label for="tc-pkg">Package</label>
+              <select id="tc-pkg" class="sel" [value]="packageId()" (change)="packageId.set($any($event.target).value)">
+                @for (p of packageOpts(); track p.id) { <option [value]="p.id" [selected]="p.id === packageId()">{{ p.name }}</option> }
+              </select>
+            </div>
+          } @else {
+            <div class="f">
+              <label for="tc-boxes">Boxes</label>
+              <input id="tc-boxes" type="number" min="1" max="999" step="1" formControlName="pieces" inputmode="numeric" />
+            </div>
+          }
           <div class="f">
             <label for="tc-kg">Weight (kg)</label>
             <input id="tc-kg" type="number" min="0" step="0.001" formControlName="actualWeightKg" inputmode="decimal" placeholder="Total" />
@@ -65,6 +101,14 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
         </div>
 
         <div class="bar__opts">
+          @if (tab() === 'all') {
+            <label class="opt opt--date">Business customer
+              <select class="opt__sel" [value]="customerId()" (change)="customerId.set($any($event.target).value)" aria-label="Business customer">
+                <option value="">None (company rates)</option>
+                @for (c of customerOpts(); track c.id) { <option [value]="c.id" [selected]="c.id === customerId()">{{ c.label }}</option> }
+              </select>
+            </label>
+          } @else {
           <button class="opt" type="button" (click)="dims.set(!dims())" [attr.aria-expanded]="dims()"><mat-icon>{{ dims() ? 'close' : 'add' }}</mat-icon> Dimensions</button>
           <button class="opt opt--warm" type="button" (click)="cod.set(!cod())" [attr.aria-pressed]="cod()"><mat-icon>{{ cod() ? 'check_circle' : 'add' }}</mat-icon> {{ cod() ? 'Cash on delivery' : 'Cash on delivery?' }}</button>
           <label class="opt opt--date">Date <input type="date" formControlName="bookingDate" aria-label="Booking date" /></label>
@@ -76,10 +120,69 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
               <small>cm per box; documents and cards without a divisor use the weight</small>
             </span>
           }
+          }
         </div>
         @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
       </form>
 
+      @if (tab() === 'all') {
+      <div class="toolbar" aria-live="polite">
+        @if (allResult(); as r) {
+          <span class="route">{{ r.fromPincode }} → {{ r.toPincode }} · {{ r.weightKg | number: '1.0-3' }} kg · {{ r.packageTypeName }} · GST {{ r.gstPercent | number: '1.0-2' }}%</span>
+          <label class="sort">Sort
+            <select [value]="sort()" (change)="sort.set($any($event.target).value)" aria-label="Sort rates">
+              <option value="price">Lowest price</option>
+              <option value="fastest">Fastest delivery</option>
+              <option value="name">Service name</option>
+            </select>
+          </label>
+        }
+      </div>
+
+      @if (loading()) {
+        <p class="hint">Pricing every service…</p>
+      } @else if (!allResult()) {
+        <div class="empty">
+          <mat-icon>price_check</mat-icon>
+          <p>Enter any two pincodes and the weight, pick a business customer for their own rates, and press <strong>Check rates</strong>.</p>
+        </div>
+      } @else {
+        @if (allPriced().length === 0) {
+          <p class="hint">No service has a rate for this route.</p>
+        }
+        <div class="grid">
+          @for (o of allPriced(); track o.serviceTypeId) {
+            <article class="rate">
+              @if (o === allCheapest()) { <span class="lowest">↓ Lowest</span> }
+              <span class="rate__icon"><mat-icon>{{ iconOf(o.serviceTypeCode, o.serviceTypeName) }}</mat-icon></span>
+              <h2>{{ o.serviceTypeName || o.serviceTypeCode }}</h2>
+              <p class="rate__svc">{{ o.source }}@if (o.deliveryDays != null) { · {{ o.deliveryDays === 0 ? 'same day' : o.deliveryDays + (o.deliveryDays === 1 ? ' day' : ' days') }} }</p>
+              <strong class="rate__price">{{ o.total | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+              <small>{{ o.total! / o.chargeableWeight! | currency: 'INR' : 'symbol' : '1.2-2' }} / kg · {{ o.chargeableWeight | number: '1.0-3' }} kg chargeable</small>
+              <details class="rate__breakup">
+                <summary>View breakup →</summary>
+                <table>
+                  <tbody>
+                    <tr><td>Freight <span class="why">{{ o.basis }}</span></td><td class="amt">{{ o.freight | currency: 'INR' : 'symbol' : '1.2-2' }}</td></tr>
+                    @if (o.otherCharges) { <tr><td>Other charges</td><td class="amt">{{ o.otherCharges | currency: 'INR' : 'symbol' : '1.2-2' }}</td></tr> }
+                    <tr><td>GST {{ allResult()!.gstPercent | number: '1.0-2' }}%</td><td class="amt">{{ o.gst | currency: 'INR' : 'symbol' : '1.2-2' }}</td></tr>
+                    <tr class="sum"><td>Total</td><td class="amt">{{ o.total | currency: 'INR' : 'symbol' : '1.2-2' }}</td></tr>
+                  </tbody>
+                </table>
+              </details>
+              <button class="book" type="button" (click)="bookAll(o)">Book</button>
+            </article>
+          }
+        </div>
+        @if (allUnavailable().length) {
+          <p class="hint">Not available:
+            @for (u of allUnavailable(); track u.serviceTypeId; let last = $last) {
+              <strong>{{ u.serviceTypeName || u.serviceTypeCode }}</strong> ({{ u.error }}){{ last ? '' : ', ' }}
+            }
+          </p>
+        }
+      }
+      } @else {
       <div class="toolbar" aria-live="polite">
         @if (result(); as r) {
           <div class="filters" role="group" aria-label="Filter by package type">
@@ -149,6 +252,7 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
           </p>
         }
       }
+      }
     </section>
   `,
   styles: [`
@@ -158,8 +262,15 @@ type Lookup = { state: 'idle' } | { state: 'ok'; text: string } | { state: 'bad'
     .calc__title h1 { margin:0; font:800 calc(1.5rem + 3px) var(--font-display); letter-spacing:.04em; text-transform:uppercase; }
     .calc__title p { margin:2px 0 0; color:var(--content-muted); }
     .calc__badge { display:grid; place-items:center; width:3rem; height:3rem; border-radius:16px; background:var(--occpl-gradient-brand); color:#fff; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .tab { display:inline-flex; align-items:center; gap:8px; min-height:2.75rem; padding:0 18px; border:2px solid var(--surface-border); border-radius:14px; background:var(--occpl-color-surface); color:var(--content-muted); font:800 calc(.8rem + 3px) var(--font-sans); letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+    .tab mat-icon { font-size:20px; width:20px; height:20px; }
+    .tab--on { border-color:var(--occpl-color-primary); background:var(--occpl-color-text); color:var(--occpl-color-surface); }
+    .sel { width:100%; min-height:3.25rem; padding:0 10px; border:2px solid var(--surface-border); border-radius:14px; font:700 calc(.85rem + 3px) var(--font-sans); background:var(--occpl-color-surface); color:var(--content-fg); box-sizing:border-box; }
+    .opt__sel { border:0; background:transparent; font:600 calc(.85rem + 3px) var(--font-sans); color:var(--content-fg); max-width:22rem; }
     .bar { background:var(--occpl-color-surface); border:1px solid var(--surface-border); border-top:5px solid var(--occpl-color-primary); border-radius:24px; padding:18px 20px; box-shadow:var(--occpl-shadow-md); display:flex; flex-direction:column; gap:12px; }
     .bar__row { display:grid; grid-template-columns:1.3fr 1.3fr .6fr .8fr .9fr auto; gap:12px; align-items:start; }
+    .bar__row--all { grid-template-columns:1.2fr 1.2fr 1.1fr .8fr .9fr auto; }
     .f { display:flex; flex-direction:column; gap:6px; min-width:0; }
     .f label { font:700 calc(.75rem + 3px) var(--font-sans); letter-spacing:.1em; text-transform:uppercase; color:var(--content-muted); }
     .f input { width:100%; min-height:3.25rem; padding:0 16px; border:2px solid var(--surface-border); border-radius:14px; font:800 calc(1.15rem + 3px) var(--font-sans); background:var(--occpl-color-surface); color:var(--content-fg); box-sizing:border-box; }
@@ -216,6 +327,28 @@ export class TariffQuote implements OnInit {
   private readonly service = inject(ZoneTariffService);
   private readonly breadcrumb = inject(BreadcrumbService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly api = inject(ApiService);
+  private readonly customers = inject(BusinessCustomerService);
+
+  readonly tab = signal<'domestic' | 'all'>('domestic');
+  readonly allResult = signal<AllRateResult | null>(null);
+  readonly packageOpts = signal<{ id: string; name: string }[]>([]);
+  readonly packageId = signal('');
+  readonly customerOpts = signal<{ id: string; label: string }[]>([]);
+  readonly customerId = signal('');
+  readonly allPriced = computed(() => {
+    const list = (this.allResult()?.rows ?? []).filter((r) => r.total != null);
+    const by = this.sort();
+    return [...list].sort((a, b) => by === 'name' ? (a.serviceTypeName || a.serviceTypeCode).localeCompare(b.serviceTypeName || b.serviceTypeCode)
+      : by === 'fastest' ? (a.deliveryDays ?? 99) - (b.deliveryDays ?? 99) || a.total! - b.total!
+      : a.total! - b.total!);
+  });
+  readonly allCheapest = computed(() => {
+    const list = this.allPriced();
+    return list.length ? list.reduce((a, b) => (b.total! < a.total! ? b : a)) : null;
+  });
+  readonly allUnavailable = computed(() => (this.allResult()?.rows ?? []).filter((r) => r.total == null));
 
   readonly dims = signal(false);
   readonly cod = signal(false);
@@ -261,6 +394,35 @@ export class TariffQuote implements OnInit {
 
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Zone Tariff' }, { label: 'Calculator' }]);
+    if (this.route.snapshot.queryParamMap.get('tab') === 'all') this.tab.set('all');
+    this.api.page<{ id: string; name: string; documentType: boolean }>('/master/package-types', { page: 0, size: 100, status: 'ACTIVE' })
+      .subscribe({
+        next: (p) => {
+          this.packageOpts.set(p.content.map((t) => ({ id: t.id, name: t.name })));
+          const parcel = p.content.find((t) => !t.documentType) ?? p.content[0];
+          if (parcel) this.packageId.set(parcel.id);
+        },
+        error: () => this.packageOpts.set([])
+      });
+    // Company admins get the customer list; anyone else prices at company rates.
+    this.customers.businessCustomers().subscribe({
+      next: (p) => this.customerOpts.set(p.content.map((c) => ({ id: c.id, label: `${c.displayName} (${c.customerCode})` }))),
+      error: () => this.customerOpts.set([])
+    });
+  }
+
+  protected setTab(t: 'domestic' | 'all'): void {
+    this.tab.set(t);
+    this.error.set(null);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { tab: t === 'all' ? 'all' : null }, replaceUrl: true });
+  }
+
+  protected iconOf(code: string, name: string | null): string {
+    const s = `${code} ${name ?? ''}`.toUpperCase();
+    if (s.includes('AIR')) return 'flight';
+    if (s.includes('PREMIUM') || s.includes('EXPRESS')) return 'bolt';
+    if (s.includes('CARGO')) return 'inventory_2';
+    return 'local_shipping';
   }
 
   protected text(l: Lookup): string { return l.state === 'idle' ? '' : l.text; }
@@ -295,6 +457,7 @@ export class TariffQuote implements OnInit {
   }
 
   check(): void {
+    if (this.tab() === 'all') { this.checkAll(); return; }
     this.error.set(null);
     if (this.form.invalid) { this.form.markAllAsTouched(); this.error.set('Enter both 6-digit pincodes, the number of boxes and the weight.'); return; }
     const v = this.form.getRawValue();
@@ -309,6 +472,36 @@ export class TariffQuote implements OnInit {
       next: (r) => { this.loading.set(false); this.pkg.set(''); this.result.set(r); },
       error: (e: HttpErrorResponse) => { this.loading.set(false); this.result.set(null); this.error.set(e.error?.message ?? 'Rates could not be checked right now. Please try again.'); }
     });
+  }
+
+  /** All to all: every service for any two pincodes (customer rates when a customer is picked). */
+  private checkAll(): void {
+    this.error.set(null);
+    const v = this.form.getRawValue();
+    const c = this.form.controls;
+    if (c.originPincode.invalid || c.destinationPincode.invalid || c.actualWeightKg.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set('Enter both 6-digit pincodes and the weight.');
+      return;
+    }
+    this.loading.set(true);
+    this.api.post<AllRateResult>('/rate-calculator', {
+      fromPincode: v.originPincode.trim(), toPincode: v.destinationPincode.trim(), weightKg: Number(v.actualWeightKg),
+      packageTypeId: this.packageId() || null, customerId: this.customerId() || null, declaredValue: v.declaredValue || null
+    }).subscribe({
+      next: (r) => { this.loading.set(false); this.allResult.set(r); },
+      error: (e: HttpErrorResponse) => { this.loading.set(false); this.allResult.set(null); this.error.set(e.error?.message ?? 'Rates could not be checked right now. Please try again.'); }
+    });
+  }
+
+  /** Opens Shipment Booking with this service, the package and the weight filled in. */
+  bookAll(o: AllRateRow): void {
+    const v = this.form.getRawValue();
+    this.router.navigate(['/shipments/new'], { queryParams: {
+      fromTariff: 1, deliveryPincode: v.destinationPincode.trim(), serviceTypeId: o.serviceTypeId,
+      packageTypeId: this.allResult()?.packageTypeId ?? null, weight: v.actualWeightKg, parcels: 1,
+      declaredValue: v.declaredValue || null
+    } });
   }
 
   /** Opens Shipment Booking with this option's delivery pincode, service, package and weight filled in. */
