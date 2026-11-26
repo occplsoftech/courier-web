@@ -323,6 +323,10 @@ export const routes: Routes = [
         loadComponent: () => import('@features/zone-tariff/rate-card-form').then((m) => m.RateCardForm)
       },
       {
+        path: 'zone-tariff/all-rates', title: 'All to All Rate Calculator', canActivate: [roleGuard], data: { roles: RATE_READERS },
+        loadComponent: () => import('@features/zone-tariff/all-rate-calculator').then((m) => m.AllRateCalculator)
+      },
+      {
         path: 'zone-tariff/calculator', title: 'Tariff Calculator', canActivate: [roleGuard], data: { roles: RATE_READERS },
         loadComponent: () => import('@features/zone-tariff/tariff-quote').then((m) => m.TariffQuote)
       },
