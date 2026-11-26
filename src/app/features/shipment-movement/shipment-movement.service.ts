@@ -109,9 +109,9 @@ export class ShipmentMovementService {
   }
 
   /** DRS Report detail — every shipment on one DRS run. */
-  drsDetail(deliveryUserId: string, deliveryBranchId: string, runDate: string) {
+  drsDetail(deliveryUserId: string | null, deliveryBranchId: string, runDate: string, coLoaderId: string | null = null) {
     return this.api.get<DrsDetail>(`${API.shipmentMovement}/drs/detail`,
-      { deliveryUserId, deliveryBranchId, runDate });
+      { deliveryUserId, coLoaderId, deliveryBranchId, runDate });
   }
 
   /** Active company users, for the driver/delivery-user pickers — same shape

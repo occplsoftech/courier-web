@@ -243,6 +243,7 @@ export const NAVIGATION: NavNode[] = [
       // BRANCH_MANAGER both write, matching VehicleServiceImpl's own gate (no
       // permission code exists for it yet, same as Freight Factor/Address Distance).
       { id: 'vehicles', title: 'Vehicles', icon: 'local_shipping', route: '/masters/vehicles', roles: COMPANY_AND_BRANCH },
+      { id: 'co-loaders', title: 'Co-Loaders', icon: 'local_shipping', route: '/masters/co-loaders', roles: COMPANY_AND_BRANCH },
       { id: 'package-types', title: 'Package Type', icon: 'inventory_2', route: '/masters/package-types', permission: 'MASTER_DATA_READ', roles: COMPANY_ONLY },
       { id: 'service-types', title: 'Service Type', icon: 'bolt', route: '/masters/service-types', permission: 'MASTER_DATA_READ', roles: COMPANY_ONLY },
       { id: 'payment-modes', title: 'Payment Mode', icon: 'payments', route: '/masters/payment-modes', permission: 'MASTER_DATA_READ', roles: COMPANY_ONLY },

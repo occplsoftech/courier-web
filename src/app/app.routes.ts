@@ -493,6 +493,11 @@ export const routes: Routes = [
       // (direct user feedback, 0.25.2). 'new' declared before ':id/edit' so the
       // literal segment isn't swallowed by the parameter, same convention Shipment
       // Booking's own routes already use.
+      // Masters → Co-Loaders: outside transporters / agents used at Scan → Assign (outscan, local delivery).
+      {
+        path: 'masters/co-loaders', title: 'Co-Loaders', canActivate: [roleGuard], data: { roles: UPDATERS },
+        loadComponent: () => import('@features/manifest/co-loaders').then((m) => m.CoLoaders)
+      },
       {
         path: 'masters/vehicles', title: 'Vehicles', canActivate: [roleGuard], data: { roles: UPDATERS },
         loadComponent: () => import('@features/manifest/vehicle-list').then((m) => m.VehicleList)
