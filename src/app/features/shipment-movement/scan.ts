@@ -48,8 +48,11 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
 
       <nav class="tabs" role="tablist">
         @for (t of tabs; track t.id) {
-          <button type="button" role="tab" class="tab" [class.tab--on]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">
-            <mat-icon>{{ t.icon }}</mat-icon>{{ t.label }}<span class="cnt">{{ countOf(t.id) }}</span></button>
+          <button type="button" role="tab" class="tab" [class]="'tab tab--' + t.id" [class.tab--on]="tab() === t.id" [attr.aria-selected]="tab() === t.id"
+                  [attr.aria-label]="t.label + ', ' + countOf(t.id)" (click)="setTab(t.id)">
+            <span class="tab__ic"><mat-icon>{{ t.icon }}</mat-icon></span>
+            <span class="tab__txt"><b>{{ t.label }}</b><small>{{ t.hint }}</small></span>
+            <span class="tab__n">{{ countOf(t.id) }}</span></button>
         }
       </nav>
 
@@ -238,13 +241,23 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; font: 400 15px var(--font-sans); color: var(--content-muted); }
     .flow b { color: var(--content-fg); font-weight: 600; }
     .flow mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--surface-border); overflow-x: auto; }
-    .tab { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 0; background: none; cursor: pointer; white-space: nowrap;
-      font: 600 16px var(--font-sans); color: var(--content-muted); border-bottom: 3px solid transparent; margin-bottom: -1px; }
-    .tab mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .tab--on { color: var(--brand-700); border-bottom-color: var(--brand-600); }
-    .cnt { padding: 1px 9px; border-radius: 999px; background: var(--surface-muted, #eee); font-size: 13px; }
-    .tab--on .cnt { background: var(--brand-50); color: var(--brand-700); }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 4px; }
+    .tab { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 2px solid var(--surface-border); border-radius: 18px;
+      background: var(--surface); cursor: pointer; text-align: left; color: var(--content-fg); font: inherit; transition: .15s;
+      box-shadow: var(--shadow-clay-sm); }
+    .tab:hover { border-color: var(--brand-200); }
+    .tab__ic { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; }
+    .tab__ic mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    .tab--out .tab__ic { background: var(--brand-50); color: var(--brand-700); }
+    .tab--in .tab__ic { background: var(--info-bg); color: var(--info); }
+    .tab--del .tab__ic { background: var(--success-bg); color: var(--success); }
+    .tab__txt { display: flex; flex-direction: column; min-width: 0; }
+    .tab__txt b { font: 600 18px var(--font-sans); }
+    .tab__txt small { font: 400 14px var(--font-sans); color: var(--content-muted); }
+    .tab__n { margin-left: auto; font: 700 34px var(--font-sans); line-height: 1; color: var(--content-fg); }
+    .tab--on { border-color: var(--brand-600); background: var(--brand-50); box-shadow: 0 8px 20px rgb(214 31 69 / 18%); }
+    .tab--on .tab__n { color: var(--brand-700); }
+    @media (max-width: 900px) { .tabs { grid-template-columns: 1fr; gap: 10px; } .tab { padding: 12px 14px; } .tab__n { font-size: 28px; } }
     .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
     .body--split { grid-template-columns: minmax(0, 1fr) 380px; }
     .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -313,10 +326,10 @@ export class Scan {
   private readonly router = inject(Router);
   private readonly branchId = inject(AuthService).user()?.branchId ?? null;
 
-  protected readonly tabs: { id: ScanTab; label: string; icon: string }[] = [
-    { id: 'out', label: 'Pending Outscan', icon: 'outbox' },
-    { id: 'in', label: 'Pending Inscan', icon: 'move_to_inbox' },
-    { id: 'del', label: 'Pending Delivery', icon: 'local_shipping' }
+  protected readonly tabs: { id: ScanTab; label: string; icon: string; hint: string }[] = [
+    { id: 'out', label: 'Pending Outscan', icon: 'outbox', hint: 'Booked here, to send' },
+    { id: 'in', label: 'Pending Inscan', icon: 'move_to_inbox', hint: 'Coming to this branch' },
+    { id: 'del', label: 'Pending Delivery', icon: 'local_shipping', hint: 'Here, to deliver' }
   ];
   protected readonly reasons = UNDELIVERED_REASONS;
   protected readonly destinationOf = destinationOf;
