@@ -108,6 +108,11 @@ export interface Shipment {
   rto?: boolean | ShipmentRtoInfo | null;
   /** A return pickup booked by a portal customer: collected from their buyer, delivered to them. */
   returnPickup?: boolean;
+  /** Actual weight (kg) and receiver address: the outscan table and DRS. */
+  actualWeight?: number | null;
+  receiverAddress?: string | null;
+  /** The co-loader's own number for this AWB, given at outscan. */
+  forwarderNumber?: string | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
@@ -927,6 +932,8 @@ export interface DispatchManifestRequest {
   coLoaderId?: string | null;
   forwardingNumber?: string | null;
   bagsCount?: number | null;
+  /** "With Forwarder No.": shipment id → the co-loader's own number for that AWB. */
+  forwarderNumbers?: Record<string, string> | null;
   departureTime?: string | null;
   fuelCost?: number | null;
   driverAdvance?: number | null;
