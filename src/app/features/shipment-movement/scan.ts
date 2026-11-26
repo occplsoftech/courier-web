@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -7,7 +7,7 @@ import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
-import { Manifest, Shipment, UNDELIVERED_REASONS } from '@core/models/shipment.model';
+import { DrsSummary, Manifest, Shipment, UNDELIVERED_REASONS } from '@core/models/shipment.model';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { downloadCsv } from '@shared/utils/csv-export.util';
 import { MasterDataService } from '@features/masters/master-data.service';
@@ -15,8 +15,11 @@ import { ManifestService } from '@features/manifest/manifest.service';
 import { VehicleService } from '@features/manifest/vehicle.service';
 import { ShipmentService } from '@features/shipment/shipment.service';
 import { ShipmentMovementService } from './shipment-movement.service';
+import { OutscanAssignDialog } from './components/outscan-assign-dialog';
+import { CoLoaderService } from '@features/manifest/co-loader.service';
+import { printSheet } from './scan-print.util';
 
-export type ScanTab = 'out' | 'in' | 'del';
+export type ScanTab = 'out' | 'in' | 'del' | 'drs' | 'man';
 interface Opt { value: string; label: string; }
 
 /** The branch a shipment leaves this one for: its next stop, else its delivery branch. */
@@ -37,7 +40,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
   selector: 'app-scan',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton],
+  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton, OutscanAssignDialog],
   template: `
     <div class="sc">
       <header class="page__head sc__head">
@@ -48,12 +51,58 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
 
       <nav class="tabs" role="tablist">
         @for (t of tabs; track t.id) {
-          <button type="button" role="tab" class="tab" [class.tab--on]="tab() === t.id" [attr.aria-selected]="tab() === t.id" (click)="setTab(t.id)">
-            <mat-icon>{{ t.icon }}</mat-icon>{{ t.label }}<span class="cnt">{{ countOf(t.id) }}</span></button>
+          <button type="button" role="tab" class="tab" [class]="'tab tab--' + t.id" [class.tab--on]="tab() === t.id" [attr.aria-selected]="tab() === t.id"
+                  [attr.aria-label]="t.label + ', ' + countOf(t.id)" (click)="setTab(t.id)">
+            <span class="tab__ic"><mat-icon>{{ t.icon }}</mat-icon></span>
+            <span class="tab__txt"><b>{{ t.label }}</b><small>{{ t.hint }}</small></span>
+            <span class="tab__n">{{ countOf(t.id) }}</span></button>
         }
       </nav>
 
-      <div class="body" [class.body--split]="!!selected().size">
+      @if (tab() === 'drs') {
+        <section class="card">
+          <div class="bar">
+            <label class="f f--inline"><span class="f__l">Delivery Boy</span>
+              <select class="in" id="sc-drs-who" [value]="drsWho()" (change)="drsWho.set($any($event.target).value)">
+                <option value="">Everyone</option>
+                <optgroup label="Staff">@for (o of users(); track o.value) { <option [value]="'u:' + o.value">{{ o.label }}</option> }</optgroup>
+                @if (coLoaderOpts().length) { <optgroup label="Co-Loaders">@for (o of coLoaderOpts(); track o.value) { <option [value]="'c:' + o.value">{{ o.label }}</option> }</optgroup> }
+              </select></label>
+            <button type="button" class="ico" (click)="reload()" title="Refresh" aria-label="Refresh"><mat-icon>refresh</mat-icon></button>
+          </div>
+          @if (!drsRows().length) { <p class="muted empty">No delivery runs from this branch in the last 30 days.</p> }
+          @else {
+            <div class="tw"><table class="t"><thead><tr><th>DRS</th><th>Date</th><th>Delivery by</th><th class="n">Parcels</th><th class="n">Delivered</th><th class="n">Pending</th><th></th></tr></thead>
+              <tbody>@for (d of drsRows(); track d.drsNumber + d.runDate + (d.deliveryUserId ?? d.coLoaderId)) {
+                <tr><td><span class="mono">{{ d.drsNumber || '—' }}</span></td><td>{{ d.runDate | date: 'd MMM y' }}</td><td>{{ deliveryByLabel(d) }}</td>
+                  <td class="n">{{ d.shipmentCount }}</td><td class="n">{{ d.deliveredCount }}</td><td class="n">{{ d.pendingCount }}</td>
+                  <td class="n"><button type="button" class="pill" (click)="printDrs(d)"><mat-icon>print</mat-icon>Print</button></td></tr>
+              }</tbody></table></div>
+          }
+        </section>
+      } @else if (tab() === 'man') {
+        <section class="card">
+          <div class="bar">
+            <label class="f f--inline"><span class="f__l">Co-Loader</span>
+              <select class="in" id="sc-man-cl" [value]="manCoLoader()" (change)="manCoLoader.set($any($event.target).value)">
+                <option value="">All</option>@for (o of coLoaderOpts(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+              </select></label>
+            <button type="button" class="ico" (click)="reload()" title="Refresh" aria-label="Refresh"><mat-icon>refresh</mat-icon></button>
+          </div>
+          @if (!manRows().length) { <p class="muted empty">No manifests sent from this branch yet.</p> }
+          @else {
+            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>To</th><th>Co-Loader</th><th>Forwarding No.</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
+              <tbody>@for (m of manRows(); track m.id) {
+                <tr><td><span class="mono">{{ m.manifestNumber }}</span></td><td>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</td>
+                  <td>{{ m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
+                  <td>{{ m.forwardingNumber || '—' }}</td><td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
+                  <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
+                  <td class="n"><button type="button" class="pill" (click)="printManifest(m)"><mat-icon>print</mat-icon>Print</button></td></tr>
+              }</tbody></table></div>
+          }
+        </section>
+      } @else {
+      <div class="body" [class.body--split]="!!selected().size && tab() !== 'out'">
         <section class="card">
           <div class="bar">
             <div class="scanbox">
@@ -61,6 +110,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
               <input id="sc-scan" [value]="scanText()" (input)="scanText.set($any($event.target).value)" (keydown.enter)="scanOne()"
                      [placeholder]="tab() === 'in' ? 'Scan AWB to receive…' : 'Scan or type AWB, Enter to select…'" autocomplete="off" />
             </div>
+            @if (tab() === 'out') { <app-button icon="outbox" (pressed)="openAssign()">ASSIGN</app-button> }
             <div class="seg">
               <button type="button" class="pill" [class.pill--on]="!today()" (click)="today.set(false)">All</button>
               <button type="button" class="pill" [class.pill--on]="today()" (click)="today.set(true)">Today</button>
@@ -117,62 +167,8 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           }
         </section>
 
-        @if (selected().size) {
+        @if (selected().size && tab() !== 'out') {
           <aside class="card side">
-            @if (tab() === 'out') {
-              <h2 class="sec">Assign {{ selected().size }} parcel(s)</h2>
-              <div class="seg seg--wide" role="radiogroup" aria-label="Action" style="grid-template-columns:repeat(3,1fr);display:grid">
-                <button type="button" class="pill" id="sc-act-branch" [class.pill--on]="outAction() === 'branch'" (click)="setOutAction('branch')"><mat-icon>outbox</mat-icon>To Branch</button>
-                <button type="button" class="pill" id="sc-act-delivery" [class.pill--on]="outAction() === 'delivery'" (click)="setOutAction('delivery')"><mat-icon>directions_run</mat-icon>Delivery</button>
-                <button type="button" class="pill" id="sc-act-rto" [class.pill--on]="outAction() === 'rto'" (click)="setOutAction('rto')"><mat-icon>undo</mat-icon>RTO</button>
-              </div>
-              @switch (outAction()) {
-                @case ('branch') {
-                  <p class="text-caption">Creates the loading sheet to the branch and dispatches the trip (THC) in one step.</p>
-                  @if (outDestinationError(); as e) { <p class="warn">{{ e }}</p> }
-                  <div class="g2">
-                    <label class="f" style="grid-column:1/-1"><span class="f__l">Branch <b class="req">*</b></span>
-                      <select class="in" id="sc-branch" [value]="toBranchId()" (change)="toBranchId.set($any($event.target).value)">
-                        <option value="">Select branch or hub</option>@for (o of branchOptions(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                    <label class="f"><span class="f__l">Vehicle <b class="req">*</b></span>
-                      <select class="in" id="sc-vehicle" [value]="vehicleId()" (change)="vehicleId.set($any($event.target).value)">
-                        <option value="">Select vehicle</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                    <label class="f"><span class="f__l">Driver <b class="req">*</b></span>
-                      <select class="in" id="sc-driver" [value]="driverId()" (change)="driverId.set($any($event.target).value)">
-                        <option value="">Select driver</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                    <label class="f"><span class="f__l">Forwarding No.</span><input class="in" id="sc-fwd" [value]="forwardingNo()" (input)="forwardingNo.set($any($event.target).value)" placeholder="Optional" maxlength="40" /></label>
-                    <label class="f"><span class="f__l">Bags Count</span><input class="in" id="sc-bags" inputmode="numeric" [value]="bags()" (input)="bags.set(digits($event, 4))" /></label>
-                    <label class="f" style="grid-column:1/-1"><span class="f__l">Remarks</span><input class="in" id="sc-remarks" [value]="remarks()" (input)="remarks.set($any($event.target).value)" placeholder="Optional" /></label>
-                  </div>
-                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
-                    <app-button icon="outbox" [loading]="busy()" (pressed)="outscan()">Assign</app-button></div>
-                }
-                @case ('delivery') {
-                  <p class="text-caption">Local delivery straight from this branch: creates the DRS, no transfer.</p>
-                  <div class="g2">
-                    <label class="f"><span class="f__l">Delivery Boy <b class="req">*</b></span>
-                      <select class="in" id="sc-local-boy" [value]="deliveryUserId()" (change)="deliveryUserId.set($any($event.target).value)">
-                        <option value="">Select delivery boy</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                    <label class="f"><span class="f__l">Vehicle</span>
-                      <select class="in" [value]="drsVehicleId()" (change)="drsVehicleId.set($any($event.target).value)">
-                        <option value="">Optional</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                  </div>
-                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
-                    <app-button icon="directions_run" [loading]="busy()" (pressed)="assignLocalDelivery()">Assign · Create DRS</app-button></div>
-                }
-                @case ('rto') {
-                  <p class="text-caption">Returned to the sender before it leaves this branch. The booking stays charged; cancel it instead to undo the booking.</p>
-                  <label class="f"><span class="f__l">Message <b class="req">*</b></span><input class="in" id="sc-rto-msg" [value]="rtoMessage()" (input)="rtoMessage.set($any($event.target).value)" placeholder="Why it goes back" maxlength="300" /></label>
-                  <div class="acts"><button type="button" class="pill" (click)="clearSelection()">Cancel</button>
-                    <app-button icon="undo" [loading]="busy()" (pressed)="assignRto()">Assign RTO</app-button></div>
-                }
-              }
-            }
             @if (tab() === 'in') {
               <h2 class="sec">Inscan {{ selected().size }} parcel(s)</h2>
               <p class="text-caption">Receives them at this branch. They then wait in Pending Delivery.</p>
@@ -224,7 +220,13 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </aside>
         }
       </div>
+      }
 
+      @if (assignOpen()) {
+        <app-outscan-assign-dialog [pending]="lists().out" [preselected]="selectedIds()" [defaultBranchId]="outDestination()" [branches]="branchOptions()"
+          [hubIds]="hubIds()" [coLoaders]="coLoaderOpts()" [vehicles]="vehicles()" [users]="users()" [myBranchId]="branchId!"
+          (done)="onAssigned($event)" (closed)="assignOpen.set(false)" />
+      }
       @if (lastDone(); as d) {
         <div class="done" role="status"><mat-icon>check_circle</mat-icon><span>{{ d.text }}</span>
           @if (d.link) { <button type="button" class="clear" (click)="go(d.link)">{{ d.linkLabel }}</button> }
@@ -234,17 +236,30 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
   `,
   styles: [`
     :host { display: block; }
+    .f--inline { display: flex; flex-direction: row; align-items: center; gap: 8px; } .f--inline .in { min-width: 240px; }
     .sc { display: flex; flex-direction: column; gap: 14px; }
     .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; font: 400 15px var(--font-sans); color: var(--content-muted); }
     .flow b { color: var(--content-fg); font-weight: 600; }
     .flow mat-icon { font-size: 16px; width: 16px; height: 16px; }
-    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--surface-border); overflow-x: auto; }
-    .tab { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border: 0; background: none; cursor: pointer; white-space: nowrap;
-      font: 600 16px var(--font-sans); color: var(--content-muted); border-bottom: 3px solid transparent; margin-bottom: -1px; }
-    .tab mat-icon { font-size: 20px; width: 20px; height: 20px; }
-    .tab--on { color: var(--brand-700); border-bottom-color: var(--brand-600); }
-    .cnt { padding: 1px 9px; border-radius: 999px; background: var(--surface-muted, #eee); font-size: 13px; }
-    .tab--on .cnt { background: var(--brand-50); color: var(--brand-700); }
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr) repeat(2, minmax(0, .8fr)); gap: 14px; margin-bottom: 4px; }
+    .tab { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 2px solid var(--surface-border); border-radius: 18px;
+      background: var(--surface); cursor: pointer; text-align: left; color: var(--content-fg); font: inherit; transition: .15s;
+      box-shadow: var(--shadow-clay-sm); }
+    .tab:hover { border-color: var(--brand-200); }
+    .tab__ic { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; }
+    .tab__ic mat-icon { font-size: 24px; width: 24px; height: 24px; }
+    .tab--out .tab__ic { background: var(--brand-50); color: var(--brand-700); }
+    .tab--in .tab__ic { background: var(--info-bg); color: var(--info); }
+    .tab--del .tab__ic { background: var(--success-bg); color: var(--success); }
+    .tab--drs .tab__ic, .tab--man .tab__ic { background: var(--surface-muted); color: var(--content-fg); }
+    .tab__txt { display: flex; flex-direction: column; min-width: 0; }
+    .tab__txt b { font: 600 18px var(--font-sans); }
+    .tab__txt small { font: 400 14px var(--font-sans); color: var(--content-muted); }
+    .tab__n { margin-left: auto; font: 700 34px var(--font-sans); line-height: 1; color: var(--content-fg); }
+    .tab--on { border-color: var(--brand-600); background: var(--brand-50); box-shadow: 0 8px 20px rgb(214 31 69 / 18%); }
+    .tab--on .tab__n { color: var(--brand-700); }
+    @media (max-width: 1300px) { .tabs { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px) { .tabs { grid-template-columns: 1fr; gap: 10px; } .tab { padding: 12px 14px; } .tab__n { font-size: 28px; } }
     .body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
     .body--split { grid-template-columns: minmax(0, 1fr) 380px; }
     .card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -308,22 +323,27 @@ export class Scan {
   private readonly manifests = inject(ManifestService);
   private readonly movement = inject(ShipmentMovementService);
   private readonly vehicleService = inject(VehicleService);
+  private readonly coLoaderService = inject(CoLoaderService);
   private readonly masters = inject(MasterDataService);
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
-  private readonly branchId = inject(AuthService).user()?.branchId ?? null;
+  protected readonly branchId = inject(AuthService).user()?.branchId ?? null;
+  private readonly branchTypes = signal<Map<string, string>>(new Map());
+  protected readonly branchOptions = signal<Opt[]>([]);
 
-  protected readonly tabs: { id: ScanTab; label: string; icon: string }[] = [
-    { id: 'out', label: 'Pending Outscan', icon: 'outbox' },
-    { id: 'in', label: 'Pending Inscan', icon: 'move_to_inbox' },
-    { id: 'del', label: 'Pending Delivery', icon: 'local_shipping' }
+  protected readonly tabs: { id: ScanTab; label: string; icon: string; hint: string }[] = [
+    { id: 'out', label: 'Pending Outscan', icon: 'outbox', hint: 'Booked here, to send' },
+    { id: 'in', label: 'Pending Inscan', icon: 'move_to_inbox', hint: 'Coming to this branch' },
+    { id: 'del', label: 'Pending Delivery', icon: 'local_shipping', hint: 'Here, to deliver' },
+    { id: 'drs', label: 'DRS', icon: 'assignment', hint: 'Last 30 days' },
+    { id: 'man', label: 'Manifest', icon: 'description', hint: 'Sent from here' }
   ];
   protected readonly reasons = UNDELIVERED_REASONS;
   protected readonly destinationOf = destinationOf;
   protected readonly bookedAtOf = bookedAt;
 
   protected readonly tab = signal<ScanTab>('out');
-  protected readonly lists = signal<Record<ScanTab, Shipment[]>>({ out: [], in: [], del: [] });
+  protected readonly lists = signal<Record<ScanTab, Shipment[]>>({ out: [], in: [], del: [], drs: [], man: [] });
   protected readonly loading = signal(true);
   protected readonly selected = signal<Set<string>>(new Set());
   protected readonly today = signal(false);
@@ -342,8 +362,6 @@ export class Scan {
   private readonly thcNumbers = signal<Map<string, string>>(new Map());
 
   // Outscan
-  protected readonly vehicleId = signal('');
-  protected readonly driverId = signal('');
   protected readonly bags = signal('');
   protected readonly remarks = signal('');
   // Pending Delivery
@@ -381,24 +399,6 @@ export class Scan {
     const dests = new Set(this.selectedRows().map((s) => destinationOf(s)));
     return dests.size === 1 ? [...dests][0] : null;
   });
-  /** Only a warning: the Branch chosen below decides where the trip goes (as on the earlier portal). */
-  protected readonly outDestinationError = computed(() => {
-    const rows = this.selectedRows();
-    const routed = new Set(rows.map((s) => destinationOf(s)).filter((d): d is string => !!d));
-    if (routed.size > 1) return 'The selected parcels already have different next branches; they will all go to the Branch chosen here.';
-    const chosen = this.toBranchId();
-    if (chosen && routed.size === 1 && !routed.has(chosen)) return `These parcels were routed to ${this.branchName([...routed][0])}; they will go to the Branch chosen here instead.`;
-    return null;
-  });
-
-  // Assign (Pending Outscan): To Branch / Delivery / RTO, as on the earlier portal
-  protected readonly outAction = signal<'branch' | 'delivery' | 'rto'>('branch');
-  protected readonly toBranchId = signal('');
-  protected readonly forwardingNo = signal('');
-  protected readonly rtoMessage = signal('');
-  private readonly branchTypes = signal<Map<string, string>>(new Map());
-  protected readonly branchOptions = signal<Opt[]>([]);
-  protected setOutAction(a: 'branch' | 'delivery' | 'rto'): void { this.outAction.set(a); this.actionError.set(null); }
 
   constructor() {
     inject(BreadcrumbService).set([{ label: 'Operations' }, { label: 'Scan' }]);
@@ -410,18 +410,14 @@ export class Scan {
         .sort((a, b) => (a.branchType === 'HUB' ? 0 : 1) - (b.branchType === 'HUB' ? 0 : 1) || a.branchName.localeCompare(b.branchName))
         .map((b) => ({ value: b.id, label: `${b.branchName} (${b.branchCode})${b.branchType === 'HUB' ? ' · Hub' : ''}` })));
     });
-    // A parcel that already has its next branch pre-fills Branch, as it did before.
-    effect(() => {
-      const dest = this.outDestination();
-      untracked(() => { if (dest && !this.toBranchId()) this.toBranchId.set(dest); });
-    });
+    this.coLoaderService.list().subscribe({ next: (c) => this.coLoaderOpts.set(c.map((x) => ({ value: x.id, label: x.name }))), error: () => undefined });
     this.vehicleService.list(true).subscribe({ next: (v) => this.vehicles.set(v.map((x) => ({ value: x.id, label: x.vehicleNumber }))), error: () => undefined });
     this.movement.userOptions().subscribe({ next: (u) => this.users.set(u.map((x) => ({ value: x.id, label: x.label }))), error: () => undefined });
     this.reload();
     setTimeout(() => document.getElementById('sc-scan')?.focus());
   }
 
-  protected countOf(t: ScanTab): number { return this.lists()[t].length; }
+  protected countOf(t: ScanTab): number { return t === 'drs' ? this.drsRuns().length : t === 'man' ? this.sheets().length : this.lists()[t].length; }
   protected branchName(id: string | null | undefined): string { return id ? (this.branchNames().get(id) ?? '—') : '—'; }
   protected thcOf(s: Shipment): string { return (s.manifestId && this.thcNumbers().get(s.manifestId)) || '—'; }
   protected emptyText(): string {
@@ -453,14 +449,19 @@ export class Scan {
       delDest: page({ deliveryBranchId: me, status: ['IN_SCAN', 'OUT_FOR_DELIVERY'] }),
       delHere: page({ currentLocationId: me, unassignedDeliveryBranch: true, status: ['IN_SCAN', 'OUT_FOR_DELIVERY'] }),
       thc: this.manifests.list({ page: 0, size: 100, status: 'DISPATCHED', deliveryBranchId: me }).pipe(
-        map((p) => p.content), catchError(() => of([] as Manifest[])))
-    }).subscribe(({ out, inNext, inDest, delDest, delHere, thc }) => {
+        map((p) => p.content), catchError(() => of([] as Manifest[]))),
+      drs: this.movement.listDrs(null, null, me).pipe(catchError(() => of([] as DrsSummary[]))),
+      sent: this.manifests.list({ page: 0, size: 100, bookingBranchId: me }).pipe(map((p) => p.content), catchError(() => of([] as Manifest[])))
+    }).subscribe(({ out, inNext, inDest, delDest, delHere, thc, drs, sent }) => {
+      this.drsRuns.set(drs);
+      this.sheets.set(sent);
       this.thcNumbers.set(new Map(thc.map((m) => [m.id, m.manifestNumber])));
       const newestFirst = (a: Shipment, b: Shipment) => (bookedAt(b) ?? '').localeCompare(bookedAt(a) ?? '');
       this.lists.set({
         out: out.sort(newestFirst),
         in: merge(inNext, inDest).sort(newestFirst),
-        del: merge(delDest, delHere).sort(newestFirst)
+        del: merge(delDest, delHere).sort(newestFirst),
+        drs: [], man: []
       });
       this.selected.update((sel) => new Set([...sel].filter((id) => this.lists()[this.tab()].some((s) => s.id === id))));
       this.loading.set(false);
@@ -497,80 +498,63 @@ export class Scan {
     return el.value;
   }
 
-  /** Outscan: a loading sheet to the parcels' branch, then the trip dispatched with the vehicle and driver. */
-  protected outscan(): void {
-    const dest = this.toBranchId();
-    const rows = this.selectedRows();
-    if (!dest) { this.actionError.set('Select the branch the parcels go to.'); return; }
-    if (!this.vehicleId() || !this.driverId()) { this.actionError.set('Select the vehicle and the driver.'); return; }
-    const note = [this.forwardingNo().trim() ? `Forwarding No: ${this.forwardingNo().trim()}` : '', this.bags() ? `Bags: ${this.bags()}` : '',
-      this.remarks().trim()].filter(Boolean).join(' · ') || null;
-    const hub = this.branchTypes().get(dest) === 'HUB';
-    this.busy.set(true);
+  // ---- Pending Outscan → ASSIGN (the earlier portal's "Assign Outscan Item")
+  protected readonly assignOpen = signal(false);
+  protected readonly selectedIds = computed(() => [...this.selected()]);
+  protected readonly hubIds = computed(() => [...this.branchTypes().entries()].filter(([, t]) => t === 'HUB').map(([id]) => id));
+  protected readonly coLoaderOpts = signal<Opt[]>([]);
+  protected openAssign(): void {
+    if (!this.lists().out.length) { this.actionError.set('No parcels are pending outscan at this branch.'); return; }
     this.actionError.set(null);
-    let sheet: Manifest | null = null;
-    this.manifests.create({ bookingBranchId: this.branchId!, deliveryBranchId: dest, deliveryMode: 'BRANCH_DELIVERY', destinationCity: null,
-      shipmentIds: rows.map((s) => s.id), remarks: note, hubTransfer: hub }).pipe(
-      switchMap((m) => { sheet = m; return this.movement.dispatch({ manifestId: m.id, vehicleId: this.vehicleId(), driverUserId: this.driverId(),
-        departureTime: null, fuelCost: null, driverAdvance: null, tollAmount: null, otherAmount: null }); })
-    ).subscribe({
-      next: (r) => {
-        this.busy.set(false);
-        this.lastDone.set({ text: `${rows.length} parcel(s) outscanned to ${this.branchName(dest)} — loading sheet ${r.manifestNumber} dispatched.`,
-          link: '/movement/trip-hire-challan', linkLabel: 'Print THC' });
-        this.afterAction();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.busy.set(false);
-        const why = e.error?.message ?? 'The server refused it.';
-        const made = sheet as Manifest | null;
-        this.actionError.set(made
-          ? `Loading sheet ${made.manifestNumber} was created but the trip was not dispatched: ${why} Dispatch it from Trip Hire Challan.`
-          : `Could not outscan: ${why}`);
-        if (made) this.afterAction(false);
-      }
-    });
+    this.assignOpen.set(true);
+  }
+  protected onAssigned(text: string): void {
+    this.assignOpen.set(false);
+    this.lastDone.set({ text });
+    this.afterAction();
   }
 
-  /** Assign to Delivery: the booking branch delivers local parcels itself (a DRS, no transfer). */
-  protected assignLocalDelivery(): void {
-    const rows = this.selectedRows();
-    if (!this.deliveryUserId()) { this.actionError.set('Select the delivery boy.'); return; }
-    this.busy.set(true);
-    this.actionError.set(null);
-    this.movement.outForDelivery({ shipmentIds: rows.map((s) => s.id), deliveryUserId: this.deliveryUserId(),
-      vehicleId: this.drsVehicleId() || null }).subscribe({
-      next: (r) => {
-        this.busy.set(false);
-        if (r.failureCount) {
-          const bad = r.results.filter((x) => !x.success).map((x) => `${x.reference}: ${x.message ?? 'failed'}`);
-          this.actionError.set(`${r.failureCount} of ${r.results.length} not assigned — ${bad.join('; ')}`);
-        }
-        if (r.successCount) this.lastDone.set({ text: `${r.successCount} parcel(s) out for delivery from this branch${r.drsNumber ? ' — DRS ' + r.drsNumber : ''}. Update them in Pending Delivery.` });
-        this.afterAction(!r.failureCount);
+  // ---- DRS and Manifest tabs
+  protected readonly drsRuns = signal<DrsSummary[]>([]);
+  protected readonly drsWho = signal('');
+  protected readonly drsRows = computed(() => {
+    const who = this.drsWho();
+    if (!who) return this.drsRuns();
+    const id = who.slice(2);
+    return this.drsRuns().filter((d) => who.startsWith('u:') ? d.deliveryUserId === id : d.coLoaderId === id);
+  });
+  protected readonly sheets = signal<Manifest[]>([]);
+  protected readonly manCoLoader = signal('');
+  protected readonly manRows = computed(() => this.manCoLoader() ? this.sheets().filter((m) => m.coLoaderId === this.manCoLoader()) : this.sheets());
+  protected coLoaderName(id: string | null | undefined): string { return id ? (this.coLoaderOpts().find((o) => o.value === id)?.label ?? '—') : '—'; }
+  protected deliveryByLabel(d: DrsSummary): string {
+    if (d.coLoaderId) return this.coLoaderName(d.coLoaderId) + ' (co-loader)';
+    return this.users().find((u) => u.value === d.deliveryUserId)?.label ?? '—';
+  }
+  protected printDrs(d: DrsSummary): void {
+    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null).subscribe({
+      next: (det) => {
+        const ok = printSheet(`DRS ${d.drsNumber ?? ''}`, [['Date', d.runDate], ['Branch', this.branchName(d.deliveryBranchId)], ['Delivery by', this.deliveryByLabel(d)],
+          ['Parcels', String(d.shipmentCount)], ['Delivered', String(d.deliveredCount)], ['Pending', String(d.pendingCount)]],
+          ['AWB', 'Receiver', 'Address', 'Phone', 'Status', 'Signature'],
+          det.shipments.map((s) => [s.shipmentNumber, s.receiverName, s.receiverAddress, s.receiverContact, s.status === 'DELIVERED' ? 'Delivered' : 'Out for delivery', '']));
+        if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
       },
-      error: (e: HttpErrorResponse) => { this.busy.set(false); this.actionError.set(e.error?.message ?? 'Could not create the DRS.'); }
+      error: () => this.notify.error('Could not load this DRS.')
     });
   }
-
-  /** Assign to RTO: returned to the sender before leaving this branch. */
-  protected assignRto(): void {
-    const rows = this.selectedRows();
-    const why = this.rtoMessage().trim();
-    if (!why) { this.actionError.set('Enter the message: why it goes back to the sender.'); return; }
-    this.busy.set(true);
-    this.actionError.set(null);
-    forkJoin(rows.map((s) => this.movement.returnToSender(s.id, why).pipe(
-      map(() => ({ ref: s.shipmentNumber, ok: true, msg: '' })),
-      catchError((e: HttpErrorResponse) => of({ ref: s.shipmentNumber, ok: false, msg: e.error?.message ?? 'failed' })))))
-      .subscribe((res) => {
-        this.busy.set(false);
-        const bad = res.filter((x) => !x.ok);
-        if (bad.length) this.actionError.set(`${bad.length} of ${res.length} not returned — ${bad.map((x) => `${x.ref}: ${x.msg}`).join('; ')}`);
-        const ok = res.length - bad.length;
-        if (ok) { this.lastDone.set({ text: `${ok} parcel(s) returned to the sender.` }); this.rtoMessage.set(''); }
-        this.afterAction(!bad.length);
-      });
+  protected printManifest(m: Manifest): void {
+    this.manifests.shipments(m.id).subscribe({
+      next: (rows) => {
+        const ok = printSheet(`Manifest ${m.manifestNumber}`, [['Date', (m.dispatchedAt || m.createdAt || '').slice(0, 10)], ['From', this.branchName(m.bookingBranchId)],
+          ['To', m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery'], ['Co-Loader', this.coLoaderName(m.coLoaderId)],
+          ['Forwarding No.', m.forwardingNumber || '—'], ['Bags', m.bagsCount != null ? String(m.bagsCount) : '—']],
+          ['AWB', 'Receiver', 'To', 'Pcs', 'Weight (kg)'],
+          rows.map((s) => [s.shipmentNumber, s.receiverName, s.toCity ?? '', String(s.numberOfPackages ?? 1), String(s.chargeableWeight ?? '')]));
+        if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
+      },
+      error: () => this.notify.error('Could not load this manifest.')
+    });
   }
 
   /** Inscan: receives the selected parcels at this branch. */

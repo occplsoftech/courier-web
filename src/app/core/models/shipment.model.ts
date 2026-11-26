@@ -762,6 +762,10 @@ export interface Manifest {
   createdAt?: string | null;
   updatedAt?: string | null;
   version: number;
+  /** Outscan details (Scan → Assign): co-loader, forwarding number, bags. */
+  coLoaderId?: string | null;
+  forwardingNumber?: string | null;
+  bagsCount?: number | null;
   shipmentCount: number;
   totalWeight: number;
   totalPackages: number;
@@ -916,8 +920,13 @@ export interface BulkMovementResult {
 /** Body of POST /shipment-movement/dispatch. */
 export interface DispatchManifestRequest {
   manifestId: string;
-  vehicleId: string;
-  driverUserId: string;
+  /** Optional when the trip goes with a co-loader. */
+  vehicleId?: string | null;
+  driverUserId?: string | null;
+  /** Outscan: the co-loader the parcels are handed to, its forwarding number, and bags. */
+  coLoaderId?: string | null;
+  forwardingNumber?: string | null;
+  bagsCount?: number | null;
   departureTime?: string | null;
   fuelCost?: number | null;
   driverAdvance?: number | null;
@@ -961,7 +970,9 @@ export interface InScanRequest {
  *  use — stamped on every DeliveryAssignment row the call touches. */
 export interface OutForDeliveryRequest {
   shipmentIds: string[];
-  deliveryUserId: string;
+  /** The staff delivery boy, or leave it out and give coLoaderId. */
+  deliveryUserId?: string | null;
+  coLoaderId?: string | null;
   vehicleId?: string | null;
   fuelCost?: number | null;
   deliveryCharge?: number | null;
@@ -1016,7 +1027,9 @@ export interface TimelineStep {
  *  calendar day), grouped server-side from `DeliveryAssignment` rows. There is no separate
  *  DRS/batch table — see `MEMORY/modules/shipment-movement.md`. Mirrors `DrsSummaryResponse`. */
 export interface DrsSummary {
-  deliveryUserId: string;
+  /** Null when a co-loader delivers the run (coLoaderId). */
+  deliveryUserId: string | null;
+  coLoaderId?: string | null;
   deliveryBranchId: string;
   runDate: string;
   drsNumber: string | null;
@@ -1168,4 +1181,14 @@ export interface UndeliveredCase {
   attempts: number; reason: string | null; reasonLabel: string | null; note: string | null; failedAt: string | null; daysWaiting: number;
   choice: 'REATTEMPT' | 'CHANGE_ADDRESS' | 'RETURN' | null; choiceLabel: string | null; choiceDate: string | null; choiceAt: string | null;
   returnFlagged: boolean;
+}
+
+/** Masters → Co-Loaders: an outside transporter / agent used at outscan and local delivery. */
+export interface CoLoader {
+  id: string;
+  name: string;
+  contactPerson?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+  active: boolean;
 }

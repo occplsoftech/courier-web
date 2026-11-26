@@ -16,36 +16,26 @@ describe('Scan', () => {
     expect(destinationOf({ nextLocationId: null, deliveryBranchId: null })).toBeNull();
   });
 
-  it('Assign to Branch: any branch can be chosen; a parcel with a route pre-fills it, a different choice is only a warning', () => {
+  it('Pending Outscan opens the Assign dialog; DRS and Manifest tabs count their runs and sheets', () => {
     const c = make();
-    c['lists'].set({ out: [s('a'), s('b'), s('c', { nextLocationId: 'br3', deliveryBranchId: 'br3' }), s('d', { nextLocationId: null, deliveryBranchId: null })], in: [], del: [] });
-    c['selected'].set(new Set(['d']));
-    expect(c['outDestinationError']()).toBeNull();          // no route yet: just pick the Branch
-    c['selected'].set(new Set(['a', 'b']));
-    expect(c['outDestination']()).toBe('br2');
-    c['toBranchId'].set('br9');
-    expect(c['outDestinationError']()).toContain('instead');
-    c['selected'].set(new Set(['a', 'c']));
-    expect(c['outDestinationError']()).toContain('different next branches');
-  });
-
-  it('Assign checks the Branch, vehicle and driver, the delivery boy, and the RTO message before calling the server', () => {
-    const c = make();
-    c['lists'].set({ out: [s('d', { nextLocationId: null, deliveryBranchId: null })], in: [], del: [] });
-    c['selected'].set(new Set(['d']));
-    c['outscan']();
-    expect(c['actionError']()).toContain('branch');
-    c['toBranchId'].set('br2'); c['outscan']();
-    expect(c['actionError']()).toContain('vehicle');
-    c['setOutAction']('delivery'); c['assignLocalDelivery']();
-    expect(c['actionError']()).toContain('delivery boy');
-    c['setOutAction']('rto'); c['assignRto']();
-    expect(c['actionError']()).toContain('message');
+    c['openAssign']();
+    expect(c['actionError']()).toContain('No parcels');
+    c['lists'].set({ out: [s('a')], in: [], del: [], drs: [], man: [] });
+    c['openAssign']();
+    expect(c['assignOpen']()).toBe(true);
+    c['drsRuns'].set([{ deliveryUserId: 'u1', coLoaderId: null, deliveryBranchId: 'b', runDate: '2026-11-26', drsNumber: 'D1', shipmentCount: 2, deliveredCount: 1, pendingCount: 1 },
+      { deliveryUserId: null, coLoaderId: 'c1', deliveryBranchId: 'b', runDate: '2026-11-26', drsNumber: 'D2', shipmentCount: 1, deliveredCount: 0, pendingCount: 1 }]);
+    expect(c['countOf']('drs')).toBe(2);
+    c['drsWho'].set('c:c1');
+    expect(c['drsRows']().map((d: any) => d.drsNumber)).toEqual(['D2']);
+    c['sheets'].set([{ id: 'm1', coLoaderId: 'c1' }, { id: 'm2', coLoaderId: null }]);
+    c['manCoLoader'].set('c1');
+    expect(c['manRows']().map((m: any) => m.id)).toEqual(['m1']);
   });
 
   it('a scanned AWB or tracking number selects that row; others are explained', () => {
     const c = make();
-    c['lists'].set({ out: [s('a')], in: [], del: [] });
+    c['lists'].set({ out: [s('a')], in: [], del: [], drs: [], man: [] });
     c['scanText'].set('ta'); c['scanOne']();
     expect(c['selected']().has('a')).toBe(true);
     c['scanText'].set('A'); c['scanOne']();
@@ -56,7 +46,7 @@ describe('Scan', () => {
 
   it('Pending Delivery splits the selection into DRS (inscanned) and Update Delivery (out for delivery)', () => {
     const c = make();
-    c['lists'].set({ out: [], in: [], del: [s('i', { status: 'IN_SCAN' }), s('o', { status: 'OUT_FOR_DELIVERY' })] });
+    c['lists'].set({ out: [], in: [], del: [s('i', { status: 'IN_SCAN' }), s('o', { status: 'OUT_FOR_DELIVERY' })], drs: [], man: [] });
     c['tab'].set('del');
     c['selected'].set(new Set(['i', 'o']));
     expect(c['selectedInscanned']().map((x: any) => x.id)).toEqual(['i']);
