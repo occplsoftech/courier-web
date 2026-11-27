@@ -1058,6 +1058,8 @@ export interface DrsSummary {
 
 /** One shipment row of GET /shipment-movement/drs/detail — mirrors `DrsShipmentRowResponse`. */
 export interface DrsShipmentRow {
+  numberOfPackages?: number | null;
+  actualWeight?: number | null;
   /** COD to collect from the receiver; null when none. */
   codAmount?: number | null;
   deliveryPincode?: string | null;
