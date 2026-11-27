@@ -81,6 +81,24 @@ describe('DomesticCashBooking', () => {
     expect((f.componentInstance as unknown as Record<string, any>)['gstPercent']()).toBe(0);
   });
 
+  it('shows 0% GST until the company setting loads, and stays 0% if it cannot load', () => {
+    const f = TestBed.createComponent(DomesticCashBooking);
+    const c = f.componentInstance as unknown as Record<string, any>;
+    expect(c['gstPercent']()).toBe(0);
+    f.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((r) => r.url.endsWith('/company-settings')).forEach((r) => r.flush({ success: false }, { status: 500, statusText: 'Error' }));
+    expect(c['gstPercent']()).toBe(0);
+  });
+
+  it('uses the company GST % once Settings says so (18% here)', () => {
+    const f = TestBed.createComponent(DomesticCashBooking);
+    f.detectChanges();
+    const http = TestBed.inject(HttpTestingController);
+    http.match((r) => r.url.endsWith('/company-settings')).forEach((r) => r.flush({ success: true, data: { finance: { gstPercentage: 18 } } }));
+    expect((f.componentInstance as unknown as Record<string, any>)['gstPercent']()).toBe(18);
+  });
+
   const mode = (id: string, total: number | null, estimate: number, extra: Partial<ModeRate> = {}): ModeRate => ({
     serviceTypeId: id, label: id, total, freight: 0, oda: 0, extras: 0, gst: 0, estimate, days: null, chargeable: 5, ...extra });
 

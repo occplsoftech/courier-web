@@ -660,7 +660,8 @@ export class DomesticCashBooking implements OnInit {
   private readonly serviceOptions = signal<SelectOption[]>([]);
   private readonly deliveryDays = signal<Map<string, number | null>>(new Map());
   private readonly packageTypeOptions = signal<SelectOption[]>([]);
-  protected readonly gstPercent = signal(18);
+  /** Settings → Finance → GST %, loaded on start; 0 until then (and if it cannot load), never a guessed 18%. */
+  protected readonly gstPercent = signal(0);
   protected readonly modes = signal<ModeRate[]>([]);
   protected readonly ratesLoading = signal(false);
   protected readonly modeId = signal<string | null>(null);
