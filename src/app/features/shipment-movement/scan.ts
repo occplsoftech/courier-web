@@ -238,16 +238,23 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
               @if (delAction() === 'drs') {
                 @if (!selectedInscanned().length) { <p class="err">Select inscanned parcels to put on a DRS.</p> }
                 @else {
-                  <div class="g2">
-                    <label class="f"><span class="f__l">Delivery Boy <b class="req">*</b></span>
-                      <select class="in" id="sc-boy" [value]="deliveryUserId()" (change)="deliveryUserId.set($any($event.target).value)">
-                        <option value="">Select delivery boy</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                    <label class="f"><span class="f__l">Vehicle</span>
-                      <select class="in" [value]="drsVehicleId()" (change)="drsVehicleId.set($any($event.target).value)">
-                        <option value="">Optional</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
-                      </select></label>
-                  </div>
+                  <!-- As on the earlier portal: a staff delivery boy OR a co-loader delivers the run (one of the two), plus the vehicle. -->
+                  <label class="f"><span class="f__l">Delivery Boy</span>
+                    <select class="in" id="sc-boy" (change)="pickBoy($any($event.target).value)">
+                      <option value="" [selected]="!deliveryUserId()">Select delivery boy</option>
+                      @for (o of users(); track o.value) { <option [value]="o.value" [selected]="o.value === deliveryUserId()">{{ o.label }}</option> }
+                    </select></label>
+                  <label class="f"><span class="f__l">Co-Loader</span>
+                    <select class="in" id="sc-drs-cl" (change)="pickCoLoader($any($event.target).value)">
+                      <option value="" [selected]="!drsCoLoaderId()">Select co-loader</option>
+                      @for (o of coLoaderOpts(); track o.value) { <option [value]="o.value" [selected]="o.value === drsCoLoaderId()">{{ o.label }}</option> }
+                    </select></label>
+                  <p class="hint">Pick a delivery boy <b>or</b> a co-loader.</p>
+                  <label class="f"><span class="f__l">Vehicle No</span>
+                    <select class="in" id="sc-drs-veh" (change)="drsVehicleId.set($any($event.target).value)">
+                      <option value="" [selected]="!drsVehicleId()">Optional</option>
+                      @for (o of vehicles(); track o.value) { <option [value]="o.value" [selected]="o.value === drsVehicleId()">{{ o.label }}</option> }
+                    </select></label>
                   <div class="acts"><app-button icon="directions_run" [loading]="busy()" (pressed)="generateDrs()">Create DRS</app-button></div>
                 }
               } @else {
@@ -389,6 +396,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .rc__tog { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--surface-border); background: none; padding: 9px 16px; color: var(--brand-700); font: 600 14px var(--font-sans); cursor: pointer; }
     .t--in { font-size: 14px; } .t--in td.wrap { white-space: normal; max-width: 260px; }
     .st--run { background: #fff1e6; color: #c2410c; }
+    .hint { margin: -4px 0 0; color: var(--content-muted); font: 400 13px var(--font-sans); }
     @media (max-width: 760px) { .rc__facts { grid-template-columns: 1fr 1fr; } }
     .acts-row { white-space: nowrap; width: 1%; } .acts-row .pill + .pill { margin-left: 4px; }
     .acts-row .pill { padding: 5px 9px; } .t td.wrap { max-width: 180px; white-space: normal; }
@@ -467,6 +475,10 @@ export class Scan {
   protected readonly delAction = signal<'drs' | 'update'>('drs');
   protected readonly deliveryUserId = signal('');
   protected readonly drsVehicleId = signal('');
+  protected readonly drsCoLoaderId = signal('');
+  /** One or the other delivers the run: choosing a delivery boy clears the co-loader, and back. */
+  protected pickBoy(v: string): void { this.deliveryUserId.set(v); if (v) this.drsCoLoaderId.set(''); }
+  protected pickCoLoader(v: string): void { this.drsCoLoaderId.set(v); if (v) this.deliveryUserId.set(''); }
   protected readonly delivered = signal(true);
   protected readonly receivedBy = signal('');
   protected readonly reason = signal('');
@@ -845,11 +857,11 @@ export class Scan {
   /** Generate DRS: the selected inscanned parcels go out with the delivery boy. */
   protected generateDrs(): void {
     const rows = this.selectedInscanned();
-    if (!this.deliveryUserId()) { this.actionError.set('Select the delivery boy.'); return; }
+    if (!this.deliveryUserId() && !this.drsCoLoaderId()) { this.actionError.set('Select the delivery boy or the co-loader.'); return; }
     this.busy.set(true);
     this.actionError.set(null);
-    this.movement.outForDelivery({ shipmentIds: rows.map((s) => s.id), deliveryUserId: this.deliveryUserId(),
-      vehicleId: this.drsVehicleId() || null }).subscribe({
+    this.movement.outForDelivery({ shipmentIds: rows.map((s) => s.id), deliveryUserId: this.deliveryUserId() || null,
+      coLoaderId: this.drsCoLoaderId() || null, vehicleId: this.drsVehicleId() || null }).subscribe({
       next: (r) => {
         this.busy.set(false);
         if (r.failureCount) this.actionError.set(`${r.failureCount} of ${r.results.length} not added to the DRS — ${r.results.filter((x) => !x.success).map((x) => x.message).join('; ')}`);
