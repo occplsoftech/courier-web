@@ -17,7 +17,7 @@ import { ShipmentService } from '@features/shipment/shipment.service';
 import { ShipmentMovementService } from './shipment-movement.service';
 import { OutscanAssignDialog } from './components/outscan-assign-dialog';
 import { CoLoaderService } from '@features/manifest/co-loader.service';
-import { longDate, money, printLetterhead } from './scan-print.util';
+import { money, printLetterhead, shortDate } from '@shared/utils/letterhead-print.util';
 import { CompanyLetterhead, CompanyProfileService } from '@features/company/company-profile.service';
 
 export type ScanTab = 'out' | 'in' | 'del' | 'drs' | 'man';
@@ -610,8 +610,11 @@ export class Scan {
         title: 'DELIVERY RUN SHEET', company: refs.company, logo: this.auth.companyLogo(), qr: d.drsNumber ?? null,
         // Tall rows: the receiver's stamp (about 30 mm) goes in Remark without touching the rows above or below.
         rowHeight: '38mm',
-        lines: [[{ label: 'DRS ID', value: d.drsNumber ?? '—' }],
-          [{ label: 'Delivery Person', value: this.deliveryByLabel(d) }, { label: 'Date', value: longDate(d.runDate), right: true }]],
+        details: [
+          [{ label: 'DRS ID', value: d.drsNumber ?? '—', big: true }, { label: 'Branch', value: this.branchName(d.deliveryBranchId) }],
+          [{ label: 'Delivery Person', value: this.deliveryByLabel(d), big: true }, { label: 'Date', value: shortDate(d.runDate) }],
+          [{ label: 'Parcels', value: String(det.shipments.length), big: true },
+            { label: 'Vehicle', value: this.vehicles().find((v) => v.value === det.vehicleId)?.label ?? '—' }]],
         columns: [{ label: 'Sr. No', width: '48px' }, { label: 'AWB Number', nowrap: true }, { label: 'Consignee' },
           { label: 'To Pay', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }, { label: 'Remark / Stamp', width: '34%' }],
         rows: det.shipments.map((s, i) => [String(i + 1), s.shipmentNumber,
@@ -633,11 +636,12 @@ export class Scan {
         const by = m.coLoaderId ? this.coLoaderName(m.coLoaderId) : [driver, vehicle].filter(Boolean).join(' - ') || '—';
         this.printBlocked(printLetterhead({
           title: 'MANIFEST', company: refs.company, logo: this.auth.companyLogo(), qr: m.manifestNumber,
-          lines: [[{ label: 'Manifest No', value: m.manifestNumber }, { label: 'Date', value: (m.dispatchedAt || m.createdAt || '').slice(0, 10), right: true }],
-            [{ label: 'Delivery Boy', value: by }, { label: 'To', value: m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery', right: true }],
-            ...(m.bagsCount != null || m.forwardingNumber ? [[
-              ...(m.bagsCount != null ? [{ label: 'Bags', value: String(m.bagsCount) }] : []),
-              ...(m.forwardingNumber ? [{ label: 'Forwarding No.', value: m.forwardingNumber }] : [])]] : [])],
+          details: [
+            [{ label: 'Manifest No', value: m.manifestNumber, big: true }, { label: 'From', value: this.branchName(m.bookingBranchId) }],
+            [{ label: 'Delivery Boy', value: by, big: true }, { label: 'To', value: m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery' }],
+            [{ label: 'Date', value: shortDate(m.dispatchedAt || m.createdAt), big: true },
+              { label: m.forwardingNumber ? 'Bags · Forwarding No.' : 'Bags',
+                value: [m.bagsCount != null ? String(m.bagsCount) : '—', m.forwardingNumber].filter(Boolean).join(' · ') }]],
           columns: [{ label: 'SR', width: '40px' }, { label: 'AWB No', nowrap: true }, { label: 'FWD No', nowrap: true }, { label: 'Destination' }, { label: 'Mode' },
             { label: 'PCS', width: '44px', right: true }, { label: 'WT (kg)', width: '60px', right: true },
             { label: 'TO PAY', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }],

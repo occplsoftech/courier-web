@@ -1085,6 +1085,8 @@ export interface DrsDetail {
   runDate: string;
   drsNumber: string | null;
   shipments: DrsShipmentRow[];
+  /** The run's vehicle, when one was given. */
+  vehicleId?: string | null;
 }
 
 /** Admin-side PAID / TO_PAY switch state for one BOOKED shipment — see
