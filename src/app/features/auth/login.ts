@@ -55,6 +55,7 @@ import { PUBLIC_PAGE_LINKS } from '@features/public/public-page.content';
         <div class="login__dev">
           <span class="login__dev-label">Dev quick fill</span>
           <div class="login__dev-btns">
+            <button type="button" class="login__dev-btn" (click)="fill('occplSupport')">OCCPL Support</button>
             <button type="button" class="login__dev-btn" (click)="fill('admin')">Super Admin</button>
             <button type="button" class="login__dev-btn" (click)="fill('company')">Company Admin</button>
             <button type="button" class="login__dev-btn" (click)="fill('pune')">Pune Branch</button>
@@ -163,9 +164,11 @@ export class Login {
    *  courier_db was replaced with a prod dump on 2026-09-18. No Latur/Hub branch exists
    *  under this company, so those slots were repointed to real branches (Satara/Kolhapur)
    *  instead of being left broken. */
-  fill(kind: 'admin' | 'company' | 'pune' | 'satara' | 'kolhapur' | 'hub' | 'hubPun'): void {
+  fill(kind: 'occplSupport' | 'admin' | 'company' | 'pune' | 'satara' | 'kolhapur' | 'hub' | 'hubPun'): void {
     this.error.set(null);
     const creds: Record<typeof kind, { companyCode: string; email: string; password: string }> = {
+      // The dev server's own company (courier.dev.occplsoftech.com).
+      occplSupport: { companyCode: 'OCCPL', email: 'support@occplsoftech.com', password: 'Shubhu@9767' },
       admin:     { companyCode: '', email: 'it.shubham.rk@gmail.com', password: 'Password@1234' },
       company:   { companyCode: 'AMAZING_LOGISTICS', email: 'ashwin@amazinglpl.com', password: 'Verify@1234' },
       pune:      { companyCode: 'AMAZING_LOGISTICS', email: 'shubham@gmail.com', password: 'Password@1234' },
