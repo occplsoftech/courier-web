@@ -204,6 +204,11 @@ const TRI_STATE: MasterFieldOption[] = [
   { value: '', label: 'Not set' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }
 ];
 
+/** A service type's delivery network (V171, V185): which pincode coverage its bookings are checked against. */
+const NETWORK_LABEL: Record<string, string> = {
+  SURFACE: 'Surface', AIR: 'Air', AIR_CARGO: 'Air Cargo', SURFACE_CARGO: 'Surface Cargo', PREMIUM: 'Premium'
+};
+
 /** One delivery network's coverage at a pincode (V171): delivers, ODA, promised hours. */
 function coverageFields(parent: 'doc' | 'surface' | 'air', group: string): MasterField[] {
   return [
@@ -472,7 +477,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'priority', header: 'Priority', align: 'right', width: '100px', value: (r) => text(r['priority']) },
       { key: 'volumetricDivisor', header: 'Vol. divisor', align: 'right', width: '120px',
         value: (r) => text(r['volumetricDivisor'] ?? 5000) },
-      { key: 'network', header: 'Network', width: '100px', value: (r) => r['network'] === 'AIR' ? 'Air' : 'Surface' },
+      { key: 'network', header: 'Network', width: '120px', value: (r) => NETWORK_LABEL[String(r['network'] ?? '')] ?? 'Surface' },
       STATUS_COLUMN
     ],
     fields: [
@@ -487,8 +492,8 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'volumetricDivisor', label: 'Volumetric divisor', kind: 'number', min: 1, group: 'Weight',
         hint: 'Volumetric weight = L×W×H (cm) ÷ this. Air is usually 5000, Surface 4000. Empty uses 5000.' },
       { key: 'network', label: 'Network', kind: 'select', group: 'Weight',
-        options: [{ value: 'SURFACE', label: 'Surface' }, { value: 'AIR', label: 'Air' }],
-        hint: 'Which pincode coverage parcels on this service are checked against. Documents always use Document coverage. Empty is Surface.' }
+        options: Object.entries(NETWORK_LABEL).map(([value, label]) => ({ value, label })),
+        hint: 'Which pincode coverage bookings on this service are checked against. Documents use Document coverage, except on Premium. Empty is Surface.' }
     ],
     filters: [{ key: 'express', label: 'Express only', kind: 'boolean' }],
     exportColumns: ['code', 'name', 'deliveryDays', 'express', 'cutoffTime', 'priority', 'volumetricDivisor', 'network', 'status']

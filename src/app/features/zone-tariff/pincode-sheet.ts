@@ -15,6 +15,9 @@ export interface PincodeSheetRow {
   pincode: string | null; city: string | null; state: string | null; region: string | null; zone: string | null;
   docIsOda: string | null; docServ: string | null; docTat: string | null;
   surfaceServ: string | null; surfaceTat: string | null; airService: string | null; airTat: string | null;
+  // The 2026-11-27 sheet's cargo and premium columns (V185).
+  airCargoTat?: string | null; surfaceCargoTat?: string | null; airCargoOda?: string | null; surfaceCargoOda?: string | null;
+  premiumService?: string | null; premiumTat?: string | null;
 }
 
 const PAGE_SIZE = 50;
@@ -60,6 +63,12 @@ const ZONES = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL', 'INTERNATIONAL'];
           <td>{{ r.surfaceTat }}</td>
           <td>{{ r.airService }}</td>
           <td>{{ r.airTat }}</td>
+          <td>{{ r.airCargoTat }}</td>
+          <td>{{ r.surfaceCargoTat }}</td>
+          <td>{{ r.airCargoOda }}</td>
+          <td>{{ r.surfaceCargoOda }}</td>
+          <td>{{ r.premiumService }}</td>
+          <td>{{ r.premiumTat }}</td>
         </ng-template>
       </app-table>
       @if (page(); as pg) {
@@ -98,7 +107,13 @@ export class PincodeSheet implements OnInit {
     { key: 'surfaceServ', header: 'Surface Serv Y/N' },
     { key: 'surfaceTat', header: 'Surface TAT' },
     { key: 'airService', header: 'Air Service Y/N' },
-    { key: 'airTat', header: 'Air TAT' }
+    { key: 'airTat', header: 'Air TAT' },
+    { key: 'airCargoTat', header: 'Air Cargo TAT' },
+    { key: 'surfaceCargoTat', header: 'Surface Cargo TAT' },
+    { key: 'airCargoOda', header: 'Air Cargo ODA' },
+    { key: 'surfaceCargoOda', header: 'Surface Cargo ODA' },
+    { key: 'premiumService', header: 'Premium Service' },
+    { key: 'premiumTat', header: 'Premium TAT' }
   ];
 
   ngOnInit(): void {
