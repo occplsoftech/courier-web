@@ -22,6 +22,33 @@ export interface StructurePreview {
 }
 export interface StructureImportResult { ratesSaved: number; airCourierRates: number; cargoSurfaceRates: number; cargoAirRates: number; }
 
+/** A business customer's own rate card, uploaded in the old software's rate sheet layout. */
+export interface CustomerTariffCard {
+  id: string; code: string; name: string; fromZoneId: string; fromZoneCode: string | null;
+  effectiveFrom: string; effectiveTo: string | null; status: 'ACTIVE' | 'INACTIVE'; laneCount: number;
+}
+export interface TariffSheetIssue { row: number | null; message: string; }
+export interface TariffSheetLane {
+  toZoneId: string; toZoneCode: string; serviceTypeId: string; serviceTypeCode: string;
+  packageTypeId: string; packageTypeCode: string; slabCount: number; summary: string; replaces: boolean;
+}
+export interface TariffSheetResult {
+  rateCardCode: string; fromZoneCode: string | null; rowsRead: number; duplicateRows: number; skippedRows: number;
+  lanes: TariffSheetLane[]; errors: TariffSheetIssue[]; warnings: TariffSheetIssue[]; imported: boolean;
+}
+export interface CustomerTariffUpload {
+  customerId: string; customerName: string; rateCardId: string | null; newCard: boolean; fromZoneId: string;
+  additionStepKg: number; chargesFrom: string | null; sheet: TariffSheetResult;
+}
+/** {@code fromZoneId} empty: the sheet's. {@code additionStepKg}: what one "Addition 500GM" rate buys. */
+export interface CustomerTariffOptions { fromZoneId?: string | null; additionStepKg: 0.5 | 1; }
+
+function tariffQuery(o: CustomerTariffOptions): string {
+  const q = new URLSearchParams({ additionStepKg: String(o.additionStepKg) });
+  if (o.fromZoneId) q.set('fromZoneId', o.fromZoneId);
+  return q.toString();
+}
+
 function structureQuery(customerId: string, s: StructureServices): string {
   const q = new URLSearchParams({ customerId });
   if (s.airCourier) q.set('airCourierServiceTypeId', s.airCourier);
@@ -91,6 +118,15 @@ export class BusinessCustomerService {
   structureApply(customerId: string, services: StructureServices, file: File) {
     return this.api.post<StructureImportResult>(`${API.customerRates}/structure?${structureQuery(customerId, services)}`, formOf(file));
   }
+  // ---- the customer's own rate card (old-software sheet layout) ------------------------
+  tariffCards(customerId: string) { return this.api.get<CustomerTariffCard[]>(`${API.customerTariff}/${customerId}/cards`); }
+  tariffPreview(customerId: string, o: CustomerTariffOptions, file: File) {
+    return this.api.post<CustomerTariffUpload>(`${API.customerTariff}/${customerId}/upload/preview?${tariffQuery(o)}`, formOf(file));
+  }
+  tariffUpload(customerId: string, o: CustomerTariffOptions, file: File) {
+    return this.api.post<CustomerTariffUpload>(`${API.customerTariff}/${customerId}/upload?${tariffQuery(o)}`, formOf(file));
+  }
+  customer(id: string) { return this.api.get<Customer>(`${API.customers}/${id}`); }
     calculate(body: CalculateRateRequest) { return this.api.post<CalculateRateResponse>(`${API.customerRates}/calculate`, body); }
 }
 

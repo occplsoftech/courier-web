@@ -35,6 +35,8 @@ export const API = {
   customerRates: '/customer-rates',
   tariffZones: '/tariff-zones',
   tariffRateCards: '/tariff-rate-cards',
+  /** A business customer's own zone-tariff card: /customer-tariff/{customerId}/cards | /upload[/preview]. */
+  customerTariff: '/customer-tariff',
   pdpRates: '/pdp-rates',
   pickups: '/pickups',
   pdpEarnings: '/pdp-earnings',
