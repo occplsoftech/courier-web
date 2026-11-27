@@ -27,4 +27,16 @@ export class CompanyProfileService {
   get() {
     return this.api.get<CompanyLetterhead>(API.companyProfile);
   }
+
+  /** Company admin: upload the company logo (PNG, JPEG or WebP, up to 150 KB), printed on every letterhead. */
+  uploadLogo(file: File) {
+    const body = new FormData();
+    body.append('file', file);
+    return this.api.put<void>(`${API.companyProfile}/logo`, body);
+  }
+
+  /** Company admin: remove the uploaded logo; prints fall back to the company name. */
+  removeLogo() {
+    return this.api.delete<void>(`${API.companyProfile}/logo`);
+  }
 }
