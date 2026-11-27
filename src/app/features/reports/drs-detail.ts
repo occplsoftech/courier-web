@@ -117,7 +117,8 @@ export class DrsDetailPage implements OnInit {
     this.movementService.userDirectory().subscribe((m) => this.userContacts.set(m));
 
     const { deliveryUserId, deliveryBranchId, runDate } = this.route.snapshot.params;
-    this.movementService.drsDetail(deliveryUserId, deliveryBranchId, runDate).subscribe({
+    const drsNumber = this.route.snapshot.queryParamMap.get('drs');
+    this.movementService.drsDetail(deliveryUserId, deliveryBranchId, runDate, null, drsNumber).subscribe({
       next: (d) => { this.detail.set(d); this.loading.set(false); },
       error: () => { this.loading.set(false); this.notify.error('Could not load this DRS run.'); }
     });

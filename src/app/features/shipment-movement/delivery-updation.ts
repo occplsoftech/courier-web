@@ -132,7 +132,7 @@ interface DrsLine extends UpdateForm { row: DrsShipmentRow; done: boolean; error
               <table class="t">
                 <thead><tr><th>DRS</th><th>Date</th><th>Delivery person</th><th class="n">Shipments</th><th class="n">Delivered</th><th class="n">Pending</th><th></th></tr></thead>
                 <tbody>
-                  @for (d of drsShown(); track d.deliveryUserId + d.deliveryBranchId + d.runDate) {
+                  @for (d of drsShown(); track d.deliveryUserId + d.deliveryBranchId + d.runDate + d.drsNumber) {
                     <tr (click)="openDrs(d)">
                       <td class="awb">{{ d.drsNumber || '—' }}</td>
                       <td>{{ d.runDate | date: 'dd-MM-yyyy' }}</td>
@@ -506,7 +506,7 @@ export class DeliveryUpdation implements OnInit {
     this.dialogError.set(null);
     this.photoFile.set(null);
     this.drsDate = today();
-    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate).subscribe({
+    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null, d.drsNumber ?? null).subscribe({
       next: (detail) => {
         this.drsLines.set(detail.shipments.map((row) => ({ row, done: false, error: null, outcome: '', deliveredOn: today(),
           proof: '', receivedBy: row.receiverName ?? '', relation: '', remarks: '' })));

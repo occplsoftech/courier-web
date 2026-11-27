@@ -578,7 +578,7 @@ export class Scan {
     return this.users().find((u) => u.value === d.deliveryUserId)?.label ?? '—';
   }
   protected printDrs(d: DrsSummary): void {
-    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null).subscribe({
+    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null, d.drsNumber ?? null).subscribe({
       next: (det) => {
         const ok = printSheet(`DRS ${d.drsNumber ?? ''}`, [['Date', d.runDate], ['Branch', this.branchName(d.deliveryBranchId)], ['Delivery by', this.deliveryByLabel(d)],
           ['Parcels', String(d.shipmentCount)], ['Delivered', String(d.deliveredCount)], ['Pending', String(d.pendingCount)]],
