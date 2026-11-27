@@ -608,10 +608,12 @@ export class Scan {
       refs: this.printRefs() }).subscribe({
       next: ({ det, refs }) => this.printBlocked(printLetterhead({
         title: 'DELIVERY RUN SHEET', company: refs.company, logo: this.auth.companyLogo(), qr: d.drsNumber ?? null,
+        // Tall rows: the receiver's stamp (about 30 mm) goes in Remark without touching the rows above or below.
+        rowHeight: '38mm',
         lines: [[{ label: 'DRS ID', value: d.drsNumber ?? '—' }],
           [{ label: 'Delivery Person', value: this.deliveryByLabel(d) }, { label: 'Date', value: longDate(d.runDate), right: true }]],
         columns: [{ label: 'Sr. No', width: '48px' }, { label: 'AWB Number', nowrap: true }, { label: 'Consignee' },
-          { label: 'To Pay', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }, { label: 'Remark', width: '30%' }],
+          { label: 'To Pay', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }, { label: 'Remark / Stamp', width: '34%' }],
         rows: det.shipments.map((s, i) => [String(i + 1), s.shipmentNumber,
           [s.receiverName, s.receiverAddress, s.deliveryPincode && !(s.receiverAddress ?? '').includes(s.deliveryPincode) ? s.deliveryPincode : null,
             s.receiverContact].filter(Boolean).join(', '),

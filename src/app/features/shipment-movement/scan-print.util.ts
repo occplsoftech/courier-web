@@ -19,6 +19,8 @@ export interface LetterheadSheet {
   /** nowrap: an AWB / forwarder number stays on one line. */
   columns: { label: string; width?: string; right?: boolean; nowrap?: boolean }[];
   rows: string[][];
+  /** Minimum height of each table row, e.g. '35mm' on the DRS so a receiver's stamp fits inside its own row. */
+  rowHeight?: string;
 }
 
 /**
@@ -56,6 +58,8 @@ export function printLetterhead(d: LetterheadSheet): boolean {
     table { width: 100%; border-collapse: collapse; margin-top: 8px; box-shadow: 0 1px 2px rgb(0 0 0 / 25%); }
     th, td { border: 1px solid #555; padding: 10px 12px; text-align: left; vertical-align: middle; font-size: 13px; }
     th { background: #d4d4d4; font-weight: 700; } td.r, th.r { text-align: right; } td.nw { white-space: nowrap; }
+    tbody tr { break-inside: avoid; page-break-inside: avoid; }
+    ${d.rowHeight ? `tbody td { height: ${d.rowHeight}; }` : ''}
     .np { margin-bottom: 12px; } @media print { .np { display: none; } body { margin: 0; } }
   </style></head><body>
     <button class="np" onclick="window.print()">Print</button>
