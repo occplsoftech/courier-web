@@ -107,6 +107,7 @@ export interface PincodeGeo {
   areaName: string | null;
   cityName: string | null;
   districtName: string | null;
+  stateName?: string | null;
 }
 
 export interface PincodeAreaLookup {
