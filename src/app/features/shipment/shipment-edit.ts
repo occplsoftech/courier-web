@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { AuthService } from '@core/auth/auth.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ManifestService } from '@features/manifest/manifest.service';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -203,6 +204,7 @@ export class ShipmentEdit implements OnInit {
   private readonly notify = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly manifests = inject(ManifestService);
 
   protected readonly typeOptions = TYPE_OPTIONS;
   protected readonly deliveryTypes = DELIVERY_TYPES;
@@ -403,7 +405,21 @@ export class ShipmentEdit implements OnInit {
 
     this.saving.set(true);
     this.service.update(this.id, body).subscribe({
-      next: () => { this.saving.set(false); this.notify.success('Shipment updated.'); this.router.navigate(['/shipments', this.id]); },
+      next: () => {
+        // Opened from a draft manifest's Qty / Wt: the AWB goes back onto that manifest, then back to Scan → Manifest.
+        const manifestId = this.route.snapshot.queryParamMap.get('manifest');
+        if (manifestId) {
+          this.manifests.addShipments(manifestId, [this.id]).subscribe({
+            next: () => { this.saving.set(false); this.notify.success('Shipment updated and put back on the manifest.');
+              this.router.navigate(['/movement/scan'], { queryParams: { tab: 'man' } }); },
+            error: (e: HttpErrorResponse) => { this.saving.set(false);
+              this.notify.error(`Shipment updated, but it could not go back on the manifest: ${e.error?.message ?? 'refused'}. Add it from Scan → Manifest → Edit.`);
+              this.router.navigate(['/movement/scan'], { queryParams: { tab: 'man' } }); }
+          });
+          return;
+        }
+        this.saving.set(false); this.notify.success('Shipment updated.'); this.router.navigate(['/shipments', this.id]);
+      },
       error: (err: HttpErrorResponse) => {
         this.saving.set(false);
         if (err.status === 409) { this.notify.error('This shipment changed since you opened it. Reloading the latest version.'); this.load(); }
@@ -413,5 +429,16 @@ export class ShipmentEdit implements OnInit {
     });
   }
 
-  cancel(): void { this.router.navigate(['/shipments', this.id]); }
+  cancel(): void {
+    const manifestId = this.route.snapshot.queryParamMap.get('manifest');
+    if (manifestId) {
+      // Cancelled from a draft manifest's Qty / Wt: unchanged, but it still goes back onto the manifest.
+      this.manifests.addShipments(manifestId, [this.id]).subscribe({
+        next: () => this.router.navigate(['/movement/scan'], { queryParams: { tab: 'man' } }),
+        error: () => this.router.navigate(['/movement/scan'], { queryParams: { tab: 'man' } })
+      });
+      return;
+    }
+    this.router.navigate(['/shipments', this.id]);
+  }
 }

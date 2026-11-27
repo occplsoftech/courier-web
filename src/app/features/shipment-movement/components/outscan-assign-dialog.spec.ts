@@ -30,7 +30,7 @@ describe('Assign Outscan Item', () => {
     expect(c['totalWt']()).toBe(4.5);
   });
 
-  it('Manifest without forwarder no.: loading sheet to the branch, then dispatch with co-loader and bags', () => {
+  it('Manifest without forwarder no.: saves a draft (Created) with co-loader and bags; nothing is dispatched', () => {
     const { c, http } = setup();
     c['assign']();
     expect(c['error']()).toContain('branch');
@@ -39,8 +39,11 @@ describe('Assign Outscan Item', () => {
     const create = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/manifests'));
     expect(create.request.body).toMatchObject({ bookingBranchId: 'me', deliveryBranchId: 'kot', shipmentIds: ['a1'] });
     create.flush({ data: { id: 'm1', manifestNumber: 'LS-1' } });
-    const dispatch = http.expectOne((r) => r.url.endsWith('/dispatch'));
-    expect(dispatch.request.body).toMatchObject({ manifestId: 'm1', vehicleId: null, coLoaderId: 'cl1', bagsCount: 3, forwarderNumbers: null });
+    const draft = http.expectOne((r) => r.method === 'PATCH' && r.url.endsWith('/manifests/m1'));
+    expect(draft.request.body).toEqual({ coLoaderId: 'cl1', vehicleId: null, driverUserId: null, bagsCount: 3 });
+    draft.flush({ data: { id: 'm1', manifestNumber: 'LS-1' } });
+    http.expectNone((r) => r.url.endsWith('/dispatch'));
+    http.expectNone((r) => r.url.endsWith('/forwarder-numbers'));
   });
 
   it('With Forwarder No.: ASSIGN waits until every AWB has its number, which goes per shipment', () => {
@@ -55,8 +58,9 @@ describe('Assign Outscan Item', () => {
     expect(c['canAssign']()).toBe(true);
     c['assign']();
     http.expectOne((r) => r.url.endsWith('/manifests')).flush({ data: { id: 'm1', manifestNumber: 'LS-1' } });
-    const dispatch = http.expectOne((r) => r.url.endsWith('/dispatch'));
-    expect(dispatch.request.body.forwarderNumbers).toEqual({ a1: 'DT-1', b2: 'DT-2' });
+    http.expectOne((r) => r.method === 'PATCH').flush({ data: { id: 'm1', manifestNumber: 'LS-1' } });
+    const fwd = http.expectOne((r) => r.method === 'PUT' && r.url.endsWith('/manifests/m1/forwarder-numbers'));
+    expect(fwd.request.body).toEqual({ forwarderNumbers: { a1: 'DT-1', b2: 'DT-2' } });
   });
 
   it('DRS by a co-loader with a vehicle creates the delivery run', () => {

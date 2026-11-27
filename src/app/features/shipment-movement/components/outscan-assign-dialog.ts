@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, injec
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatIconModule } from '@angular/material/icon';
-import { switchMap } from 'rxjs';
+import { map, of, switchMap } from 'rxjs';
 import { Manifest, Shipment } from '@core/models/shipment.model';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { ManifestService } from '@features/manifest/manifest.service';
@@ -117,7 +117,7 @@ export type AssignCreate = 'manifest' | 'drs';
         @if (error()) { <p class="err" role="alert">{{ error() }}</p> }
 
         <div class="acts"><button type="button" class="txt" (click)="cancel()">CANCEL</button>
-          <app-button [loading]="busy()" [disabled]="!canAssign()" (pressed)="assign()">ASSIGN</app-button></div>
+          <app-button [loading]="busy()" [disabled]="!canAssign()" (pressed)="assign()">{{ create() === 'manifest' ? 'SAVE MANIFEST' : 'ASSIGN' }}</app-button></div>
       </div>
 
       @if (camera()) {
@@ -333,16 +333,18 @@ export class OutscanAssignDialog implements OnInit {
       let sheet: Manifest | null = null;
       this.manifests.create({ bookingBranchId: this.myBranchId(), deliveryBranchId: dest, deliveryMode: 'BRANCH_DELIVERY', destinationCity: null,
         shipmentIds: ids, remarks: null, hubTransfer: this.hubIds().includes(dest) }).pipe(
-        switchMap((m) => { sheet = m; return this.movement.dispatch({ manifestId: m.id, vehicleId: this.vehicleId() || null, driverUserId: this.driverId() || null,
-          coLoaderId: this.coLoaderId() || null, forwardingNumber: null, bagsCount: bags, forwarderNumbers,
-          departureTime: null, fuelCost: null, driverAdvance: null, tollAmount: null, otherAmount: null }); })
+        // A draft (Created): trip details and forwarder numbers are saved on it; it leaves only on Dispatch (Manifest tab).
+        switchMap((m) => { sheet = m; return this.manifests.updateDraft(m.id, { coLoaderId: this.coLoaderId() || null,
+          vehicleId: this.vehicleId() || null, driverUserId: this.driverId() || null, bagsCount: bags }); }),
+        switchMap((m) => forwarderNumbers ? this.manifests.setForwarderNumbers(m.id, forwarderNumbers).pipe(map(() => m)) : of(m))
       ).subscribe({
-        next: (r) => { this.busy.set(false); this.done.emit(`${rows.length} AWB(s) outscanned to ${this.label(this.branches(), dest)} — manifest ${r.manifestNumber}.`); },
+        next: (m) => { this.busy.set(false);
+          this.done.emit(`Manifest ${m.manifestNumber} saved with ${rows.length} AWB(s) to ${this.label(this.branches(), dest)}. Dispatch it from the Manifest tab.`); },
         error: (e: HttpErrorResponse) => {
           this.busy.set(false);
           const made = sheet as Manifest | null;
-          this.error.set(made ? `Manifest ${made.manifestNumber} was created but not dispatched: ${e.error?.message ?? 'refused'}`
-            : e.error?.message ?? 'Could not outscan.');
+          this.error.set(made ? `Manifest ${made.manifestNumber} was created but its details were not saved: ${e.error?.message ?? 'refused'} — open it from the Manifest tab.`
+            : e.error?.message ?? 'Could not save the manifest.');
         }
       });
       return;

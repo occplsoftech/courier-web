@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
@@ -16,6 +16,7 @@ import { VehicleService } from '@features/manifest/vehicle.service';
 import { ShipmentService } from '@features/shipment/shipment.service';
 import { ShipmentMovementService } from './shipment-movement.service';
 import { OutscanAssignDialog } from './components/outscan-assign-dialog';
+import { ManifestEditDialog } from './components/manifest-edit-dialog';
 import { CoLoaderService } from '@features/manifest/co-loader.service';
 import { money, printLetterhead, shortDate } from '@shared/utils/letterhead-print.util';
 import { CompanyLetterhead, CompanyProfileService } from '@features/company/company-profile.service';
@@ -41,7 +42,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
   selector: 'app-scan',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton, OutscanAssignDialog],
+  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton, OutscanAssignDialog, ManifestEditDialog],
   template: `
     <div class="sc">
       <header class="page__head sc__head">
@@ -84,21 +85,34 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
       } @else if (tab() === 'man') {
         <section class="card">
           <div class="bar">
+            <div class="seg" role="tablist" aria-label="Manifests">
+              <button type="button" class="pill" id="sc-man-sent" [class.pill--on]="manView() === 'sent'" (click)="manView.set('sent')">Sent ({{ sheets().length }})</button>
+              <button type="button" class="pill" id="sc-man-in" [class.pill--on]="manView() === 'in'" (click)="manView.set('in')">Incoming ({{ incoming().length }})</button>
+            </div>
             <label class="f f--inline"><span class="f__l">Co-Loader</span>
               <select class="in" id="sc-man-cl" [value]="manCoLoader()" (change)="manCoLoader.set($any($event.target).value)">
                 <option value="">All</option>@for (o of coLoaderOpts(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }
               </select></label>
             <button type="button" class="ico" (click)="reload()" title="Refresh" aria-label="Refresh"><mat-icon>refresh</mat-icon></button>
           </div>
-          @if (!manRows().length) { <p class="muted empty">No manifests sent from this branch yet.</p> }
+          @if (!manRows().length) { <p class="muted empty">{{ manView() === 'sent' ? 'No manifests from this branch yet.' : 'No dispatched manifests addressed to this branch.' }}</p> }
           @else {
-            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>To</th><th>Co-Loader</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
+            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>{{ manView() === 'sent' ? 'To' : 'From' }}</th><th>Co-Loader</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
               <tbody>@for (m of manRows(); track m.id) {
                 <tr><td><span class="mono">{{ m.manifestNumber }}</span></td><td>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</td>
-                  <td>{{ m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
+                  <td class="wrap">{{ manView() === 'in' ? branchName(m.bookingBranchId) : m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
                   <td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
                   <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'" [class.st--ok]="m.status === 'COMPLETED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
-                  <td class="n"><button type="button" class="pill" (click)="printManifest(m)"><mat-icon>print</mat-icon>Print</button></td></tr>
+                  <td class="n acts-row">
+                    @if (m.status === 'CREATED' && manView() === 'sent') {
+                      <button type="button" class="pill" (click)="editManifest(m, false)" title="Edit" [attr.aria-label]="'Edit ' + m.manifestNumber"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="pill pill--go" (click)="editManifest(m, true)"><mat-icon>local_shipping</mat-icon>Dispatch</button>
+                    }
+                    <button type="button" class="pill" (click)="printManifest(m)" [attr.aria-label]="'Print ' + m.manifestNumber" title="Print"><mat-icon>print</mat-icon></button>
+                    @if (m.status === 'CREATED' && manView() === 'sent') {
+                      <button type="button" class="pill pill--rm" (click)="deleteManifest(m)" [attr.aria-label]="'Delete ' + m.manifestNumber"><mat-icon>delete</mat-icon></button>
+                    }
+                  </td></tr>
               }</tbody></table></div>
           }
         </section>
@@ -239,6 +253,11 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </div>
         </div>
       }
+      @if (editing(); as e) {
+        <app-manifest-edit-dialog [manifest]="e.m" [startDispatch]="e.dispatch" [pending]="lists().out" [branches]="branchOptions()"
+          [coLoaders]="coLoaderOpts()" [vehicles]="vehicles()" [users]="users()"
+          (changed)="onManifestChanged($event)" (closed)="editing.set(null)" />
+      }
       @if (assignOpen()) {
         <app-outscan-assign-dialog [pending]="lists().out" [preselected]="selectedIds()" [defaultBranchId]="outDestination()" [branches]="branchOptions()"
           [hubIds]="hubIds()" [coLoaders]="coLoaderOpts()" [vehicles]="vehicles()" [users]="users()" [myBranchId]="branchId!"
@@ -319,6 +338,10 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .warn { color: var(--warning, #b45309); font-weight: 500; }
     .st { padding: 3px 10px; border-radius: 999px; background: #fff7e6; color: #b45309; font: 600 13px var(--font-sans); }
     .st--out { background: #eef2ff; color: #4338ca; }
+    .acts-row { white-space: nowrap; width: 1%; } .acts-row .pill + .pill { margin-left: 4px; }
+    .acts-row .pill { padding: 5px 9px; } .t td.wrap { max-width: 180px; white-space: normal; }
+    .pill--go { background: var(--occpl-gradient-button, #c8102e); color: #fff; border-color: transparent; }
+    .pill--rm { color: var(--danger); }
     .st--ok { background: #ecfdf3; color: #067647; }
     .f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .f__l { font: 500 15px var(--font-sans); color: var(--content-muted); }
@@ -358,13 +381,15 @@ export class Scan {
     { id: 'in', label: 'Pending Inscan', icon: 'move_to_inbox', hint: 'Coming to this branch' },
     { id: 'del', label: 'Pending Delivery', icon: 'local_shipping', hint: 'Here, to deliver' },
     { id: 'drs', label: 'DRS', icon: 'assignment', hint: 'Last 30 days' },
-    { id: 'man', label: 'Manifest', icon: 'description', hint: 'Sent from here' }
+    { id: 'man', label: 'Manifest', icon: 'description', hint: 'Drafts, sent, incoming' }
   ];
   protected readonly reasons = UNDELIVERED_REASONS;
   protected readonly destinationOf = destinationOf;
   protected readonly bookedAtOf = bookedAt;
 
-  protected readonly tab = signal<ScanTab>('out');
+  // ?tab=man (back from Edit Shipment on a draft manifest's Qty / Wt) opens that tab.
+  protected readonly tab = signal<ScanTab>((['out', 'in', 'del', 'drs', 'man'] as ScanTab[])
+    .find((t) => t === inject(ActivatedRoute).snapshot.queryParamMap.get('tab')) ?? 'out');
   protected readonly lists = signal<Record<ScanTab, Shipment[]>>({ out: [], in: [], del: [], drs: [], man: [] });
   protected readonly loading = signal(true);
   protected readonly selected = signal<Set<string>>(new Set());
@@ -473,10 +498,13 @@ export class Scan {
       thc: this.manifests.list({ page: 0, size: 100, status: 'DISPATCHED', deliveryBranchId: me }).pipe(
         map((p) => p.content), catchError(() => of([] as Manifest[]))),
       drs: this.movement.listDrs(null, null, me).pipe(catchError(() => of([] as DrsSummary[]))),
-      sent: this.manifests.list({ page: 0, size: 100, bookingBranchId: me }).pipe(map((p) => p.content), catchError(() => of([] as Manifest[])))
-    }).subscribe(({ out, inNext, inDest, delDest, delHere, thc, drs, sent }) => {
+      sent: this.manifests.list({ page: 0, size: 100, bookingBranchId: me }).pipe(map((p) => p.content), catchError(() => of([] as Manifest[]))),
+      // Addressed to this branch: only once dispatched (a draft stays with the branch that made it).
+      incoming: this.manifests.list({ page: 0, size: 100, deliveryBranchId: me, sent: true }).pipe(map((p) => p.content), catchError(() => of([] as Manifest[])))
+    }).subscribe(({ out, inNext, inDest, delDest, delHere, thc, drs, sent, incoming }) => {
       this.drsRuns.set(drs);
       this.sheets.set(sent);
+      this.incoming.set(incoming);
       this.thcNumbers.set(new Map(thc.map((m) => [m.id, m.manifestNumber])));
       const newestFirst = (a: Shipment, b: Shipment) => (bookedAt(b) ?? '').localeCompare(bookedAt(a) ?? '');
       this.lists.set({
@@ -574,7 +602,26 @@ export class Scan {
   });
   protected readonly sheets = signal<Manifest[]>([]);
   protected readonly manCoLoader = signal('');
-  protected readonly manRows = computed(() => this.manCoLoader() ? this.sheets().filter((m) => m.coLoaderId === this.manCoLoader()) : this.sheets());
+  protected readonly incoming = signal<Manifest[]>([]);
+  protected readonly manView = signal<'sent' | 'in'>('sent');
+  protected readonly manRows = computed(() => {
+    const list = this.manView() === 'sent' ? this.sheets() : this.incoming();
+    return this.manCoLoader() ? list.filter((m) => m.coLoaderId === this.manCoLoader()) : list;
+  });
+  /** The draft manifest open in Edit (or on its Dispatch confirmation). */
+  protected readonly editing = signal<{ m: Manifest; dispatch: boolean } | null>(null);
+  protected editManifest(m: Manifest, dispatch: boolean): void { this.editing.set({ m, dispatch }); }
+  protected onManifestChanged(text: string | null): void {
+    if (text) this.lastDone.set({ text });
+    this.reload();
+  }
+  protected deleteManifest(m: Manifest): void {
+    if (!window.confirm(`Delete draft manifest ${m.manifestNumber}? Its ${m.shipmentCount} AWB(s) go back to Pending Outscan.`)) return;
+    this.manifests.deleteDraft(m.id).subscribe({
+      next: () => { this.lastDone.set({ text: `Manifest ${m.manifestNumber} deleted; its AWBs are back in Pending Outscan.` }); this.reload(); },
+      error: (e: HttpErrorResponse) => this.notify.error(e.error?.message ?? 'Could not delete the manifest.')
+    });
+  }
   protected coLoaderName(id: string | null | undefined): string { return id ? (this.coLoaderOpts().find((o) => o.value === id)?.label ?? '—') : '—'; }
   protected deliveryByLabel(d: DrsSummary): string {
     if (d.coLoaderId) return this.coLoaderName(d.coLoaderId) + ' (co-loader)';
