@@ -97,13 +97,18 @@ export class DrsEditDialog implements OnInit {
     const d = this.drs();
     this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null, d.drsNumber).subscribe({
       next: (det: DrsDetail) => this.rows.set(det.shipments),
-      error: (e: HttpErrorResponse) => this.msg.set(e.error?.message ?? 'Could not load this DRS.')
+      // A DRS whose last parcel came off has no rows left: it no longer exists.
+      error: (e: HttpErrorResponse) => {
+        this.rows.set([]);
+        this.msg.set(e.status === 404 ? 'This DRS has no parcels left. Create a new DRS from Pending Delivery.' : e.error?.message ?? 'Could not load this DRS.');
+      }
     });
   }
 
   addAwb(raw: string): void {
     const v = raw.trim().toUpperCase();
     if (!v) return;
+    if (!this.rows().length) { this.msg.set('This DRS has no parcels left. Create a new DRS from Pending Delivery.'); return; }
     if (this.rows().some((s) => s.shipmentNumber?.toUpperCase() === v || s.trackingNumber?.toUpperCase() === v)) { this.msg.set(`AWB ${v} is already on this DRS.`); return; }
     const hit = this.pending().find((s) => s.status === 'IN_SCAN' && (s.shipmentNumber?.toUpperCase() === v || s.trackingNumber?.toUpperCase() === v));
     if (!hit) { this.msg.set(`AWB ${v} is not in Pending Delivery at this branch.`); return; }
@@ -122,6 +127,7 @@ export class DrsEditDialog implements OnInit {
   protected addTyped(): void { this.awbText().split(/[\s,;]+/).filter(Boolean).forEach((p) => this.addAwb(p)); this.awbText.set(''); }
 
   protected remove(s: DrsShipmentRow): void {
+    if (this.rows().length === 1 && !window.confirm(`${s.shipmentNumber} is the last parcel on ${this.drs().drsNumber}. Taking it off ends this DRS. Continue?`)) return;
     this.busy.set(true);
     this.movement.removeFromDrs(this.drs().drsNumber!, s.shipmentId).subscribe({
       next: () => { this.busy.set(false); this.load(); this.changed.emit(); },
