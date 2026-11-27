@@ -6,6 +6,8 @@ import { NotificationService } from '@core/services/notification.service';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiLoader } from '@shared/components/ui-loader/ui-loader';
 import { SettingsService } from './settings.service';
+import { CompanyProfileService } from '@features/company/company-profile.service';
+import { LogoPicker } from '@features/customer/components/logo-picker';
 import { RazorpayConfigService, RazorpayConfigResponse, RazorpayMode } from './razorpay-config.service';
 import { SettingsSectionDialog, SectionField } from './components/settings-section-dialog';
 
@@ -72,7 +74,7 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
   selector: 'app-settings-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, UiCard, UiLoader],
+  imports: [MatIconModule, UiCard, UiLoader, LogoPicker],
   template: `
     <div class="page">
       <header class="page__head"><div><h1 class="text-h1">Company Settings</h1><p class="text-caption">Configure how the platform behaves for your company.</p></div></header>
@@ -80,6 +82,10 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
         <app-loader [minHeight]="240" caption="Loading settings…" />
       } @else {
         <div class="grid">
+          <app-card title="Company Logo" subtitle="Printed on the DRS, manifest and every other company print.">
+            <app-logo-picker label="Company logo" [current]="logo()" (picked)="saveLogo($event)" />
+            @if (logoSaving()) { <p class="text-caption">Saving…</p> }
+          </app-card>
           @for (s of sections; track s.key) {
             <app-card [title]="s.title" [subtitle]="s.desc">
               @if (editableSections.has(s.key)) {
@@ -282,6 +288,10 @@ const SECTION_FIELDS: Record<string, SectionField[]> = {
 })
 export class SettingsPage implements OnInit {
   private readonly service = inject(SettingsService);
+  private readonly profile = inject(CompanyProfileService);
+  /** The company logo as printed (an uploaded data URL, else the link on the company record). */
+  protected readonly logo = signal<string | null>(null);
+  protected readonly logoSaving = signal(false);
   private readonly razorpayService = inject(RazorpayConfigService);
   private readonly breadcrumb = inject(BreadcrumbService);
   private readonly notify = inject(NotificationService);
@@ -347,8 +357,23 @@ export class SettingsPage implements OnInit {
     { key: 'branding', title: 'Branding', icon: 'palette', desc: 'Logo, colours and theme.' }
   ];
 
+  /** Uploads (or, with null, removes) the company logo as soon as it is picked. */
+  protected saveLogo(file: File | null): void {
+    this.logoSaving.set(true);
+    const call = file ? this.profile.uploadLogo(file) : this.profile.removeLogo();
+    call.subscribe({
+      next: () => {
+        this.logoSaving.set(false);
+        this.notify.success(file ? 'Company logo saved. Prints use it from now on.' : 'Company logo removed.');
+        this.profile.get().subscribe({ next: (c) => this.logo.set(c?.logo ?? null), error: () => undefined });
+      },
+      error: (e) => { this.logoSaving.set(false); this.notify.error(e?.error?.message ?? 'Could not save the logo.'); }
+    });
+  }
+
   ngOnInit(): void {
     this.breadcrumb.set([{ label: 'Settings' }]);
+    this.profile.get().subscribe({ next: (c) => this.logo.set(c?.logo ?? null), error: () => undefined });
     this.service.get().subscribe({
       next: (d) => {
         this.data.set(d ?? {});
