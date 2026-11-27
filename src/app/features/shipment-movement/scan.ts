@@ -773,7 +773,7 @@ export class Scan {
             { label: 'Vehicle', value: this.vehicles().find((v) => v.value === det.vehicleId)?.label ?? '—' }]],
         columns: [{ label: 'Sr. No', width: '48px' }, { label: 'AWB Number', nowrap: true }, { label: 'Consignee' },
           { label: 'To Pay', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }, { label: 'Remark / Stamp', width: '34%' }],
-        rows: det.shipments.map((s, i) => [String(i + 1), s.shipmentNumber,
+        rows: det.shipments.map((s, i) => [String(i + 1), awbOf(s),
           [s.receiverName, s.receiverAddress, s.deliveryPincode && !(s.receiverAddress ?? '').includes(s.deliveryPincode) ? s.deliveryPincode : null,
             s.receiverContact].filter(Boolean).join(', '),
           refs.toPay.has(s.paymentModeId) ? money(s.netAmount) : '', money(s.codAmount), ''])
@@ -811,7 +811,7 @@ export class Scan {
             { label: 'Delivery Branch / Vendor' }, { label: 'Destination' },
             { label: 'Qty', width: '44px', right: true }, { label: 'Actual Wt (kg)', width: '70px', right: true },
             { label: 'Mode / Service Type' }, { label: 'Paymode' }],
-          rows: rows.map((s, i) => [String(i + 1), s.shipmentNumber, ...(withFwd ? [s.forwarderNumber ?? ''] : []),
+          rows: rows.map((s, i) => [String(i + 1), awbOf(s), ...(withFwd ? [s.forwarderNumber ?? ''] : []),
             branchOrVendor(s),
             dest.get(`${s.deliveryPincode}|${s.destinationAreaId ?? ''}`) || s.toCity || '',
             String(s.numberOfPackages ?? 1), String(s.actualWeight ?? s.chargeableWeight ?? ''),
@@ -907,4 +907,9 @@ export class Scan {
 
 function localIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** The AWB printed on the DRS and manifest: the tracking number, else the shipment number for an old row without one. */
+export function awbOf(s: { trackingNumber?: string | null; shipmentNumber?: string | null }): string {
+  return s.trackingNumber || s.shipmentNumber || '';
 }

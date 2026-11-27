@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { Scan, destinationOf } from './scan';
+import { Scan, awbOf, destinationOf } from './scan';
 
 describe('Scan', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] }));
@@ -51,5 +51,14 @@ describe('Scan', () => {
     c['selected'].set(new Set(['i', 'o']));
     expect(c['selectedInscanned']().map((x: any) => x.id)).toEqual(['i']);
     expect(c['selectedOut']().map((x: any) => x.id)).toEqual(['o']);
+  });
+});
+
+describe('awbOf (DRS / manifest print AWB column)', () => {
+  it('prints the tracking number, not the shipment number', () => {
+    expect(awbOf({ trackingNumber: '26110000029', shipmentNumber: 'TEST_BR-000014' })).toBe('26110000029');
+  });
+  it('falls back to the shipment number when a row has no tracking number', () => {
+    expect(awbOf({ trackingNumber: null, shipmentNumber: 'TEST_BR-000014' })).toBe('TEST_BR-000014');
   });
 });
