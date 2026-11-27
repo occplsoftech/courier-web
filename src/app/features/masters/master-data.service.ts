@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators';
 import { ApiService } from '@core/services/api.service';
 import { Page, PageQuery } from '@core/models/page.model';
 import {
-  MasterBootstrapResult, MasterOption, MasterRecord, PincodeAreaLookup, PincodeAreaRow, PincodeGeo, ServiceType
+  MasterBootstrapResult, MasterOption, MasterRecord, PincodeAreaLookup, PincodeAreaRow, PincodeGeo, PaymentMode, ServiceType
 } from '@core/models/master.model';
 import { LookupSource, MASTER_DEFINITIONS, MasterDefinition, MasterKey } from './master.config';
 
@@ -212,6 +212,18 @@ export class MasterDataService {
         .pipe(map((p) => p.content), shareReplay({ bufferSize: 1, refCount: false }));
     }
     return this.serviceTypeDirectory$;
+  }
+
+  private paymentModeDirectory$: Observable<PaymentMode[]> | null = null;
+
+  /** Raw Payment Mode rows with their collect-at flags — the DRS / manifest prints' To Pay column. Cached. */
+  paymentModeDirectory(): Observable<PaymentMode[]> {
+    if (!this.paymentModeDirectory$) {
+      this.paymentModeDirectory$ = this.api
+        .page<PaymentMode>('/master/payment-modes', { page: 0, size: 200 })
+        .pipe(map((p) => p.content), shareReplay({ bufferSize: 1, refCount: false }));
+    }
+    return this.paymentModeDirectory$;
   }
 
   /** Any write invalidates the picker cache — the new row is usually the next one picked. */

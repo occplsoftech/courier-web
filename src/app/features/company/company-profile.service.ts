@@ -16,6 +16,8 @@ export interface CompanyLetterhead {
   gstNumber: string | null;
   mobile: string | null;
   website: string | null;
+  /** Support email, else the company's own: the DRS / manifest letterhead. */
+  email?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

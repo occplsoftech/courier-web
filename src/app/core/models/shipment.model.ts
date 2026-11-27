@@ -113,6 +113,11 @@ export interface Shipment {
   receiverAddress?: string | null;
   /** The co-loader's own number for this AWB, given at outscan. */
   forwarderNumber?: string | null;
+  /** Service (Surface, Premium…): the manifest print's Mode column. */
+  serviceTypeId?: string | null;
+  deliveryPincode?: string | null;
+  /** The Area picked at booking. */
+  destinationAreaId?: string | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
@@ -1053,6 +1058,9 @@ export interface DrsSummary {
 
 /** One shipment row of GET /shipment-movement/drs/detail — mirrors `DrsShipmentRowResponse`. */
 export interface DrsShipmentRow {
+  /** COD to collect from the receiver; null when none. */
+  codAmount?: number | null;
+  deliveryPincode?: string | null;
   shipmentId: string;
   shipmentNumber: string;
   trackingNumber: string;
@@ -1079,6 +1087,8 @@ export interface DrsDetail {
   runDate: string;
   drsNumber: string | null;
   shipments: DrsShipmentRow[];
+  /** The run's vehicle, when one was given. */
+  vehicleId?: string | null;
 }
 
 /** Admin-side PAID / TO_PAY switch state for one BOOKED shipment — see

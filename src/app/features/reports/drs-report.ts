@@ -131,6 +131,6 @@ export class DrsReport implements OnInit {
   protected userContact(id: string): string { return this.userContacts().get(id)?.mobile ?? '—'; }
 
   view(r: DrsSummary): void {
-    this.router.navigate(['/reports/drs', r.deliveryUserId, r.deliveryBranchId, r.runDate]);
+    this.router.navigate(['/reports/drs', r.deliveryUserId, r.deliveryBranchId, r.runDate], { queryParams: r.drsNumber ? { drs: r.drsNumber } : {} });
   }
 }

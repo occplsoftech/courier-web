@@ -17,7 +17,8 @@ import { ShipmentService } from '@features/shipment/shipment.service';
 import { ShipmentMovementService } from './shipment-movement.service';
 import { OutscanAssignDialog } from './components/outscan-assign-dialog';
 import { CoLoaderService } from '@features/manifest/co-loader.service';
-import { printSheet } from './scan-print.util';
+import { money, printLetterhead, shortDate } from '@shared/utils/letterhead-print.util';
+import { CompanyLetterhead, CompanyProfileService } from '@features/company/company-profile.service';
 
 export type ScanTab = 'out' | 'in' | 'del' | 'drs' | 'man';
 interface Opt { value: string; label: string; }
@@ -344,6 +345,8 @@ export class Scan {
   private readonly vehicleService = inject(VehicleService);
   private readonly coLoaderService = inject(CoLoaderService);
   private readonly masters = inject(MasterDataService);
+  private readonly companyProfile = inject(CompanyProfileService);
+  private readonly auth = inject(AuthService);
   private readonly notify = inject(NotificationService);
   private readonly router = inject(Router);
   protected readonly branchId = inject(AuthService).user()?.branchId ?? null;
@@ -577,31 +580,92 @@ export class Scan {
     if (d.coLoaderId) return this.coLoaderName(d.coLoaderId) + ' (co-loader)';
     return this.users().find((u) => u.value === d.deliveryUserId)?.label ?? '—';
   }
+  /** Letterhead, To-Pay payment modes and service names for the DRS / manifest prints (cached after the first print). */
+  private printRefs(): Observable<{ company: CompanyLetterhead | null; toPay: Set<string>; services: Map<string, string>; payModes: Map<string, string> }> {
+    return forkJoin({
+      company: this.companyProfile.get().pipe(catchError(() => of(null))),
+      modes: this.masters.paymentModeDirectory().pipe(catchError(() => of([]))),
+      services: this.masters.serviceTypeDirectory().pipe(catchError(() => of([])))
+    }).pipe(map(({ company, modes, services }) => ({
+      company,
+      // To Pay: collected from the receiver at delivery, not COD, not a credit account (as the backend's own isToPay).
+      toPay: new Set(modes.filter((m) => m.collectAtDelivery && !m.cashOnDelivery && !m.requiresCreditAccount).map((m) => m.id)),
+      services: new Map(services.map((t) => [t.id, t.name])),
+      payModes: new Map(modes.map((m) => [m.id, m.name]))
+    })));
+  }
+  /** "Area, City, STATE" per shipment (its pincode and the Area picked at booking): the manifest's Destination column. */
+  private destinations(rows: Shipment[]): Observable<Map<string, string>> {
+    const keys = [...new Set(rows.filter((x) => x.deliveryPincode).map((x) => `${x.deliveryPincode}|${x.destinationAreaId ?? ''}`))];
+    if (!keys.length) return of(new Map());
+    return forkJoin(keys.map((k) => {
+      const [pin, area] = k.split('|');
+      return this.masters.pincodeGeo(pin, area || null).pipe(
+        map((g) => [k, [g.areaName, g.cityName, g.stateName?.toUpperCase()].filter(Boolean).join(', ')] as [string, string]),
+        catchError(() => of([k, ''] as [string, string])));
+    })).pipe(map((l) => new Map(l)));
+  }
+  private printBlocked(ok: boolean): void { if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.'); }
+
+  /** Delivery Run Sheet, as the company's sample: DRS ID, Delivery Person, Date; Sr No, AWB, Consignee, To Pay, COD, Remark. */
   protected printDrs(d: DrsSummary): void {
-    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null).subscribe({
-      next: (det) => {
-        const ok = printSheet(`DRS ${d.drsNumber ?? ''}`, [['Date', d.runDate], ['Branch', this.branchName(d.deliveryBranchId)], ['Delivery by', this.deliveryByLabel(d)],
-          ['Parcels', String(d.shipmentCount)], ['Delivered', String(d.deliveredCount)], ['Pending', String(d.pendingCount)]],
-          ['AWB', 'Receiver', 'Address', 'Phone', 'Status', 'Signature'],
-          det.shipments.map((s) => [s.shipmentNumber, s.receiverName, s.receiverAddress, s.receiverContact, s.status === 'DELIVERED' ? 'Delivered' : 'Out for delivery', '']));
-        if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
-      },
+    forkJoin({ det: this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null, d.drsNumber ?? null),
+      refs: this.printRefs() }).subscribe({
+      next: ({ det, refs }) => this.printBlocked(printLetterhead({
+        title: 'DELIVERY RUN SHEET', company: refs.company, logo: this.auth.companyLogo(), qr: d.drsNumber ?? null,
+        // Tall rows: the receiver's stamp (about 30 mm) goes in Remark without touching the rows above or below.
+        rowHeight: '38mm',
+        details: [
+          [{ label: 'DRS ID', value: d.drsNumber ?? '—', big: true }, { label: 'Branch', value: this.branchName(d.deliveryBranchId) }],
+          [{ label: 'Delivery Person', value: this.deliveryByLabel(d), big: true }, { label: 'Date', value: shortDate(d.runDate) }],
+          [{ label: 'Parcels', value: String(det.shipments.length), big: true },
+            { label: 'Vehicle', value: this.vehicles().find((v) => v.value === det.vehicleId)?.label ?? '—' }]],
+        columns: [{ label: 'Sr. No', width: '48px' }, { label: 'AWB Number', nowrap: true }, { label: 'Consignee' },
+          { label: 'To Pay', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }, { label: 'Remark / Stamp', width: '34%' }],
+        rows: det.shipments.map((s, i) => [String(i + 1), s.shipmentNumber,
+          [s.receiverName, s.receiverAddress, s.deliveryPincode && !(s.receiverAddress ?? '').includes(s.deliveryPincode) ? s.deliveryPincode : null,
+            s.receiverContact].filter(Boolean).join(', '),
+          refs.toPay.has(s.paymentModeId) ? money(s.netAmount) : '', money(s.codAmount), ''])
+      })),
       error: () => this.notify.error('Could not load this DRS.')
     });
   }
+  /** Manifest: Manifest No, From, Delivery Boy, To, Date, Bags; Sr No, AWB No, (FWD No), Delivery Branch / Vendor, Destination, Qty, Actual Wt, Mode / Service Type, Paymode. */
   protected printManifest(m: Manifest): void {
-    this.manifests.shipments(m.id).subscribe({
-      next: (rows) => {
+    this.manifests.shipments(m.id).pipe(
+      switchMap((rows) => forkJoin({ rows: of(rows), refs: this.printRefs(), dest: this.destinations(rows) }))
+    ).subscribe({
+      next: ({ rows, refs, dest }) => {
         const withFwd = rows.some((s) => !!s.forwarderNumber);
-        const ok = printSheet(`Manifest ${m.manifestNumber}`, [['Date', (m.dispatchedAt || m.createdAt || '').slice(0, 10)], ['From', this.branchName(m.bookingBranchId)],
-          ['To', m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery'], ['Co-Loader', this.coLoaderName(m.coLoaderId)],
-          // Forwarder numbers are per AWB now (the table below); a manifest-level one only on older manifests.
-          ...(m.forwardingNumber ? [['Forwarding No.', m.forwardingNumber] as [string, string]] : []),
-          ['Bags', m.bagsCount != null ? String(m.bagsCount) : '—']],
-          ['AWB', 'Receiver', 'To', 'Qty', 'Actual wt (kg)', ...(withFwd ? ['Forwarder No.'] : [])],
-          rows.map((s) => [s.shipmentNumber, s.receiverName, s.toCity ?? '', String(s.numberOfPackages ?? 1),
-            String(s.actualWeight ?? s.chargeableWeight ?? ''), ...(withFwd ? [s.forwarderNumber ?? ''] : [])]));
-        if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
+        // Delivery branch of each AWB; a co-loader (vendor) when it has no branch of ours to go to.
+        const branchOrVendor = (s: Shipment) => s.deliveryBranchId ? this.branchName(s.deliveryBranchId)
+          : m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : m.coLoaderId ? this.coLoaderName(m.coLoaderId) : '—';
+        const payMode = (s: Shipment) => {
+          const name = refs.payModes.get(s.paymentModeId) ?? '';
+          const due = refs.toPay.has(s.paymentModeId) ? money(s.netAmount) : s.codAmount ? 'COD ' + money(s.codAmount) : '';
+          return [name, due].filter(Boolean).join(' · ');
+        };
+        const driver = this.users().find((u) => u.value === m.driverUserId)?.label;
+        const vehicle = this.vehicles().find((v) => v.value === m.vehicleId)?.label;
+        const by = m.coLoaderId ? this.coLoaderName(m.coLoaderId) : [driver, vehicle].filter(Boolean).join(' - ') || '—';
+        this.printBlocked(printLetterhead({
+          title: 'MANIFEST', company: refs.company, logo: this.auth.companyLogo(), qr: m.manifestNumber,
+          details: [
+            [{ label: 'Manifest No', value: m.manifestNumber, big: true }, { label: 'From', value: this.branchName(m.bookingBranchId) }],
+            [{ label: 'Delivery Boy', value: by, big: true }, { label: 'To', value: m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery' }],
+            [{ label: 'Date', value: shortDate(m.dispatchedAt || m.createdAt), big: true },
+              { label: m.forwardingNumber ? 'Bags · Forwarding No.' : 'Bags',
+                value: [m.bagsCount != null ? String(m.bagsCount) : '—', m.forwardingNumber].filter(Boolean).join(' · ') }]],
+          columns: [{ label: 'Sr No', width: '44px' }, { label: 'AWB No', nowrap: true }, ...(withFwd ? [{ label: 'FWD No', nowrap: true }] : []),
+            { label: 'Delivery Branch / Vendor' }, { label: 'Destination' },
+            { label: 'Qty', width: '44px', right: true }, { label: 'Actual Wt (kg)', width: '70px', right: true },
+            { label: 'Mode / Service Type' }, { label: 'Paymode' }],
+          rows: rows.map((s, i) => [String(i + 1), s.shipmentNumber, ...(withFwd ? [s.forwarderNumber ?? ''] : []),
+            branchOrVendor(s),
+            dest.get(`${s.deliveryPincode}|${s.destinationAreaId ?? ''}`) || s.toCity || '',
+            String(s.numberOfPackages ?? 1), String(s.actualWeight ?? s.chargeableWeight ?? ''),
+            (s.serviceTypeId ? refs.services.get(s.serviceTypeId) : '') ?? '', payMode(s)])
+        }));
       },
       error: () => this.notify.error('Could not load this manifest.')
     });

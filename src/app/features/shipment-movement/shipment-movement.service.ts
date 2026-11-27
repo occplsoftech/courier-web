@@ -115,9 +115,11 @@ export class ShipmentMovementService {
   }
 
   /** DRS Report detail — every shipment on one DRS run. */
-  drsDetail(deliveryUserId: string | null, deliveryBranchId: string, runDate: string, coLoaderId: string | null = null) {
+  drsDetail(deliveryUserId: string | null, deliveryBranchId: string, runDate: string, coLoaderId: string | null = null,
+            drsNumber: string | null = null) {
+    // drsNumber: just that DRS (two runs the same day with the same delivery boy stay apart); null = the whole day's run.
     return this.api.get<DrsDetail>(`${API.shipmentMovement}/drs/detail`,
-      { deliveryUserId, coLoaderId, deliveryBranchId, runDate });
+      { deliveryUserId, coLoaderId, deliveryBranchId, runDate, drsNumber });
   }
 
   /** Active company users, for the driver/delivery-user pickers — same shape
