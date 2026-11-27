@@ -110,7 +110,10 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
               <input id="sc-scan" [value]="scanText()" (input)="scanText.set($any($event.target).value)" (keydown.enter)="scanOne()"
                      [placeholder]="tab() === 'in' ? 'Scan AWB to receive…' : 'Scan or type AWB, Enter to select…'" autocomplete="off" />
             </div>
-            @if (tab() === 'out') { <app-button icon="outbox" (pressed)="openAssign()">ASSIGN</app-button> }
+            @if (tab() === 'out') {
+              <app-button icon="outbox" (pressed)="openAssign()">ASSIGN</app-button>
+              <button type="button" class="pill" id="sc-rto" (click)="openRto()"><mat-icon>undo</mat-icon>Return to Origin</button>
+            }
             <div class="seg">
               <button type="button" class="pill" [class.pill--on]="!today()" (click)="today.set(false)">All</button>
               <button type="button" class="pill" [class.pill--on]="today()" (click)="today.set(true)">Today</button>
@@ -222,6 +225,19 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
       </div>
       }
 
+      @if (rtoOpen()) {
+        <div class="rto" (keydown.escape)="rtoOpen.set(false)">
+          <div class="rto__dlg" role="dialog" aria-modal="true" aria-labelledby="rto-t">
+            <h2 id="rto-t" class="sec">Return to Origin — {{ selected().size }} AWB</h2>
+            <p class="text-caption">{{ selectedNumbers() }}</p>
+            <label class="f"><span class="f__l">Reason <b class="req">*</b></span>
+              <input class="in" id="sc-rto-why" maxlength="300" [value]="rtoWhy()" (input)="rtoWhy.set($any($event.target).value)" placeholder="Why it goes back to the sender" /></label>
+            @if (rtoError()) { <p class="err" role="alert">{{ rtoError() }}</p> }
+            <div class="acts"><button type="button" class="pill" (click)="rtoOpen.set(false)">Cancel</button>
+              <app-button icon="undo" [loading]="busy()" (pressed)="returnSelected()">Return</app-button></div>
+          </div>
+        </div>
+      }
       @if (assignOpen()) {
         <app-outscan-assign-dialog [pending]="lists().out" [preselected]="selectedIds()" [defaultBranchId]="outDestination()" [branches]="branchOptions()"
           [hubIds]="hubIds()" [coLoaders]="coLoaderOpts()" [vehicles]="vehicles()" [users]="users()" [myBranchId]="branchId!"
@@ -311,6 +327,8 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .err { margin: 0; color: var(--danger); font: 500 15px var(--font-sans); }
     .muted { margin: 0; color: var(--content-muted); font: 400 16px var(--font-sans); }
     .empty { padding: 24px 0; text-align: center; }
+    .rto { position: fixed; inset: 0; z-index: 1000; background: rgb(15 16 32 / 55%); display: grid; place-items: center; padding: 16px; }
+    .rto__dlg { width: min(460px, 100%); background: var(--surface); border-radius: 18px; padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; }
     .done { position: sticky; bottom: 12px; display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px;
       background: var(--success-surface, #e9f7ee); color: var(--success, #15803d); font: 500 16px var(--font-sans); }
     .done span { flex: 1; }
@@ -508,6 +526,33 @@ export class Scan {
     this.actionError.set(null);
     this.assignOpen.set(true);
   }
+  // ---- Pending Outscan → Return to Origin (was "Assign to RTO" in the ASSIGN popup)
+  protected readonly rtoOpen = signal(false);
+  protected readonly rtoWhy = signal('');
+  protected readonly rtoError = signal<string | null>(null);
+  protected selectedNumbers(): string { return this.selectedRows().map((s) => s.shipmentNumber).join(', '); }
+  protected openRto(): void {
+    if (!this.selected().size) { this.actionError.set('Tick the AWBs to return to the sender first.'); return; }
+    this.actionError.set(null); this.rtoError.set(null); this.rtoWhy.set('');
+    this.rtoOpen.set(true);
+  }
+  protected returnSelected(): void {
+    const why = this.rtoWhy().trim();
+    if (!why) { this.rtoError.set('Enter the reason.'); return; }
+    const rows = this.selectedRows();
+    this.busy.set(true);
+    forkJoin(rows.map((s) => this.movement.returnToSender(s.id, why).pipe(
+      map(() => null as string | null), catchError((e: HttpErrorResponse) => of(`${s.shipmentNumber}: ${e.error?.message ?? 'failed'}`)))))
+      .subscribe((errs) => {
+        this.busy.set(false);
+        const bad = errs.filter((x): x is string => !!x);
+        if (bad.length) { this.rtoError.set(`${bad.length} not returned — ${bad.join('; ')}`); }
+        else this.rtoOpen.set(false);
+        const ok = rows.length - bad.length;
+        if (ok) this.lastDone.set({ text: `${ok} AWB(s) returned to the sender.` });
+        this.afterAction(!bad.length);
+      });
+  }
   protected onAssigned(text: string): void {
     this.assignOpen.set(false);
     this.lastDone.set({ text });
@@ -549,8 +594,9 @@ export class Scan {
         const ok = printSheet(`Manifest ${m.manifestNumber}`, [['Date', (m.dispatchedAt || m.createdAt || '').slice(0, 10)], ['From', this.branchName(m.bookingBranchId)],
           ['To', m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery'], ['Co-Loader', this.coLoaderName(m.coLoaderId)],
           ['Forwarding No.', m.forwardingNumber || '—'], ['Bags', m.bagsCount != null ? String(m.bagsCount) : '—']],
-          ['AWB', 'Receiver', 'To', 'Pcs', 'Weight (kg)'],
-          rows.map((s) => [s.shipmentNumber, s.receiverName, s.toCity ?? '', String(s.numberOfPackages ?? 1), String(s.chargeableWeight ?? '')]));
+          ['AWB', 'Receiver', 'To', 'Qty', 'Actual wt (kg)', 'Forwarder No.'],
+          rows.map((s) => [s.shipmentNumber, s.receiverName, s.toCity ?? '', String(s.numberOfPackages ?? 1),
+            String(s.actualWeight ?? s.chargeableWeight ?? ''), s.forwarderNumber ?? '']));
         if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
       },
       error: () => this.notify.error('Could not load this manifest.')
