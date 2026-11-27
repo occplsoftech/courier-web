@@ -100,15 +100,15 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
             <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>{{ manView() === 'sent' ? 'To' : 'From' }}</th><th>Co-Loader</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
               <tbody>@for (m of manRows(); track m.id) {
                 <tr><td><span class="mono">{{ m.manifestNumber }}</span></td><td>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</td>
-                  <td>{{ manView() === 'in' ? branchName(m.bookingBranchId) : m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
+                  <td class="wrap">{{ manView() === 'in' ? branchName(m.bookingBranchId) : m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
                   <td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
                   <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'" [class.st--ok]="m.status === 'COMPLETED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
                   <td class="n acts-row">
                     @if (m.status === 'CREATED' && manView() === 'sent') {
-                      <button type="button" class="pill" (click)="editManifest(m, false)"><mat-icon>edit</mat-icon>Edit</button>
+                      <button type="button" class="pill" (click)="editManifest(m, false)" title="Edit" [attr.aria-label]="'Edit ' + m.manifestNumber"><mat-icon>edit</mat-icon></button>
                       <button type="button" class="pill pill--go" (click)="editManifest(m, true)"><mat-icon>local_shipping</mat-icon>Dispatch</button>
                     }
-                    <button type="button" class="pill" (click)="printManifest(m)" [attr.aria-label]="'Print ' + m.manifestNumber"><mat-icon>print</mat-icon>Print</button>
+                    <button type="button" class="pill" (click)="printManifest(m)" [attr.aria-label]="'Print ' + m.manifestNumber" title="Print"><mat-icon>print</mat-icon></button>
                     @if (m.status === 'CREATED' && manView() === 'sent') {
                       <button type="button" class="pill pill--rm" (click)="deleteManifest(m)" [attr.aria-label]="'Delete ' + m.manifestNumber"><mat-icon>delete</mat-icon></button>
                     }
@@ -338,7 +338,8 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .warn { color: var(--warning, #b45309); font-weight: 500; }
     .st { padding: 3px 10px; border-radius: 999px; background: #fff7e6; color: #b45309; font: 600 13px var(--font-sans); }
     .st--out { background: #eef2ff; color: #4338ca; }
-    .acts-row { white-space: nowrap; } .acts-row .pill + .pill { margin-left: 6px; }
+    .acts-row { white-space: nowrap; width: 1%; } .acts-row .pill + .pill { margin-left: 4px; }
+    .acts-row .pill { padding: 5px 9px; } .t td.wrap { max-width: 180px; white-space: normal; }
     .pill--go { background: var(--occpl-gradient-button, #c8102e); color: #fff; border-color: transparent; }
     .pill--rm { color: var(--danger); }
     .st--ok { background: #ecfdf3; color: #067647; }

@@ -31,11 +31,11 @@ export interface Opt { value: string; label: string; }
           <div class="g5">
             <div class="f"><span class="f__l">Branch</span><div class="in in--ro"><mat-icon>lock</mat-icon>{{ toLabel() }}</div></div>
             <label class="f"><span class="f__l">Co-Loader</span><select class="in" id="me-cl" [value]="coLoaderId()" (change)="coLoaderId.set($any($event.target).value)">
-              <option value="">None</option>@for (o of coLoaders(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></label>
+              <option value="">None</option>@for (o of coLoaders(); track o.value) { <option [value]="o.value" [selected]="o.value === coLoaderId()">{{ o.label }}</option> }</select></label>
             <label class="f"><span class="f__l">Vehicle</span><select class="in" [value]="vehicleId()" (change)="vehicleId.set($any($event.target).value)">
-              <option value="">None</option>@for (o of vehicles(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></label>
+              <option value="">None</option>@for (o of vehicles(); track o.value) { <option [value]="o.value" [selected]="o.value === vehicleId()">{{ o.label }}</option> }</select></label>
             <label class="f"><span class="f__l">Driver</span><select class="in" [value]="driverId()" (change)="driverId.set($any($event.target).value)">
-              <option value="">None</option>@for (o of users(); track o.value) { <option [value]="o.value">{{ o.label }}</option> }</select></label>
+              <option value="">None</option>@for (o of users(); track o.value) { <option [value]="o.value" [selected]="o.value === driverId()">{{ o.label }}</option> }</select></label>
             <label class="f"><span class="f__l">Bags</span><input class="in" id="me-bags" inputmode="numeric" maxlength="4" [value]="bags()" (input)="bags.set(digits($event))" /></label>
           </div>
           <div class="seg" role="radiogroup" aria-label="Forwarder number">
