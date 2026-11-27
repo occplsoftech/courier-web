@@ -8,9 +8,10 @@ import {
 } from '@core/models/customer.model';
 
 /** Which row actions the caller may see. Drives the kebab menu; the list computes it. */
-export interface CustomerPerms { update: boolean; lifecycle: boolean; }
+/** {@code uploadRates}: company admin on the Business Customer list; offered on active business customers. */
+export interface CustomerPerms { update: boolean; lifecycle: boolean; uploadRates?: boolean; }
 
-export type CustomerAction = 'view' | 'edit' | 'activate' | 'deactivate';
+export type CustomerAction = 'view' | 'edit' | 'activate' | 'deactivate' | 'uploadRates';
 
 /** Customer directory table. Columns follow the backend list projection (CustomerSummaryResponse). */
 @Component({
@@ -37,6 +38,9 @@ export type CustomerAction = 'view' | 'edit' | 'activate' | 'deactivate';
             <button mat-menu-item (click)="act('view', c)"><mat-icon>visibility</mat-icon><span>View</span></button>
             @if (perms().update) {
               <button mat-menu-item (click)="act('edit', c)"><mat-icon>edit</mat-icon><span>Edit</span></button>
+            }
+            @if (perms().uploadRates && c.customerType === 'BUSINESS' && c.status === 'ACTIVE') {
+              <button mat-menu-item (click)="act('uploadRates', c)"><mat-icon>upload_file</mat-icon><span>Upload Rates (Excel)</span></button>
             }
             @if (perms().lifecycle) {
               @if (c.status === 'INACTIVE') {

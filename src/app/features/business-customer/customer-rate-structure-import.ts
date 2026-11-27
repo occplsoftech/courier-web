@@ -143,10 +143,10 @@ export class CustomerRateStructureImport implements OnInit {
       this.customerOpts.set(p.content.map((c) => ({ value: c.id, label: `${c.displayName} (${c.customerCode})` }))));
     this.service.serviceTypes().subscribe((p) => {
       this.serviceOpts.set(p.content.map((t) => ({ value: t.id, label: `${t.name} (${t.code})` })));
-      // Best guesses, by code: AIR prices air courier, CARGO / SURFACE cargo by surface, a CARGO…AIR code cargo by air.
+      // Best guesses, by code: AIR prices air courier, SURFACE_CARGO (or the older CARGO) / SURFACE cargo by surface, a CARGO…AIR code cargo by air.
       const find = (test: (code: string) => boolean) => p.content.find((t) => test(t.code.toUpperCase()))?.id ?? '';
       if (!this.airCtl.value) this.airCtl.setValue(find((c) => c === 'AIR'), { emitEvent: false });
-      if (!this.surfaceCtl.value) this.surfaceCtl.setValue(find((c) => c === 'CARGO') || find((c) => c === 'SURFACE'), { emitEvent: false });
+      if (!this.surfaceCtl.value) this.surfaceCtl.setValue(find((c) => c === 'SURFACE_CARGO') || find((c) => c === 'CARGO') || find((c) => c === 'SURFACE'), { emitEvent: false });
       if (!this.cargoAirCtl.value) this.cargoAirCtl.setValue(find((c) => c.includes('CARGO') && c.includes('AIR')), { emitEvent: false });
     });
     for (const ctl of [this.customerCtl, this.airCtl, this.surfaceCtl, this.cargoAirCtl]) {

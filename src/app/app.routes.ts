@@ -291,6 +291,11 @@ export const routes: Routes = [
         data: { roles: COMPANY_ONLY, businessOnly: true },
         loadComponent: () => import('@features/customer/customer-list').then((m) => m.CustomerList)
       },
+      {
+        // A business customer's own rate card from their old-software rate sheet (COMPANY_ADMIN on the server).
+        path: 'business-customer/customers/:id/upload-rates', title: 'Upload Rates', canActivate: [roleGuard], data: { roles: COMPANY_ONLY },
+        loadComponent: () => import('@features/business-customer/customer-tariff-upload').then((m) => m.CustomerTariffUploadPage)
+      },
       // Zone Tariff: company zones, rate cards (slabs + charges) and the calculator. Writes are
       // COMPANY_ADMIN on the server; the calculator is a read any booking user may run.
       {

@@ -25,7 +25,8 @@ import { ZoneTariffService } from './zone-tariff.service';
 const ROUNDING_OPTS: SelectOption[] = (Object.keys(ROUNDING_LABELS) as TotalRounding[]).map((r) => ({ value: r, label: ROUNDING_LABELS[r] }));
 const APPLIES_OPTS: SelectOption[] = (Object.keys(APPLIES_LABELS) as ChargeAppliesWhen[]).map((a) => ({ value: a, label: APPLIES_LABELS[a] }));
 const CALC_OPTS: SelectOption[] = (Object.keys(CALC_LABELS) as ChargeCalcMethod[]).map((m) => ({ value: m, label: CALC_LABELS[m] }));
-const SLAB_TYPE_OPTS: SelectOption[] = [{ value: 'FIXED', label: 'Fixed' }, { value: 'PER_EXTRA_KG', label: 'Per extra kg' }];
+const SLAB_TYPE_OPTS: SelectOption[] = [{ value: 'FIXED', label: 'Fixed' }, { value: 'PER_EXTRA_KG', label: 'Per extra kg' },
+  { value: 'PER_BOX', label: 'Per box' }];
 const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }];
 
 interface GridRow { key: string; lane: RateLane; slab: RateSlab; index: number; }
@@ -78,6 +79,9 @@ export function defaultSlabs(document: boolean | null = null): RateSlab[] {
         <div>
           <h1 class="text-h1">{{ isCreate() ? 'New Rate Card' : (card()?.code || 'Rate Card') }}</h1>
           <p class="text-caption">{{ isCreate() ? 'Prices for shipments that start in one from zone.' : card()?.name }}</p>
+          @if (card()?.customerId) {
+            <p class="text-caption">A business customer's own card: their bookings use it before the company's card. Upload a new sheet from Business Customer → Customer → Upload Rates.</p>
+          }
         </div>
         @if (card(); as c) {
           <div class="page__actions">
@@ -161,7 +165,7 @@ export function defaultSlabs(document: boolean | null = null): RateSlab[] {
                       <tr [class.chg]="isChanged(r)">
                         <td>{{ r.lane.toZoneCode }}</td><td>{{ r.lane.serviceTypeCode }}</td><td>{{ r.lane.packageTypeCode }}</td>
                         <td>{{ weightLabel(r.slab) }}</td>
-                        <td>{{ r.slab.rateType === 'FIXED' ? 'Fixed' : '+ per ' + (r.slab.stepKg && Number(r.slab.stepKg) !== 1 ? r.slab.stepKg + ' kg' : 'kg') }}</td>
+                        <td>{{ r.slab.rateType === 'FIXED' ? 'Fixed' : r.slab.rateType === 'PER_BOX' ? 'Per box' : '+ per ' + (r.slab.stepKg && Number(r.slab.stepKg) !== 1 ? r.slab.stepKg + ' kg' : 'kg') }}</td>
                         <td class="num">
                           @if (canUpdate()) {
                             <input class="cell" type="number" min="0" step="0.5" [value]="rateOf(r)" (input)="setRate(r, $any($event.target).valueAsNumber)" [attr.aria-label]="'Rate ' + r.lane.toZoneCode + ' ' + weightLabel(r.slab)" />
@@ -574,7 +578,7 @@ export class RateCardForm implements OnInit {
 
   protected weightLabel(s: RateSlab): string {
     const n = (x: number) => String(Number(x));
-    return s.rateType === 'FIXED' ? `up to ${n(s.weightToKg)}` : `${n(s.weightFromKg)} – ${n(s.weightToKg)}`;
+    return s.rateType === 'PER_EXTRA_KG' ? `${n(s.weightFromKg)} – ${n(s.weightToKg)}` : `up to ${n(s.weightToKg)}`;
   }
 
   protected rateOf(r: GridRow): number { return this.edits().get(r.key) ?? Number(r.slab.rate); }
@@ -649,8 +653,8 @@ export class RateCardForm implements OnInit {
 
   protected slabSummary(l: RateLane): string {
     const n = (x: number) => String(Number(x));
-    return l.slabs.map((s) => s.rateType === 'FIXED'
-      ? `≤${n(s.weightToKg)} kg ${n(s.rate)}`
+    return l.slabs.map((s) => s.rateType === 'FIXED' ? `≤${n(s.weightToKg)} kg ${n(s.rate)}`
+      : s.rateType === 'PER_BOX' ? `≤${n(s.weightToKg)} kg ${n(s.rate)}/box`
       : `+${n(s.rate)}/${s.stepKg && Number(s.stepKg) !== 1 ? n(s.stepKg) + ' kg' : 'kg'} to ${n(s.weightToKg)} kg`).join(' · ');
   }
 

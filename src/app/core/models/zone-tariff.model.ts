@@ -4,7 +4,8 @@ export type ZoneUsage = 'FROM' | 'TO' | 'BOTH';
 export type TariffZoneStatus = 'ACTIVE' | 'INACTIVE';
 export type LocationScope = 'STATE' | 'REGIONAL_ZONE' | 'DISTRICT' | 'CITY' | 'PINCODE';
 export type TariffStatus = 'ACTIVE' | 'INACTIVE';
-export type SlabRateType = 'FIXED' | 'PER_EXTRA_KG';
+/** PER_BOX: rate × number of boxes (pieces), whatever the weight in the slab. */
+export type SlabRateType = 'FIXED' | 'PER_EXTRA_KG' | 'PER_BOX';
 export type TotalRounding = 'NONE' | 'NEAREST_RUPEE' | 'UP_RUPEE';
 export type ChargeAppliesWhen = 'ALWAYS' | 'COD_ONLY' | 'ODA_ONLY';
 export type ChargeCalcMethod = 'FLAT' | 'PERCENT_OF_FREIGHT' | 'PER_KG' | 'PER_PIECE' | 'PERCENT_OF_VALUE';
@@ -140,6 +141,8 @@ export interface RateCard {
   createdDate: string;
   updatedDate: string;
   version: number;
+  /** Set on a business customer's own card (uploaded from their row); null on the company's cards. */
+  customerId?: string | null;
 }
 
 export interface RateCardRequest {

@@ -84,7 +84,8 @@ export class CustomerList implements OnInit {
     update: this.perms.canAccess({ roles: WRITERS, permissions: ['CUSTOMER_UPDATE'] }),
     lifecycle: this.perms.canAccess({ roles: LIFECYCLE, permissions: ['CUSTOMER_ACTIVATE', 'CUSTOMER_DEACTIVATE'] })
   }));
-  readonly tablePerms = computed<CustomerPerms>(() => ({ update: this.can().update, lifecycle: this.can().lifecycle }));
+  readonly tablePerms = computed<CustomerPerms>(() => ({ update: this.can().update, lifecycle: this.can().lifecycle,
+    uploadRates: this.businessOnly && this.perms.canAccess({ roles: [AppRole.COMPANY_ADMIN] }) }));
 
   ngOnInit(): void {
     this.breadcrumb.set(this.businessOnly
@@ -125,6 +126,7 @@ export class CustomerList implements OnInit {
       case 'edit': return void this.router.navigate(['/customers', customer.id, 'edit']);
       case 'activate': return this.lifecycle(customer, 'activate');
       case 'deactivate': return this.lifecycle(customer, 'deactivate');
+      case 'uploadRates': return void this.router.navigate(['/business-customer/customers', customer.id, 'upload-rates']);
     }
   }
 
