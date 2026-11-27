@@ -115,6 +115,14 @@ export class ShipmentMovementService {
   }
 
   /** DRS Report detail — every shipment on one DRS run. */
+  /** Edit DRS: Pending Delivery parcels join an existing DRS (same number, delivery boy, vehicle and day). */
+  addToDrs(drsNumber: string, shipmentIds: string[]) {
+    return this.api.post<BulkMovementResult>(`${API.shipmentMovement}/drs/${encodeURIComponent(drsNumber)}/shipments`, { shipmentIds });
+  }
+  /** Edit DRS: an undelivered parcel comes off the run, back to Pending Delivery. */
+  removeFromDrs(drsNumber: string, shipmentId: string) {
+    return this.api.delete<void>(`${API.shipmentMovement}/drs/${encodeURIComponent(drsNumber)}/shipments/${shipmentId}`);
+  }
   drsDetail(deliveryUserId: string | null, deliveryBranchId: string, runDate: string, coLoaderId: string | null = null,
             drsNumber: string | null = null) {
     // drsNumber: just that DRS (two runs the same day with the same delivery boy stay apart); null = the whole day's run.

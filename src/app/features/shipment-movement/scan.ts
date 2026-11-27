@@ -7,7 +7,7 @@ import { Observable, catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
-import { DrsSummary, Manifest, Shipment, UNDELIVERED_REASONS } from '@core/models/shipment.model';
+import { DrsDetail, DrsSummary, Manifest, Shipment, UNDELIVERED_REASONS } from '@core/models/shipment.model';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { downloadCsv } from '@shared/utils/csv-export.util';
 import { MasterDataService } from '@features/masters/master-data.service';
@@ -17,6 +17,7 @@ import { ShipmentService } from '@features/shipment/shipment.service';
 import { ShipmentMovementService } from './shipment-movement.service';
 import { OutscanAssignDialog } from './components/outscan-assign-dialog';
 import { ManifestEditDialog } from './components/manifest-edit-dialog';
+import { DrsEditDialog } from './components/drs-edit-dialog';
 import { CoLoaderService } from '@features/manifest/co-loader.service';
 import { money, printLetterhead, shortDate } from '@shared/utils/letterhead-print.util';
 import { CompanyLetterhead, CompanyProfileService } from '@features/company/company-profile.service';
@@ -42,7 +43,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
   selector: 'app-scan',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton, OutscanAssignDialog, ManifestEditDialog],
+  imports: [DatePipe, DecimalPipe, MatIconModule, UiButton, OutscanAssignDialog, ManifestEditDialog, DrsEditDialog],
   template: `
     <div class="sc">
       <header class="page__head sc__head">
@@ -74,12 +75,32 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </div>
           @if (!drsRows().length) { <p class="muted empty">No delivery runs from this branch in the last 30 days.</p> }
           @else {
-            <div class="tw"><table class="t"><thead><tr><th>DRS</th><th>Date</th><th>Delivery by</th><th class="n">Parcels</th><th class="n">Delivered</th><th class="n">Pending</th><th></th></tr></thead>
-              <tbody>@for (d of drsRows(); track d.drsNumber + d.runDate + (d.deliveryUserId ?? d.coLoaderId)) {
-                <tr><td><span class="mono">{{ d.drsNumber || '—' }}</span></td><td>{{ d.runDate | date: 'd MMM y' }}</td><td>{{ deliveryByLabel(d) }}</td>
-                  <td class="n">{{ d.shipmentCount }}</td><td class="n">{{ d.deliveredCount }}</td><td class="n">{{ d.pendingCount }}</td>
-                  <td class="n"><button type="button" class="pill" (click)="printDrs(d)"><mat-icon>print</mat-icon>Print</button></td></tr>
-              }</tbody></table></div>
+            <div class="cards">
+              @for (d of drsRows(); track drsKey(d)) {
+                <article class="rc" [attr.aria-label]="'DRS ' + (d.drsNumber || '')">
+                  <div class="rc__top"><span class="rc__no">{{ d.drsNumber || '—' }}</span>
+                    <span class="st" [class.st--run]="d.pendingCount > 0" [class.st--ok]="!d.pendingCount">{{ d.pendingCount ? 'Out for delivery' : 'Completed' }}</span>
+                    <span class="rc__sp"></span>
+                    @if (d.pendingCount && d.drsNumber) { <button type="button" class="pill" (click)="editDrs(d)" [attr.aria-label]="'Edit ' + d.drsNumber"><mat-icon>edit</mat-icon>Edit</button> }
+                    <button type="button" class="pill" (click)="printDrs(d)" [attr.aria-label]="'Print ' + (d.drsNumber || 'DRS')"><mat-icon>print</mat-icon>Print</button></div>
+                  <div class="rc__facts"><div><span>Date</span>{{ d.runDate | date: 'd MMM y' }}</div><div><span>Branch</span>{{ branchName(d.deliveryBranchId) }}</div>
+                    <div><span>Delivery by</span>{{ deliveryByLabel(d) }}</div>
+                    <div><span>Vehicle</span>{{ drsOpen()[drsKey(d)] ? (vehicleLabel(drsOpen()[drsKey(d)]!.vehicleId) || '—') : '…' }}</div></div>
+                  <div class="rc__tot"><span><b>{{ d.shipmentCount }}</b> AWB</span><span class="ok"><b>{{ d.deliveredCount }}</b> delivered</span>
+                    <span class="run"><b>{{ d.pendingCount }}</b> pending</span>
+                    @if (drsOpen()[drsKey(d)]; as det) { <span>{{ drsMoney(det) }}</span> }</div>
+                  @if (drsOpen()[drsKey(d)]; as det) {
+                    <div class="tw"><table class="t t--in"><thead><tr><th>AWB</th><th>Receiver</th><th>Address</th><th class="n">Qty</th><th class="n">Wt</th><th>Status</th></tr></thead>
+                      <tbody>@for (r of det.shipments; track r.shipmentId) {
+                        <tr><td class="mono">{{ r.shipmentNumber }}</td><td>{{ r.receiverName }}</td><td class="wrap">{{ r.receiverAddress }}</td>
+                          <td class="n">{{ r.numberOfPackages ?? 1 }}</td><td class="n">{{ r.actualWeight ?? '—' }}</td>
+                          <td><span [class.ok]="r.status === 'DELIVERED'">{{ r.status === 'DELIVERED' ? 'Delivered' : r.status === 'OUT_FOR_DELIVERY' ? 'Out for delivery' : r.status }}</span></td></tr>
+                      }</tbody></table></div>
+                  }
+                  <button type="button" class="rc__tog" (click)="toggleDrs(d)">{{ drsOpen()[drsKey(d)] ? '▴ Hide AWBs' : '▾ Show ' + d.shipmentCount + ' AWB' }}</button>
+                </article>
+              }
+            </div>
           }
         </section>
       } @else if (tab() === 'man') {
@@ -97,23 +118,38 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </div>
           @if (!manRows().length) { <p class="muted empty">{{ manView() === 'sent' ? 'No manifests from this branch yet.' : 'No dispatched manifests addressed to this branch.' }}</p> }
           @else {
-            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>{{ manView() === 'sent' ? 'To' : 'From' }}</th><th>Co-Loader</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
-              <tbody>@for (m of manRows(); track m.id) {
-                <tr><td><span class="mono">{{ m.manifestNumber }}</span></td><td>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</td>
-                  <td class="wrap">{{ manView() === 'in' ? branchName(m.bookingBranchId) : m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
-                  <td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
-                  <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'" [class.st--ok]="m.status === 'COMPLETED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
-                  <td class="n acts-row">
+            <div class="cards">
+              @for (m of manRows(); track m.id) {
+                <article class="rc" [attr.aria-label]="'Manifest ' + m.manifestNumber">
+                  <div class="rc__top"><span class="rc__no">{{ m.manifestNumber }}</span>
+                    <span class="st" [class.st--out]="m.status === 'DISPATCHED'" [class.st--ok]="m.status === 'COMPLETED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span>
+                    <span class="rc__sp"></span>
                     @if (m.status === 'CREATED' && manView() === 'sent') {
-                      <button type="button" class="pill" (click)="editManifest(m, false)" title="Edit" [attr.aria-label]="'Edit ' + m.manifestNumber"><mat-icon>edit</mat-icon></button>
+                      <button type="button" class="pill" (click)="editManifest(m, false)" [attr.aria-label]="'Edit ' + m.manifestNumber"><mat-icon>edit</mat-icon>Edit</button>
                       <button type="button" class="pill pill--go" (click)="editManifest(m, true)"><mat-icon>local_shipping</mat-icon>Dispatch</button>
                     }
-                    <button type="button" class="pill" (click)="printManifest(m)" [attr.aria-label]="'Print ' + m.manifestNumber" title="Print"><mat-icon>print</mat-icon></button>
+                    <button type="button" class="pill" (click)="printManifest(m)" [attr.aria-label]="'Print ' + m.manifestNumber"><mat-icon>print</mat-icon>Print</button>
                     @if (m.status === 'CREATED' && manView() === 'sent') {
-                      <button type="button" class="pill pill--rm" (click)="deleteManifest(m)" [attr.aria-label]="'Delete ' + m.manifestNumber"><mat-icon>delete</mat-icon></button>
-                    }
-                  </td></tr>
-              }</tbody></table></div>
+                      <button type="button" class="pill pill--rm" (click)="deleteManifest(m)" [attr.aria-label]="'Delete ' + m.manifestNumber" title="Delete"><mat-icon>delete</mat-icon></button>
+                    }</div>
+                  <div class="rc__facts"><div><span>{{ m.dispatchedAt ? 'Dispatched' : 'Created' }}</span>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</div>
+                    <div><span>From → To</span>{{ branchCode(m.bookingBranchId) }} → {{ m.deliveryBranchId ? branchCode(m.deliveryBranchId) : 'Direct' }}</div>
+                    <div><span>Co-Loader</span>{{ coLoaderName(m.coLoaderId) }}</div>
+                    <div><span>Vehicle / Driver</span>{{ [vehicleLabel(m.vehicleId), userLabel(m.driverUserId)].filter(isSet).join(' · ') || '—' }}</div></div>
+                  <div class="rc__tot"><span><b>{{ m.shipmentCount }}</b> AWB</span><span><b>{{ m.totalPackages }}</b> pcs</span>
+                    <span><b>{{ m.totalWeight | number: '1.0-2' }} kg</b></span><span><b>{{ m.bagsCount ?? 0 }}</b> bags</span>
+                    @if (manOpen()[m.id]; as rows) { @if (fwdCount(rows); as n) { <span>Forwarder No. {{ n }}/{{ rows.length }}</span> } }</div>
+                  @if (manOpen()[m.id]; as rows) {
+                    <div class="tw"><table class="t t--in"><thead><tr><th>AWB</th><th>FWD No</th><th>Receiver</th><th>Destination</th><th class="n">Qty</th><th class="n">Wt</th><th>Paymode</th></tr></thead>
+                      <tbody>@for (r of rows; track r.id) {
+                        <tr><td class="mono">{{ r.shipmentNumber }}</td><td>{{ r.forwarderNumber || '—' }}</td><td>{{ r.receiverName }}</td><td class="wrap">{{ r.toCity || '—' }}</td>
+                          <td class="n">{{ r.numberOfPackages ?? 1 }}</td><td class="n">{{ r.actualWeight ?? r.chargeableWeight }}</td><td>{{ payLabel(r) }}</td></tr>
+                      }</tbody></table></div>
+                  }
+                  <button type="button" class="rc__tog" (click)="toggleMan(m)">{{ manOpen()[m.id] ? '▴ Hide AWBs' : '▾ Show ' + m.shipmentCount + ' AWB' }}</button>
+                </article>
+              }
+            </div>
           }
         </section>
       } @else {
@@ -253,6 +289,9 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </div>
         </div>
       }
+      @if (drsEditing(); as d) {
+        <app-drs-edit-dialog [drs]="d" [deliveryBy]="deliveryByLabel(d)" [pending]="lists().del" (changed)="onDrsChanged(d)" (closed)="drsEditing.set(null); reload()" />
+      }
       @if (editing(); as e) {
         <app-manifest-edit-dialog [manifest]="e.m" [startDispatch]="e.dispatch" [pending]="lists().out" [branches]="branchOptions()"
           [coLoaders]="coLoaderOpts()" [vehicles]="vehicles()" [users]="users()"
@@ -338,6 +377,19 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .warn { color: var(--warning, #b45309); font-weight: 500; }
     .st { padding: 3px 10px; border-radius: 999px; background: #fff7e6; color: #b45309; font: 600 13px var(--font-sans); }
     .st--out { background: #eef2ff; color: #4338ca; }
+    .cards { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+    .rc { border: 1px solid var(--surface-border); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: 0 1px 4px rgb(0 0 0 / 5%); }
+    .rc__top { display: flex; align-items: center; gap: 10px; padding: 14px 16px 8px; flex-wrap: wrap; }
+    .rc__no { font: 700 18px var(--font-mono, monospace); color: var(--brand-700); } .rc__sp { flex: 1; }
+    .rc__top .pill + .pill { margin-left: 2px; }
+    .rc__facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 16px; padding: 0 16px 12px; font: 400 15px var(--font-sans); }
+    .rc__facts span { display: block; color: var(--content-muted); font: 600 11.5px var(--font-sans); text-transform: uppercase; letter-spacing: .04em; }
+    .rc__tot { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 16px; background: var(--surface-muted); border-top: 1px solid var(--surface-border); font: 400 14px var(--font-sans); }
+    .rc__tot b { font-size: 15px; } .ok { color: #067647; } .run { color: #c2410c; }
+    .rc__tog { display: block; width: 100%; text-align: left; border: 0; border-top: 1px solid var(--surface-border); background: none; padding: 9px 16px; color: var(--brand-700); font: 600 14px var(--font-sans); cursor: pointer; }
+    .t--in { font-size: 14px; } .t--in td.wrap { white-space: normal; max-width: 260px; }
+    .st--run { background: #fff1e6; color: #c2410c; }
+    @media (max-width: 760px) { .rc__facts { grid-template-columns: 1fr 1fr; } }
     .acts-row { white-space: nowrap; width: 1%; } .acts-row .pill + .pill { margin-left: 4px; }
     .acts-row .pill { padding: 5px 9px; } .t td.wrap { max-width: 180px; white-space: normal; }
     .pill--go { background: var(--occpl-gradient-button, #c8102e); color: #fff; border-color: transparent; }
@@ -608,11 +660,62 @@ export class Scan {
     const list = this.manView() === 'sent' ? this.sheets() : this.incoming();
     return this.manCoLoader() ? list.filter((m) => m.coLoaderId === this.manCoLoader()) : list;
   });
+  // ---- cards: AWB lists folded open on demand
+  protected readonly manOpen = signal<Record<string, Shipment[] | undefined>>({});
+  protected readonly drsOpen = signal<Record<string, DrsDetail | undefined>>({});
+  private readonly payModes = signal<{ names: Map<string, string>; toPay: Set<string> }>({ names: new Map(), toPay: new Set() });
+  protected readonly drsEditing = signal<DrsSummary | null>(null);
+  protected isSet = (v: unknown) => !!v;
+  protected drsKey(d: DrsSummary): string { return `${d.drsNumber}|${d.runDate}|${d.deliveryUserId ?? d.coLoaderId}`; }
+  protected vehicleLabel(id: string | null | undefined): string { return id ? (this.vehicles().find((v) => v.value === id)?.label ?? '') : ''; }
+  protected userLabel(id: string | null | undefined): string { return id ? (this.users().find((u) => u.value === id)?.label ?? '') : ''; }
+  protected branchCode(id: string): string { const n = this.branchName(id); return n.match(/\(([^)]+)\)\s*$/)?.[1] ?? n; }
+  protected fwdCount(rows: Shipment[]): number { return rows.filter((r) => !!r.forwarderNumber).length; }
+  protected payLabel(r: Shipment): string {
+    const pm = this.payModes();
+    const name = pm.names.get(r.paymentModeId) ?? '';
+    const due = pm.toPay.has(r.paymentModeId) && r.netAmount ? ' · ' + Number(r.netAmount).toFixed(0) : r.codAmount ? ' · COD ' + Number(r.codAmount).toFixed(0) : '';
+    return name + due;
+  }
+  protected drsMoney(det: DrsDetail): string {
+    const pm = this.payModes();
+    const toPay = det.shipments.filter((s) => s.status !== 'DELIVERED' && pm.toPay.has(s.paymentModeId)).reduce((a, s) => a + Number(s.netAmount ?? 0), 0);
+    const cod = det.shipments.filter((s) => s.status !== 'DELIVERED').reduce((a, s) => a + Number(s.codAmount ?? 0), 0);
+    return `To collect: To Pay ₹${toPay.toFixed(0)} · COD ₹${cod.toFixed(0)}`;
+  }
+  private loadPayModes(): void {
+    if (this.payModes().names.size) return;
+    this.masters.paymentModeDirectory().pipe(catchError(() => of([]))).subscribe((modes) => this.payModes.set({
+      names: new Map(modes.map((m) => [m.id, m.name])),
+      toPay: new Set(modes.filter((m) => m.collectAtDelivery && !m.cashOnDelivery && !m.requiresCreditAccount).map((m) => m.id))
+    }));
+  }
+  protected toggleMan(m: Manifest): void {
+    if (this.manOpen()[m.id]) { this.manOpen.update((o) => ({ ...o, [m.id]: undefined })); return; }
+    this.loadPayModes();
+    this.manifests.shipments(m.id).subscribe({
+      next: (rows) => this.manOpen.update((o) => ({ ...o, [m.id]: rows })),
+      error: () => this.notify.error('Could not load this manifest.')
+    });
+  }
+  protected toggleDrs(d: DrsSummary): void {
+    const k = this.drsKey(d);
+    if (this.drsOpen()[k]) { this.drsOpen.update((o) => ({ ...o, [k]: undefined })); return; }
+    this.loadPayModes();
+    this.movement.drsDetail(d.deliveryUserId, d.deliveryBranchId, d.runDate, d.coLoaderId ?? null, d.drsNumber ?? null).subscribe({
+      next: (det) => this.drsOpen.update((o) => ({ ...o, [k]: det })),
+      error: () => this.notify.error('Could not load this DRS.')
+    });
+  }
+  protected editDrs(d: DrsSummary): void { this.drsEditing.set(d); }
+  protected onDrsChanged(d: DrsSummary): void { this.drsOpen.update((o) => ({ ...o, [this.drsKey(d)]: undefined })); }
+
   /** The draft manifest open in Edit (or on its Dispatch confirmation). */
   protected readonly editing = signal<{ m: Manifest; dispatch: boolean } | null>(null);
   protected editManifest(m: Manifest, dispatch: boolean): void { this.editing.set({ m, dispatch }); }
   protected onManifestChanged(text: string | null): void {
     if (text) this.lastDone.set({ text });
+    this.manOpen.set({});
     this.reload();
   }
   protected deleteManifest(m: Manifest): void {
