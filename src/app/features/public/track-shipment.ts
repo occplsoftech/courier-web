@@ -27,12 +27,23 @@ interface PublicTrackResult {
   latestStatus?: string | null;
   latestLocation?: string | null;
 }
+/** Proof of delivery from `POST /track/{number}/verify`; links are short-lived. */
+interface PublicTrackPod {
+  photoUrl: string | null;
+  signatureUrl: string | null;
+  deliveredBy: string | null;
+  deliveredAt: string | null;
+  receivedBy?: string | null;
+}
 
 /** Public (no-login) Track Shipment — reached from the login screen so anyone with an
  *  AWB/tracking or shipment number can see its status without an account. Calls the
  *  redacted `GET /track/{number}` endpoint (see `PublicTrackController` on the backend) —
  *  no bearer token attached, none required. Accepts an optional `?q=` so a shared tracking
- *  link (`/track-shipment?q=AWB123`) runs the search immediately. */
+ *  link (`/track-shipment?q=AWB123`) runs the search immediately.
+ *
+ *  A delivered shipment offers "Show proof of delivery": the last 4 digits of the receiver's phone unlock
+ *  the delivery photo, signature, time and receiver (`POST /track/{number}/verify`, rate-limited). */
 @Component({
   selector: 'app-track-shipment',
   standalone: true,
@@ -96,6 +107,32 @@ interface PublicTrackResult {
                 </ul>
               </div>
             }
+
+            @if (r.status === 'DELIVERED' && !r.carrier) {
+              <div class="pod">
+                <p class="text-caption">Proof of delivery</p>
+                @if (pod(); as p) {
+                  <div class="pod__facts">
+                    @if (p.deliveredAt) { <p><span class="text-caption">Delivered on</span> {{ p.deliveredAt | date: 'medium' }}</p> }
+                    @if (p.receivedBy) { <p><span class="text-caption">Received by</span> {{ p.receivedBy }}</p> }
+                    @if (p.deliveredBy) { <p><span class="text-caption">Delivered by</span> {{ p.deliveredBy }}</p> }
+                  </div>
+                  @if (p.photoUrl) { <img class="pod__img" [src]="p.photoUrl" alt="Proof of delivery photo" /> }
+                  @if (p.signatureUrl) { <img class="pod__img pod__img--sig" [src]="p.signatureUrl" alt="Receiver's signature" /> }
+                  @if (!p.photoUrl && !p.signatureUrl) { <p class="pod__note">No delivery photo was uploaded for this shipment.</p> }
+                } @else if (podMissing()) {
+                  <p class="pod__note">Proof of delivery is not available for this shipment yet.</p>
+                } @else {
+                  <p class="pod__note">Enter the last 4 digits of the receiver's phone number to see the delivery photo.</p>
+                  <div class="track__row">
+                    <app-input [control]="phoneControl" label="Receiver's phone, last 4 digits" placeholder="1234"
+                               type="tel" [maxLength]="4" (keydown.enter)="showPod()" />
+                    <app-button icon="lock_open" [loading]="verifying()" (pressed)="showPod()">Show proof of delivery</app-button>
+                  </div>
+                  @if (podError(); as e) { <p class="pod__error" role="alert">{{ e }}</p> }
+                }
+              </div>
+            }
           </section>
         }
       </main>
@@ -136,6 +173,14 @@ interface PublicTrackResult {
       background:var(--surface-muted); border-radius:10px; }
     .track__timeline-status { font:700 16px var(--font-sans); color:var(--content-fg); text-transform:capitalize; }
     .track__timeline-date { font:500 15px var(--font-sans); color:var(--content-muted); }
+    .pod { margin-top:24px; padding-top:20px; border-top:1px solid var(--surface-border); display:flex; flex-direction:column; gap:12px; }
+    .pod__note { font:400 16px var(--font-sans); color:var(--content-muted); margin:0; }
+    .pod__error { font:500 15px var(--font-sans); color:var(--danger-600, #c62828); margin:0; }
+    .pod__facts { display:flex; flex-direction:column; gap:6px; }
+    .pod__facts p { margin:0; font:600 16px var(--font-sans); color:var(--content-fg); display:flex; flex-direction:column; }
+    .pod__img { max-width:100%; border-radius:10px; border:1px solid var(--surface-border); }
+    .pod__img--sig { max-height:160px; object-fit:contain; background:#fff; }
+    @media (max-width:600px) { .track__row { flex-direction:column; align-items:stretch; } }
     @media (max-width:600px) { .pub__main { padding:28px 20px 40px; } .track__grid { grid-template-columns:1fr; } }
   `]
 })
@@ -152,6 +197,13 @@ export class TrackShipment {
   readonly notFound = signal(false);
   readonly lastQuery = signal('');
   readonly result = signal<PublicTrackResult | null>(null);
+
+  readonly phoneControl = new FormControl('', [Validators.required, Validators.pattern(/^\d{4}$/)]);
+  readonly verifying = signal(false);
+  readonly pod = signal<PublicTrackPod | null>(null);
+  /** Verified, but there is no proof of delivery to show (awaiting POD review, or none recorded). */
+  readonly podMissing = signal(false);
+  readonly podError = signal<string | null>(null);
 
   private readonly initialQuery = toSignal(
     this.route.queryParamMap.pipe(map((params) => params.get('q'))),
@@ -170,6 +222,7 @@ export class TrackShipment {
     this.notFound.set(false);
     this.result.set(null);
     this.lastQuery.set(raw);
+    this.resetPod();
 
     this.api.get<PublicTrackResult>(API.publicTrack(encodeURIComponent(raw)), undefined,
         new HttpContext().set(SILENT_ERRORS, true)).subscribe({
@@ -180,5 +233,33 @@ export class TrackShipment {
         if (e.status !== 404) console.error('Track shipment failed', e);
       }
     });
+  }
+
+  showPod(): void {
+    const r = this.result();
+    const code = this.phoneControl.value?.trim() ?? '';
+    if (!r || this.verifying()) return;
+    if (!/^\d{4}$/.test(code)) { this.podError.set('Enter exactly 4 digits.'); return; }
+    this.verifying.set(true);
+    this.podError.set(null);
+    this.api.post<{ pod: PublicTrackPod | null }>(`${API.publicTrack(encodeURIComponent(r.trackingNumber))}/verify`,
+        { phoneLast4: code }, new HttpContext().set(SILENT_ERRORS, true)).subscribe({
+      next: (d) => {
+        this.verifying.set(false);
+        if (d?.pod) { this.pod.set(d.pod); } else { this.podMissing.set(true); }
+      },
+      error: (e: HttpErrorResponse) => {
+        this.verifying.set(false);
+        this.podError.set(e.status === 429 ? 'Too many attempts. Please try again later.'
+          : (e.error?.message as string | undefined) ?? 'Verification failed. Check the phone number and try again.');
+      }
+    });
+  }
+
+  private resetPod(): void {
+    this.pod.set(null);
+    this.podMissing.set(false);
+    this.podError.set(null);
+    this.phoneControl.reset('');
   }
 }
