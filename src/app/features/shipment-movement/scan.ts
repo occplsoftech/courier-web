@@ -581,7 +581,7 @@ export class Scan {
     return this.users().find((u) => u.value === d.deliveryUserId)?.label ?? '—';
   }
   /** Letterhead, To-Pay payment modes and service names for the DRS / manifest prints (cached after the first print). */
-  private printRefs(): Observable<{ company: CompanyLetterhead | null; toPay: Set<string>; services: Map<string, string> }> {
+  private printRefs(): Observable<{ company: CompanyLetterhead | null; toPay: Set<string>; services: Map<string, string>; payModes: Map<string, string> }> {
     return forkJoin({
       company: this.companyProfile.get().pipe(catchError(() => of(null))),
       modes: this.masters.paymentModeDirectory().pipe(catchError(() => of([]))),
@@ -590,15 +590,20 @@ export class Scan {
       company,
       // To Pay: collected from the receiver at delivery, not COD, not a credit account (as the backend's own isToPay).
       toPay: new Set(modes.filter((m) => m.collectAtDelivery && !m.cashOnDelivery && !m.requiresCreditAccount).map((m) => m.id)),
-      services: new Map(services.map((t) => [t.id, t.name]))
+      services: new Map(services.map((t) => [t.id, t.name])),
+      payModes: new Map(modes.map((m) => [m.id, m.name]))
     })));
   }
-  /** "City, STATE" per pincode, for the manifest's Destination column. */
-  private states(pincodes: (string | null | undefined)[]): Observable<Map<string, string>> {
-    const pins = [...new Set(pincodes.filter((p): p is string => !!p))];
-    if (!pins.length) return of(new Map());
-    return forkJoin(pins.map((p) => this.masters.pincodeGeo(p).pipe(map((a) => [p, a.stateName ?? ''] as [string, string]),
-      catchError(() => of([p, ''] as [string, string]))))).pipe(map((l) => new Map(l)));
+  /** "Area, City, STATE" per shipment (its pincode and the Area picked at booking): the manifest's Destination column. */
+  private destinations(rows: Shipment[]): Observable<Map<string, string>> {
+    const keys = [...new Set(rows.filter((x) => x.deliveryPincode).map((x) => `${x.deliveryPincode}|${x.destinationAreaId ?? ''}`))];
+    if (!keys.length) return of(new Map());
+    return forkJoin(keys.map((k) => {
+      const [pin, area] = k.split('|');
+      return this.masters.pincodeGeo(pin, area || null).pipe(
+        map((g) => [k, [g.areaName, g.cityName, g.stateName?.toUpperCase()].filter(Boolean).join(', ')] as [string, string]),
+        catchError(() => of([k, ''] as [string, string])));
+    })).pipe(map((l) => new Map(l)));
   }
   private printBlocked(ok: boolean): void { if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.'); }
 
@@ -625,12 +630,21 @@ export class Scan {
       error: () => this.notify.error('Could not load this DRS.')
     });
   }
-  /** Manifest, as the company's sample: Manifest No, Date, Delivery Boy, To; SR, AWB, FWD No, Destination, Mode, PCS, WT, To Pay, COD. */
+  /** Manifest: Manifest No, From, Delivery Boy, To, Date, Bags; Sr No, AWB No, (FWD No), Delivery Branch / Vendor, Destination, Qty, Actual Wt, Mode / Service Type, Paymode. */
   protected printManifest(m: Manifest): void {
     this.manifests.shipments(m.id).pipe(
-      switchMap((rows) => forkJoin({ rows: of(rows), refs: this.printRefs(), states: this.states(rows.map((s) => s.deliveryPincode)) }))
+      switchMap((rows) => forkJoin({ rows: of(rows), refs: this.printRefs(), dest: this.destinations(rows) }))
     ).subscribe({
-      next: ({ rows, refs, states }) => {
+      next: ({ rows, refs, dest }) => {
+        const withFwd = rows.some((s) => !!s.forwarderNumber);
+        // Delivery branch of each AWB; a co-loader (vendor) when it has no branch of ours to go to.
+        const branchOrVendor = (s: Shipment) => s.deliveryBranchId ? this.branchName(s.deliveryBranchId)
+          : m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : m.coLoaderId ? this.coLoaderName(m.coLoaderId) : '—';
+        const payMode = (s: Shipment) => {
+          const name = refs.payModes.get(s.paymentModeId) ?? '';
+          const due = refs.toPay.has(s.paymentModeId) ? money(s.netAmount) : s.codAmount ? 'COD ' + money(s.codAmount) : '';
+          return [name, due].filter(Boolean).join(' · ');
+        };
         const driver = this.users().find((u) => u.value === m.driverUserId)?.label;
         const vehicle = this.vehicles().find((v) => v.value === m.vehicleId)?.label;
         const by = m.coLoaderId ? this.coLoaderName(m.coLoaderId) : [driver, vehicle].filter(Boolean).join(' - ') || '—';
@@ -642,14 +656,15 @@ export class Scan {
             [{ label: 'Date', value: shortDate(m.dispatchedAt || m.createdAt), big: true },
               { label: m.forwardingNumber ? 'Bags · Forwarding No.' : 'Bags',
                 value: [m.bagsCount != null ? String(m.bagsCount) : '—', m.forwardingNumber].filter(Boolean).join(' · ') }]],
-          columns: [{ label: 'SR', width: '40px' }, { label: 'AWB No', nowrap: true }, { label: 'FWD No', nowrap: true }, { label: 'Destination' }, { label: 'Mode' },
-            { label: 'PCS', width: '44px', right: true }, { label: 'WT (kg)', width: '60px', right: true },
-            { label: 'TO PAY', width: '70px', right: true }, { label: 'COD', width: '70px', right: true }],
-          rows: rows.map((s, i) => [String(i + 1), s.shipmentNumber, s.forwarderNumber ?? '',
-            [s.toCity, states.get(s.deliveryPincode ?? '')?.toUpperCase()].filter(Boolean).join(', '),
-            (s.serviceTypeId ? refs.services.get(s.serviceTypeId) : '')?.toLowerCase() ?? '',
+          columns: [{ label: 'Sr No', width: '44px' }, { label: 'AWB No', nowrap: true }, ...(withFwd ? [{ label: 'FWD No', nowrap: true }] : []),
+            { label: 'Delivery Branch / Vendor' }, { label: 'Destination' },
+            { label: 'Qty', width: '44px', right: true }, { label: 'Actual Wt (kg)', width: '70px', right: true },
+            { label: 'Mode / Service Type' }, { label: 'Paymode' }],
+          rows: rows.map((s, i) => [String(i + 1), s.shipmentNumber, ...(withFwd ? [s.forwarderNumber ?? ''] : []),
+            branchOrVendor(s),
+            dest.get(`${s.deliveryPincode}|${s.destinationAreaId ?? ''}`) || s.toCity || '',
             String(s.numberOfPackages ?? 1), String(s.actualWeight ?? s.chargeableWeight ?? ''),
-            refs.toPay.has(s.paymentModeId) ? money(s.netAmount) : '', money(s.codAmount)])
+            (s.serviceTypeId ? refs.services.get(s.serviceTypeId) : '') ?? '', payMode(s)])
         }));
       },
       error: () => this.notify.error('Could not load this manifest.')

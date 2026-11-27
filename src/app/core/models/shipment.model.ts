@@ -116,6 +116,8 @@ export interface Shipment {
   /** Service (Surface, Premium…): the manifest print's Mode column. */
   serviceTypeId?: string | null;
   deliveryPincode?: string | null;
+  /** The Area picked at booking. */
+  destinationAreaId?: string | null;
 }
 
 /** One row of a bulk-track result — mirrors backend `BulkTrackRowResponse`. `shipment` is
