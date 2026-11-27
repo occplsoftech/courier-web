@@ -16,6 +16,9 @@ import { ShipmentService } from '@features/shipment/shipment.service';
 import { Manifest, Shipment } from '@core/models/shipment.model';
 import { ManifestService } from '@features/manifest/manifest.service';
 import { ManifestCard } from './components/manifest-card';
+import { catchError, of } from 'rxjs';
+import { CompanyProfileService } from '@features/company/company-profile.service';
+import { printLetterhead, shortDate } from '@shared/utils/letterhead-print.util';
 import { WarehouseIllustration } from '@shared/components/illustrations/warehouse-illustration';
 
 /**
@@ -152,6 +155,7 @@ export class LoadingSheet implements OnInit {
   private readonly masterData = inject(MasterDataService);
   private readonly shipmentService = inject(ShipmentService);
   private readonly manifestService = inject(ManifestService);
+  private readonly companyProfile = inject(CompanyProfileService);
 
   protected readonly myBranchId = this.auth.user()?.branchId ?? null;
 
@@ -379,128 +383,6 @@ export class LoadingSheet implements OnInit {
     });
   }
 
-  private esc(s: string | null | undefined): string {
-    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  /** Same branded challan layout as `TripHireChallan.renderThcHtml`, retitled and with the
-   *  VEHICLE NO / DRIVER NAME meta cells swapped for FROM / TO BRANCH — a Loading Sheet
-   *  manifest is still CREATED, so no vehicle or driver exists yet to print. */
-  private renderLoadingSheetHtml(m: Manifest, shipments: Shipment[]): string {
-    const topayIds = this.topayModeIds();
-    const topayFreight = (s: Shipment): number | null => topayIds.has(s.paymentModeId) ? (s.netAmount ?? 0) : null;
-    const totalWeight = shipments.reduce((sum, s) => sum + (s.chargeableWeight ?? 0), 0);
-    const totalFreight = shipments.reduce((sum, s) => sum + (topayFreight(s) ?? 0), 0);
-    const bookingDate = (s: Shipment) => s.bookingDate ? this.esc(new Date(s.bookingDate).toLocaleDateString('en-GB')) : '—';
-    const rows = shipments.map((s, i) => `<tr>
-      <td class="center">${i + 1}</td>
-      <td>${this.esc(s.shipmentNumber)}</td>
-      <td>${this.esc(s.senderName)}</td>
-      <td>${this.esc(s.receiverName)}</td>
-      <td>${this.esc(s.fromCity) || '—'}</td>
-      <td>${this.esc(s.toCity) || '—'}</td>
-      <td class="center">${bookingDate(s)}</td>
-      <td class="right">${s.chargeableWeight}</td>
-      <td class="right">${topayFreight(s) ?? ''}</td>
-    </tr>`).join('');
-    const created = m.createdAt ? new Date(m.createdAt) : null;
-    const companyName = this.esc(this.auth.companyName() ?? 'Loading Sheet');
-    const companyLogo = this.auth.companyLogo();
-    const fromLabel = this.esc(this.branchNames().get(m.bookingBranchId) ?? '—');
-    const toLabel = m.deliveryMode === 'DIRECT_COMPANY_DELIVERY'
-      ? 'Direct Company Delivery'
-      : this.esc((m.deliveryBranchId ? this.branchNames().get(m.deliveryBranchId) : null) ?? '—');
-
-    return `<!doctype html><html><head><meta charset="utf-8"><title>Loading Sheet ${this.esc(m.manifestNumber)}</title>
-      <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 20px; background: #f3f3f3; font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 9px; }
-        .toolbar { width: 900px; margin: 0 auto 10px; }
-        button { padding: 5px 12px; margin-right: 5px; border: 1px solid #777; background: #eee; cursor: pointer; font-size: 12px; }
-        .challan { width: 900px; margin: auto; background: #fff; border: 1px solid #777; }
-        .title { text-align: center; font-size: 15px; font-weight: bold; padding: 4px 0; border-bottom: 1px solid #777; }
-        .header { display: grid; grid-template-columns: 1fr 230px; border-bottom: 1px solid #777; }
-        .company-info { text-align: center; padding: 10px; line-height: 15px; }
-        .company-info .big { font-size: 13px; font-weight: bold; }
-        .company-info .mark { max-width: 100%; max-height: 40px; object-fit: contain; }
-        .challan-box { border-left: 1px solid #777; padding: 10px; text-align: center; }
-        .challan-number { font-size: 12px; font-weight: bold; }
-        .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #777; }
-        .meta div { padding: 4px 6px; border-right: 1px solid #777; }
-        .meta div:last-child { border-right: 0; }
-        .label { font-weight: bold; display: block; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border-right: 1px solid #777; border-bottom: 1px solid #777; padding: 3px 4px; vertical-align: middle; height: 19px; word-wrap: break-word; }
-        th { font-weight: bold; text-align: center; background: #fafafa; font-size: 8px; }
-        td { font-size: 8px; }
-        td.center, th.center { text-align: center; }
-        td.right, th.right { text-align: right; }
-        .c-sr { width: 30px; }
-        .c-date { width: 75px; }
-        .c-weight, .c-freight { width: 75px; }
-        .total-row td { font-weight: bold; height: 22px; }
-        .footer { display: grid; grid-template-columns: 1fr 150px; min-height: 38px; }
-        .footer-left { padding: 5px; border-right: 1px solid #777; }
-        .footer-right { text-align: center; padding: 5px; font-weight: bold; }
-        .signature { height: 22px; margin-top: 2px; }
-        @media print {
-          body { background: #fff; padding: 0; margin: 0; }
-          .toolbar { display: none; }
-          .challan { width: 100%; border: 1px solid #000; }
-          @page { size: A4 portrait; margin: 8mm; }
-        }
-        @media screen and (max-width: 950px) { .challan, .toolbar { width: 100%; overflow-x: auto; } }
-      </style></head><body>
-
-      <div class="toolbar">
-        <button onclick="window.print()">Print</button>
-        <button onclick="window.print()">Download PDF</button>
-      </div>
-
-      <div class="challan">
-        <div class="title">LOADING SHEET</div>
-
-        <div class="header">
-          <div class="company-info">${companyLogo ? `<img class="mark" src="${this.esc(companyLogo)}" alt="${companyName}">` : `<span class="big">${companyName}</span>`}</div>
-          <div class="challan-box">
-            <div class="challan-number">${this.esc(m.manifestNumber)}</div>
-          </div>
-        </div>
-
-        <div class="meta">
-          <div><span class="label">DATE</span>${created ? this.esc(created.toLocaleDateString('en-GB')) : '—'}</div>
-          <div><span class="label">TIME</span>${created ? this.esc(created.toLocaleTimeString()) : '—'}</div>
-          <div><span class="label">FROM BRANCH</span>${fromLabel}</div>
-          <div><span class="label">TO BRANCH</span>${toLabel}</div>
-        </div>
-
-        <table>
-          <thead><tr>
-            <th class="c-sr">SR<br>NO.</th>
-            <th>SHIPMENT NO</th>
-            <th>CONSIGNOR NAME</th>
-            <th>CONSIGNEE NAME</th>
-            <th>FROM CITY</th>
-            <th>TO CITY</th>
-            <th class="c-date">BOOKING<br>DATE</th>
-            <th class="c-weight">WEIGHT</th>
-            <th class="c-freight">TO PAY<br>FREIGHT</th>
-          </tr></thead>
-          <tbody>${rows || '<tr><td colspan="9" class="center">No shipments</td></tr>'}</tbody>
-          <tfoot><tr class="total-row">
-            <td colspan="7" class="right">Total</td>
-            <td class="right">${totalWeight}</td>
-            <td class="right">${totalFreight}</td>
-          </tr></tfoot>
-        </table>
-
-        <div class="footer">
-          <div class="footer-left"><strong>${companyName}</strong></div>
-          <div class="footer-right">SIGNATURE<div class="signature"></div></div>
-        </div>
-      </div>
-    </body></html>`;
-  }
 
   protected printLoadingSheet(m: Manifest): void {
     this.manifestService.shipments(m.id).subscribe({
@@ -509,11 +391,30 @@ export class LoadingSheet implements OnInit {
     });
   }
 
+  /** The house print header (shared `printLetterhead`): boxed letterhead with QR, details grid, then the shipments. */
   private openLoadingSheetTab(m: Manifest, shipments: Shipment[]): void {
-    const win = window.open('', '_blank');
-    if (!win) { this.notify.error('Pop-up blocked — allow pop-ups to print the loading sheet.'); return; }
-    win.document.write(this.renderLoadingSheetHtml(m, shipments));
-    win.document.close();
-    win.focus();
+    const topayIds = this.topayModeIds();
+    const topay = (s: Shipment) => topayIds.has(s.paymentModeId) ? (s.netAmount ?? 0) : null;
+    const created = m.createdAt ? new Date(m.createdAt) : null;
+    const to = m.deliveryMode === 'DIRECT_COMPANY_DELIVERY' ? 'Direct Company Delivery'
+      : (m.deliveryBranchId ? this.branchNames().get(m.deliveryBranchId) : null) ?? '—';
+    const weight = shipments.reduce((a, s) => a + (s.chargeableWeight ?? 0), 0);
+    const freight = shipments.reduce((a, s) => a + (topay(s) ?? 0), 0);
+    this.companyProfile.get().pipe(catchError(() => of(null))).subscribe((company) => {
+      const ok = printLetterhead({
+        title: 'LOADING SHEET', company, logo: this.auth.companyLogo(), qr: m.manifestNumber,
+        details: [
+          [{ label: 'Manifest No', value: m.manifestNumber, big: true }, { label: 'Date', value: created ? `${shortDate(m.createdAt)} ${created.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : '—' }],
+          [{ label: 'From Branch', value: this.branchNames().get(m.bookingBranchId) ?? '—', big: true }, { label: 'To Branch', value: to }],
+          [{ label: 'Shipments', value: String(shipments.length), big: true }, { label: 'Weight (kg)', value: String(weight) }]],
+        columns: [{ label: 'Sr No', width: '44px' }, { label: 'Shipment No', nowrap: true }, { label: 'Consignor' }, { label: 'Consignee' },
+          { label: 'From City' }, { label: 'To City' }, { label: 'Booking Date', nowrap: true }, { label: 'Weight', right: true }, { label: 'To Pay Freight', right: true }],
+        rows: shipments.map((s, i) => [String(i + 1), s.shipmentNumber, s.senderName ?? '', s.receiverName ?? '', s.fromCity ?? '—', s.toCity ?? '—',
+          s.bookingDate ? new Date(s.bookingDate).toLocaleDateString('en-GB') : '—', String(s.chargeableWeight ?? ''), topay(s) != null ? String(topay(s)) : '']),
+        totals: ['', 'Total', '', '', '', '', '', String(weight), String(freight)],
+        signatures: ['Loaded by', 'Checked by'], tableFontPx: 13
+      });
+      if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print the loading sheet.');
+    });
   }
 }

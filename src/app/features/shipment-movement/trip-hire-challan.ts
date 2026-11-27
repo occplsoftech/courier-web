@@ -1,3 +1,4 @@
+import { printLetterhead } from '@shared/utils/letterhead-print.util';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -8,7 +9,6 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { AuthService } from '@core/auth/auth.service';
 import { CompanyProfileService, CompanyLetterhead } from '@features/company/company-profile.service';
-import { companyAddressLine, renderPrintHeader, PRINT_HEADER_CSS } from '@features/shipment/consignment-print.util';
 import { UiCard } from '@shared/components/ui-card/ui-card';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { UiSelect, SelectOption } from '@shared/components/ui-select/ui-select';
@@ -647,9 +647,6 @@ export class TripHireChallan implements OnInit, OnDestroy {
     return (m.deliveryBranchId ? this.branchNames().get(m.deliveryBranchId) : null) ?? '—';
   }
 
-  private esc(s: string | null | undefined): string {
-    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
 
   /** `THC/<booking-branch-code>/<DDMMYY dispatch date>/<manifestNumber's own random
    *  suffix>` — human-readable on paper, still unique without a new DB sequence. Falls back
@@ -665,178 +662,51 @@ export class TripHireChallan implements OnInit, OnDestroy {
     return `THC/${code}/${dd}${mm}${yy}/${seq}`;
   }
 
-  /** Mirrors the branded KTC-style Trip Hire Challan layout. TO PAY FREIGHT only carries a
-   *  figure for `topayModeIds` (collectAtDelivery, not cashOnDelivery) — see that signal's
-   *  doc. INVOICE NO is the shipment's E-Way Bill invoice number, blank where none exists. */
-  private renderThcHtml(m: Manifest, shipments: Shipment[]): string {
+  /** The house print header (shared `printLetterhead`): boxed letterhead with the THC number's QR, the trip details, the
+   *  shipments (TO PAY FREIGHT only for To-Pay modes), trip expenses and the terms. Landscape: twelve columns. */
+  private openThcTab(m: Manifest, shipments: Shipment[]): void {
     const topayIds = this.topayModeIds();
-    const topayFreight = (s: Shipment): number | null => topayIds.has(s.paymentModeId) ? (s.netAmount ?? 0) : null;
-    const qtyOf = (s: Shipment) => s.numberOfPackages ?? 0;
-    const totalQty = shipments.reduce((sum, s) => sum + qtyOf(s), 0);
-    const totalWeight = shipments.reduce((sum, s) => sum + (s.chargeableWeight ?? 0), 0);
-    const totalFreight = shipments.reduce((sum, s) => sum + (topayFreight(s) ?? 0), 0);
-    const bookingDate = (s: Shipment) => s.bookingDate ? this.esc(new Date(s.bookingDate).toLocaleDateString('en-GB')) : '—';
-    const rows = shipments.map((s, i) => `<tr>
-      <td class="center">${i + 1}</td>
-      <td>${this.esc(s.shipmentNumber)}</td>
-      <td>${this.esc(s.invoiceNumber) || '—'}</td>
-      <td>${this.esc(s.ewayBillNumber) || '—'}</td>
-      <td>${this.esc(s.senderName)}</td>
-      <td>${this.esc(s.receiverName)}</td>
-      <td>${this.esc(s.fromCity) || '—'}</td>
-      <td>${this.esc(s.toCity) || '—'}</td>
-      <td class="center">${bookingDate(s)}</td>
-      <td class="right">${qtyOf(s)}</td>
-      <td class="right">${s.chargeableWeight}</td>
-      <td class="right">${topayFreight(s) ?? ''}</td>
-    </tr>`).join('');
-    const dispatched = m.departureTime ?? m.dispatchedAt;
-    const dispatchedDate = dispatched ? new Date(dispatched) : null;
+    const topay = (s: Shipment): number | null => topayIds.has(s.paymentModeId) ? (s.netAmount ?? 0) : null;
+    const qty = (s: Shipment) => s.numberOfPackages ?? 0;
     const company = this.companyLetterhead();
-    const companyNameRaw = company?.companyName ?? this.auth.companyName() ?? 'Trip Hire Challan';
-    const companyName = this.esc(companyNameRaw);
-    const companyLogo = company?.logo ?? this.auth.companyLogo();
-    const companyAddress = companyAddressLine(company);
-    const companyGst = company?.gstNumber ?? null;
-    const companyContact = company?.mobile ?? null;
+    const companyName = company?.companyName ?? this.auth.companyName() ?? 'the company';
+    const dispatched = m.departureTime ?? m.dispatchedAt;
+    const when = dispatched ? new Date(dispatched) : null;
     const driver = this.driverDirectory().get(m.driverUserId ?? '');
     const thcNumber = this.thcNumber(m);
-    const fuelCost = m.fuelCost ?? 0;
-    const driverAdvance = m.driverAdvance ?? 0;
-    const tollAmount = m.tollAmount ?? 0;
-    const otherAmount = m.otherAmount ?? 0;
-    const totalExpenses = fuelCost + driverAdvance + tollAmount + otherAmount;
-
-    return `<!doctype html><html><head><meta charset="utf-8"><title>THC ${this.esc(m.manifestNumber)}</title>
-      <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 20px; background: #f3f3f3; font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 9px; }
-        .toolbar { width: 900px; margin: 0 auto 10px; }
-        button { padding: 5px 12px; margin-right: 5px; border: 1px solid #000; background: #eee; cursor: pointer; font-size: 12px; }
-        .challan { width: 900px; margin: auto; background: #fff; border: 1px solid #000; }
-        .title { text-align: center; font-size: 15px; font-weight: bold; padding: 4px 0; border-bottom: 1px solid #000; }
-        ${PRINT_HEADER_CSS}
-        .head, .head .co, .head .lrbox { border-color: #000; border-width: 1px; }
-        .meta { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #000; }
-        .meta div { padding: 4px 6px; border-right: 1px solid #000; }
-        .meta div:nth-child(4n) { border-right: 0; }
-        .label { font-weight: bold; display: block; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 3px 4px; vertical-align: middle; min-height: 19px; word-wrap: break-word; overflow-wrap: break-word; }
-        th:last-child, td:last-child { border-right: 0; }
-        th { font-weight: bold; text-align: center; background: #fafafa; font-size: 8px; }
-        td { font-size: 8px; }
-        td.center, th.center { text-align: center; }
-        td.right, th.right { text-align: right; }
-        .c-sr { width: 30px; }
-        .c-date { width: 75px; }
-        .c-qty { width: 45px; }
-        .c-weight, .c-freight { width: 75px; }
-        .total-row td { font-weight: bold; min-height: 22px; }
-        .footer { display: grid; grid-template-columns: 1fr 150px; min-height: 38px; }
-        .footer-left { padding: 5px; border-right: 1px solid #000; }
-        .footer-right { text-align: center; padding: 5px; font-weight: bold; }
-        .signature { height: 22px; margin-top: 2px; }
-        .terms { border-bottom: 1px solid #000; padding: 6px 8px; font-size: 8px; line-height: 13px; }
-        .terms .label { display: block; margin-bottom: 2px; }
-        .terms ol { margin: 0; padding-left: 14px; }
-        .expenses { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid #000; }
-        .expenses div { padding: 4px 6px; border-right: 1px solid #000; }
-        .expenses div:last-child { border-right: 0; }
-        .expenses .total { font-weight: bold; }
-        @media print {
-          body { background: #fff; padding: 0; margin: 0; }
-          .toolbar { display: none; }
-          .challan { width: 100%; }
-          @page { size: A4 portrait; margin: 8mm; }
-        }
-        @media screen and (max-width: 950px) { .challan, .toolbar { width: 100%; overflow-x: auto; } }
-      </style></head><body>
-
-      <div class="toolbar">
-        <button onclick="window.print()">Print</button>
-        <button onclick="window.print()">Download PDF</button>
-      </div>
-
-      <div class="challan">
-        <div class="title">TRIP HIRE CHALLAN</div>
-
-        ${renderPrintHeader(
-          { companyName: companyNameRaw, companyLogo, companyAddress, companyGst, companyContact, companyWebsite: null },
-          { label: 'THC No', value: thcNumber, qrValue: thcNumber }
-        )}
-
-        <div class="meta">
-          <div><span class="label">DATE</span>${dispatchedDate ? this.esc(dispatchedDate.toLocaleDateString('en-GB')) : '—'}</div>
-          <div><span class="label">TIME</span>${dispatchedDate ? this.esc(dispatchedDate.toLocaleTimeString()) : '—'}</div>
-          <div><span class="label">FROM</span>${this.esc(this.branchNames().get(m.bookingBranchId) ?? '—')}</div>
-          <div><span class="label">TO</span>${this.esc(this.manifestToLabel(m))}</div>
-          <div><span class="label">VEHICLE NO</span>${this.esc(this.label(m.vehicleId, this.vehicleOptions()))}</div>
-          <div><span class="label">DRIVER NAME</span>${this.esc(this.label(m.driverUserId, this.driverOptions()))}</div>
-          <div><span class="label">DRIVER MOBILE</span>${this.esc(driver?.mobile) || '—'}</div>
-          <div><span class="label">QTY (PKGS)</span>${m.totalPackages}</div>
-        </div>
-
-        <table>
-          <thead><tr>
-            <th class="c-sr">SR<br>NO.</th>
-            <th>SHIPMENT NO</th>
-            <th>INVOICE NO</th>
-            <th>E-WAY BILL NO</th>
-            <th>CONSIGNOR NAME</th>
-            <th>CONSIGNEE NAME</th>
-            <th>FROM CITY</th>
-            <th>TO CITY</th>
-            <th class="c-date">BOOKING<br>DATE</th>
-            <th class="c-qty">QTY</th>
-            <th class="c-weight">WEIGHT</th>
-            <th class="c-freight">TO PAY<br>FREIGHT</th>
-          </tr></thead>
-          <tbody>${rows || '<tr><td colspan="11" class="center">No shipments</td></tr>'}</tbody>
-          <tfoot><tr class="total-row">
-            <td colspan="8" class="right">Total</td>
-            <td class="right">${totalQty}</td>
-            <td class="right">${totalWeight}</td>
-            <td class="right">${totalFreight}</td>
-          </tr></tfoot>
-        </table>
-
-        ${totalExpenses > 0 ? `<div class="expenses">
-          <div><span class="label">FUEL COST</span>${fuelCost || '—'}</div>
-          <div><span class="label">DRIVER ADVANCE</span>${driverAdvance || '—'}</div>
-          <div><span class="label">TOLL</span>${tollAmount || '—'}</div>
-          <div><span class="label">OTHER</span>${otherAmount || '—'}</div>
-          <div class="total"><span class="label">TOTAL EXPENSES</span>${totalExpenses}</div>
-        </div>` : ''}
-
-        <div class="terms">
-          <span class="label">TERMS &amp; CONDITIONS</span>
-          <ol>
-            <li>Goods are carried entirely at the owner's risk.</li>
-            <li>Driver must carry a valid driving license, RC and this Trip Hire Challan for the entire trip.</li>
-            <li>Vehicle and load must match the QTY and shipment list stated above at every checkpoint.</li>
-            <li>Any shortage, damage or tampering of seal must be reported to the branch immediately.</li>
-            <li>${companyName} is not liable for delay or loss caused by circumstances beyond its control.</li>
-            <li>Freight/other charges become payable only on safe and timely delivery at the destination branch.</li>
-            <li>Driver is responsible for the vehicle, load and all documents until handover is acknowledged at destination.</li>
-            <li>Any discrepancy in quantity or condition must be reported at the time of delivery.</li>
-            <li>All disputes are subject to the jurisdiction of the courts at the booking branch's location.</li>
-          </ol>
-        </div>
-
-        <div class="footer">
-          <div class="footer-left"><strong>${companyName}</strong></div>
-          <div class="footer-right">SIGNATURE<div class="signature"></div></div>
-        </div>
-      </div>
-    </body></html>`;
+    const exp: [string, number][] = [['Fuel Cost', m.fuelCost ?? 0], ['Driver Advance', m.driverAdvance ?? 0], ['Toll', m.tollAmount ?? 0], ['Other', m.otherAmount ?? 0]];
+    const totalExpenses = exp.reduce((a, [, v]) => a + v, 0);
+    const ok = printLetterhead({
+      title: 'TRIP HIRE CHALLAN', company, logo: this.auth.companyLogo(), qr: thcNumber, landscape: true, tableFontPx: 12,
+      details: [
+        [{ label: 'THC No', value: thcNumber, big: true }, { label: 'Manifest', value: m.manifestNumber }],
+        [{ label: 'Date', value: when ? when.toLocaleDateString('en-GB') : '—', big: true }, { label: 'Time', value: when ? when.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—' }],
+        [{ label: 'From', value: this.branchNames().get(m.bookingBranchId) ?? '—', big: true }, { label: 'To', value: this.manifestToLabel(m) }],
+        [{ label: 'Vehicle No', value: this.label(m.vehicleId, this.vehicleOptions()), big: true }, { label: 'Qty (pkgs)', value: String(m.totalPackages) }],
+        [{ label: 'Driver', value: this.label(m.driverUserId, this.driverOptions()), big: true }, { label: 'Driver Mobile', value: driver?.mobile || '—' }]],
+      columns: [{ label: 'Sr', width: '30px' }, { label: 'Shipment No', nowrap: true }, { label: 'Invoice No' }, { label: 'E-Way Bill No' },
+        { label: 'Consignor' }, { label: 'Consignee' }, { label: 'From City' }, { label: 'To City' }, { label: 'Booking Date', nowrap: true },
+        { label: 'Qty', right: true }, { label: 'Weight', right: true }, { label: 'To Pay Freight', right: true }],
+      rows: shipments.map((s, i) => [String(i + 1), s.shipmentNumber, s.invoiceNumber || '—', s.ewayBillNumber || '—', s.senderName ?? '',
+        s.receiverName ?? '', s.fromCity || '—', s.toCity || '—', s.bookingDate ? new Date(s.bookingDate).toLocaleDateString('en-GB') : '—',
+        String(qty(s)), String(s.chargeableWeight ?? ''), topay(s) != null ? String(topay(s)) : '']),
+      totals: ['', 'Total', '', '', '', '', '', '', '', String(shipments.reduce((a, s) => a + qty(s), 0)),
+        String(shipments.reduce((a, s) => a + (s.chargeableWeight ?? 0), 0)), String(shipments.reduce((a, s) => a + (topay(s) ?? 0), 0))],
+      sections: [
+        ...(totalExpenses > 0 ? [{ title: 'Trip expenses', fields: [...exp.map(([k, v]) => [k, v ? String(v) : '—'] as [string, string]), ['Total expenses', String(totalExpenses)] as [string, string]] }] : []),
+        { title: 'Terms & conditions', lines: [
+          'Goods are carried entirely at the owner\'s risk.',
+          'Driver must carry a valid driving license, RC and this Trip Hire Challan for the entire trip.',
+          'Vehicle and load must match the QTY and shipment list stated above at every checkpoint.',
+          'Any shortage, damage or tampering of seal must be reported to the branch immediately.',
+          `${companyName} is not liable for delay or loss caused by circumstances beyond its control.`,
+          'Freight/other charges become payable only on safe and timely delivery at the destination branch.',
+          'Driver is responsible for the vehicle, load and all documents until handover is acknowledged at destination.',
+          'Any discrepancy in quantity or condition must be reported at the time of delivery.',
+          'All disputes are subject to the jurisdiction of the courts at the booking branch\'s location.'] }],
+      signatures: ['Driver', 'Branch In-charge']
+    });
+    if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to preview the THC.');
   }
 
-  private openThcTab(m: Manifest, shipments: Shipment[]): void {
-    const win = window.open('', '_blank');
-    if (!win) { this.notify.error('Pop-up blocked — allow pop-ups to preview the THC.'); return; }
-    win.document.write(this.renderThcHtml(m, shipments));
-    win.document.close();
-    win.focus();
-  }
 }
