@@ -37,4 +37,15 @@ describe('Edit DRS', () => {
     c['remove']({ shipmentId: 'a1' });
     http.expectOne((r) => r.method === 'DELETE' && r.url.endsWith('/drs/DRS000009/shipments/a1'));
   });
+
+  it('a DRS with no parcels left says so, and refuses adding to it', () => {
+    const { c, http } = setup();
+    c['remove']({ shipmentId: 'a1' });
+    http.expectOne((r) => r.method === 'DELETE').flush({ data: null });
+    http.expectOne((r) => r.url.includes('/drs/detail')).flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+    expect(c['rows']()).toEqual([]);
+    expect(c['msg']()).toContain('no parcels left');
+    c['addAwb']('T3');
+    http.expectNone((r) => r.method === 'POST');
+  });
 });
