@@ -91,12 +91,12 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
           </div>
           @if (!manRows().length) { <p class="muted empty">No manifests sent from this branch yet.</p> }
           @else {
-            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>To</th><th>Co-Loader</th><th>Forwarding No.</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
+            <div class="tw"><table class="t"><thead><tr><th>Manifest</th><th>Date</th><th>To</th><th>Co-Loader</th><th class="n">Bags</th><th class="n">Parcels</th><th>Status</th><th></th></tr></thead>
               <tbody>@for (m of manRows(); track m.id) {
                 <tr><td><span class="mono">{{ m.manifestNumber }}</span></td><td>{{ (m.dispatchedAt || m.createdAt) | date: 'd MMM y' }}</td>
                   <td>{{ m.deliveryBranchId ? branchName(m.deliveryBranchId) : 'Direct delivery' }}</td><td>{{ coLoaderName(m.coLoaderId) }}</td>
-                  <td>{{ m.forwardingNumber || '—' }}</td><td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
-                  <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
+                  <td class="n">{{ m.bagsCount ?? '—' }}</td><td class="n">{{ m.shipmentCount }}</td>
+                  <td><span class="st" [class.st--out]="m.status === 'DISPATCHED'" [class.st--ok]="m.status === 'COMPLETED'">{{ m.status === 'DISPATCHED' ? 'Dispatched' : m.status === 'COMPLETED' ? 'Received' : 'Created' }}</span></td>
                   <td class="n"><button type="button" class="pill" (click)="printManifest(m)"><mat-icon>print</mat-icon>Print</button></td></tr>
               }</tbody></table></div>
           }
@@ -318,6 +318,7 @@ function bookedAt(s: Shipment): string | null { return s.createdDate ?? s.bookin
     .warn { color: var(--warning, #b45309); font-weight: 500; }
     .st { padding: 3px 10px; border-radius: 999px; background: #fff7e6; color: #b45309; font: 600 13px var(--font-sans); }
     .st--out { background: #eef2ff; color: #4338ca; }
+    .st--ok { background: #ecfdf3; color: #067647; }
     .f { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .f__l { font: 500 15px var(--font-sans); color: var(--content-muted); }
     .req { color: var(--danger); }
@@ -591,12 +592,15 @@ export class Scan {
   protected printManifest(m: Manifest): void {
     this.manifests.shipments(m.id).subscribe({
       next: (rows) => {
+        const withFwd = rows.some((s) => !!s.forwarderNumber);
         const ok = printSheet(`Manifest ${m.manifestNumber}`, [['Date', (m.dispatchedAt || m.createdAt || '').slice(0, 10)], ['From', this.branchName(m.bookingBranchId)],
           ['To', m.deliveryBranchId ? this.branchName(m.deliveryBranchId) : 'Direct delivery'], ['Co-Loader', this.coLoaderName(m.coLoaderId)],
-          ['Forwarding No.', m.forwardingNumber || '—'], ['Bags', m.bagsCount != null ? String(m.bagsCount) : '—']],
-          ['AWB', 'Receiver', 'To', 'Qty', 'Actual wt (kg)', 'Forwarder No.'],
+          // Forwarder numbers are per AWB now (the table below); a manifest-level one only on older manifests.
+          ...(m.forwardingNumber ? [['Forwarding No.', m.forwardingNumber] as [string, string]] : []),
+          ['Bags', m.bagsCount != null ? String(m.bagsCount) : '—']],
+          ['AWB', 'Receiver', 'To', 'Qty', 'Actual wt (kg)', ...(withFwd ? ['Forwarder No.'] : [])],
           rows.map((s) => [s.shipmentNumber, s.receiverName, s.toCity ?? '', String(s.numberOfPackages ?? 1),
-            String(s.actualWeight ?? s.chargeableWeight ?? ''), s.forwarderNumber ?? '']));
+            String(s.actualWeight ?? s.chargeableWeight ?? ''), ...(withFwd ? [s.forwarderNumber ?? ''] : [])]));
         if (!ok) this.notify.error('Pop-up blocked — allow pop-ups to print.');
       },
       error: () => this.notify.error('Could not load this manifest.')

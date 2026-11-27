@@ -124,13 +124,13 @@ export class ThcReport implements OnInit {
 
   load(): void {
     this.loading.set(true);
-    const params: PageQuery = { ...this.query, status: 'DISPATCHED' };
+    const params: PageQuery = { ...this.query, sent: true };
     if (this.myBranchId) params['bookingBranchId'] = this.myBranchId;
     this.manifestService.list(params).subscribe({
       next: (p) => { this.page.set(p); this.loading.set(false); },
       error: () => { this.page.set(emptyPage<Manifest>()); this.loading.set(false); }
     });
-    this.manifestService.summary({ status: 'DISPATCHED', bookingBranchId: this.myBranchId ?? undefined })
+    this.manifestService.summary({ sent: true, bookingBranchId: this.myBranchId ?? undefined })
       .subscribe({ next: (s) => this.summary.set(s), error: () => this.summary.set(null) });
   }
 

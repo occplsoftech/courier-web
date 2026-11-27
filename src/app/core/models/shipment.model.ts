@@ -813,6 +813,8 @@ export interface ManifestSearchRequest {
   search?: string;
   /** Only manifests of this flow; omit for both. */
   flowType?: FlowType;
+  /** true: dispatched or received (not CREATED) — the THC report keeps received trips. */
+  sent?: boolean;
 }
 
 export type VehicleType = 'BIKE' | 'SCOOTER' | 'AUTO' | 'VAN' | 'PICKUP' | 'TRUCK' | 'TEMPO' | 'OTHER';
