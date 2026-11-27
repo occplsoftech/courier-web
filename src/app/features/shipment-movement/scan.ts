@@ -708,7 +708,8 @@ export class Scan {
     });
   }
   protected editDrs(d: DrsSummary): void { this.drsEditing.set(d); }
-  protected onDrsChanged(d: DrsSummary): void { this.drsOpen.update((o) => ({ ...o, [this.drsKey(d)]: undefined })); }
+  /** A parcel went onto / came off the run: refresh the lists too, so one just taken off can be scanned straight back on. */
+  protected onDrsChanged(d: DrsSummary): void { this.drsOpen.update((o) => ({ ...o, [this.drsKey(d)]: undefined })); this.reload(); }
 
   /** The draft manifest open in Edit (or on its Dispatch confirmation). */
   protected readonly editing = signal<{ m: Manifest; dispatch: boolean } | null>(null);
