@@ -416,6 +416,8 @@ export const NAVIGATION: NavNode[] = [
       { id: 'commission-report', title: 'Commission Report', icon: 'payments', route: '/reports/commissions', permission: 'REPORT_READ', roles: SHIPMENT_READERS },
       { id: 'drs-report', title: 'DRS Report', icon: 'directions_run', route: '/reports/drs', permission: 'REPORT_READ', roles: SHIPMENT_READERS },
       { id: 'thc-report', title: 'Trip Hire Challan Report', icon: 'outbound', route: '/reports/thc', permission: 'REPORT_READ', roles: SHIPMENT_READERS },
+      // Per user of a branch: bookings, deliveries, cash collected / handed over, wallet debits. Operators see their own row.
+      { id: 'user-performance-report', title: 'User Performance', icon: 'leaderboard', route: '/reports/user-performance', permission: 'REPORT_READ', roles: COMPANY_ROLES },
       { id: 'branch-reports', title: 'Branch Reports', icon: 'bar_chart', route: '/reports/branches', permission: 'REPORT_READ', roles: BRANCH_REPORT_READERS },
       // Branch responsibility #11 — every branch staff role reads reports on the work it did.
       { id: 'finance-reports', title: 'Finance Reports', icon: 'analytics', route: '/reports/finance', permission: 'REPORT_READ', roles: [...FINANCE, AppRole.ACCOUNTS] },
