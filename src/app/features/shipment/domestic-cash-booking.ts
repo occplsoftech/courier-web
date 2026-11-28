@@ -10,6 +10,8 @@ import { BreadcrumbService } from '@core/services/breadcrumb.service';
 import { NotificationService } from '@core/services/notification.service';
 import { MasterDataService } from '@features/masters/master-data.service';
 import { MASTER_DEFINITIONS } from '@features/masters/master.config';
+import { ZoneTariffService } from '@features/zone-tariff/zone-tariff.service';
+import { PincodeAreaRow } from '@core/models/master.model';
 import { SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiButton } from '@shared/components/ui-button/ui-button';
 import { CreateShipmentRequest, ShipmentItemRequest } from '@core/models/shipment.model';
@@ -49,8 +51,15 @@ export function pricedModes(rates: ModeRate[]): ModeRate[] {
   return rates.filter((m) => m.total !== null && m.total > 0).sort((a, b) => a.estimate - b.estimate);
 }
 
-/** A pincode as the wizard resolved it: its city and the Area the freight is priced against. */
-interface PincodeInfo { state: 'idle' | 'loading' | 'ok' | 'error'; city?: string | null; district?: string | null; areaId?: string | null; message?: string; }
+/**
+ * A pincode as the wizard resolved it: its city, the Area the freight is priced against and its zone (the Zone Tariff
+ * zone pricing uses, else the pincode master's own zone). {@code areas}: every Area of the pincode, for the destination's
+ * Area list.
+ */
+interface PincodeInfo {
+  state: 'idle' | 'loading' | 'ok' | 'error'; city?: string | null; district?: string | null; areaId?: string | null;
+  areaName?: string | null; zone?: string | null; areas?: PincodeAreaRow[]; message?: string;
+}
 
 /** Per-piece grams × pieces, in kg. */
 export function actualKg(rows: SizeRow[]): number {
@@ -261,6 +270,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                     <input class="f__i" inputmode="numeric" maxlength="6" [value]="fromPincode()" (input)="onPincode('from', $event)" />
                     <span class="f__adorn">{{ adorn(fromInfo()) }}</span>
                   </span>
+                  @if (placeLine(fromInfo()); as pl) { <span class="f__place" data-place="from">{{ pl }}</span> }
                   @if (fromInfo().state === 'error') { <span class="f__err">{{ fromInfo().message }}</span> }
                 </label>
                 <label class="f"><span class="f__l">Consignee (Receiver) Pin code</span>
@@ -268,8 +278,18 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                     <input class="f__i" inputmode="numeric" maxlength="6" [value]="toPincode()" (input)="onPincode('to', $event)" />
                     <span class="f__adorn">{{ adorn(toInfo()) }}</span>
                   </span>
+                  @if (placeLine(toInfo()); as pl) { <span class="f__place" data-place="to">{{ pl }}</span> }
                   @if (toInfo().state === 'error') { <span class="f__err">{{ toInfo().message }}</span> }
                 </label>
+                @if (toInfo().areas?.length) {
+                  <label class="f"><span class="f__l">Consignee (Receiver) Area</span>
+                    <select class="f__i" data-area-select [value]="toInfo().areaId ?? ''" (change)="selectToArea(val($event))">
+                      @for (a of toInfo().areas!; track a.areaId) {
+                        <option [value]="a.areaId" [selected]="a.areaId === toInfo().areaId">{{ a.areaName || a.cityName }}{{ a.primary ? ' (primary)' : '' }}{{ a.serviceable ? '' : ' — not serviceable' }}</option>
+                      }
+                    </select>
+                  </label>
+                }
               </div>
       </ng-template>
 
@@ -351,6 +371,19 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
                     <label class="f"><span class="f__l">Name</span><input class="f__i" [value]="d()[side.key + 'Name']" (input)="setD(side.key + 'Name', $event)" /></label>
                     <label class="f"><span class="f__l">{{ side.title.split(' ')[0] }} Address</span><input class="f__i" [value]="d()[side.key + 'Address']" (input)="setD(side.key + 'Address', $event)" /></label>
                     <div class="grid2">
+                      <label class="f"><span class="f__l">Pin code</span><input class="f__i" readonly [value]="side.key === 'pickup' ? fromPincode() : toPincode()" /></label>
+                      <label class="f"><span class="f__l">Zone</span><input class="f__i" readonly [value]="(side.key === 'pickup' ? fromInfo() : toInfo()).zone || 'Not set'" /></label>
+                      @if (side.key === 'delivery' && toInfo().areas?.length) {
+                        <label class="f"><span class="f__l">Delivery Area</span>
+                          <select class="f__i" [value]="toInfo().areaId ?? ''" (change)="selectToArea(val($event))">
+                            @for (a of toInfo().areas!; track a.areaId) {
+                              <option [value]="a.areaId" [selected]="a.areaId === toInfo().areaId">{{ a.areaName || a.cityName }}{{ a.primary ? ' (primary)' : '' }}{{ a.serviceable ? '' : ' — not serviceable' }}</option>
+                            }
+                          </select>
+                        </label>
+                      } @else {
+                        <label class="f"><span class="f__l">{{ side.title.split(' ')[0] }} Area</span><input class="f__i" readonly [value]="(side.key === 'pickup' ? fromInfo() : toInfo()).areaName ?? ''" /></label>
+                      }
                       <label class="f"><span class="f__l">{{ side.title.split(' ')[0] }} City</span><input class="f__i" readonly [value]="(side.key === 'pickup' ? fromInfo() : toInfo()).city ?? ''" /></label>
                       <label class="f"><span class="f__l">District</span><input class="f__i" readonly [value]="(side.key === 'pickup' ? fromInfo() : toInfo()).district ?? ''" /></label>
                     </div>
@@ -418,8 +451,8 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
           <div class="inv" role="dialog" aria-modal="true" aria-labelledby="inv-title" (click)="$event.stopPropagation()">
             <h2 id="inv-title" class="inv__title">Invoice Preview</h2>
             <div class="inv__grid">
-              <div><h4>From</h4><p><strong>{{ d()['pickupName'] }}</strong></p><p>{{ d()['pickupAddress'] }}</p><p>{{ fromInfo().city }} – {{ fromPincode() }}</p><p>{{ d()['pickupContact'] }}</p></div>
-              <div><h4>To</h4><p><strong>{{ d()['deliveryName'] }}</strong></p><p>{{ d()['deliveryAddress'] }}</p><p>{{ toInfo().city }} – {{ toPincode() }}</p><p>{{ d()['deliveryContact'] }}</p></div>
+              <div><h4>From</h4><p><strong>{{ d()['pickupName'] }}</strong></p><p>{{ d()['pickupAddress'] }}</p><p>{{ fromInfo().areaName ? fromInfo().areaName + ', ' : '' }}{{ fromInfo().city }} – {{ fromPincode() }}{{ fromInfo().zone ? ' · Zone ' + fromInfo().zone : '' }}</p><p>{{ d()['pickupContact'] }}</p></div>
+              <div><h4>To</h4><p><strong>{{ d()['deliveryName'] }}</strong></p><p>{{ d()['deliveryAddress'] }}</p><p>{{ toInfo().areaName ? toInfo().areaName + ', ' : '' }}{{ toInfo().city }} – {{ toPincode() }}{{ toInfo().zone ? ' · Zone ' + toInfo().zone : '' }}</p><p>{{ d()['deliveryContact'] }}</p></div>
             </div>
             <table class="inv__t">
               <tbody>
@@ -513,6 +546,7 @@ const round3 = (n: number) => Math.round(n * 1000) / 1000;
       max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .f__ta { resize: vertical; }
     .f__err { font: 500 15px var(--font-sans); color: var(--danger); }
+    .f__place { font: 500 15px var(--font-sans); color: var(--brand-700); }
     .seg { display: inline-flex; gap: 8px; }
     .seg__opt { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 999px; cursor: pointer;
       border: 1px solid var(--surface-border); background: var(--surface); font: 500 17px var(--font-sans); color: var(--content-fg); }
@@ -581,6 +615,7 @@ export class DomesticCashBooking implements OnInit {
   private readonly settings = inject(SettingsService);
   private readonly notify = inject(NotificationService);
   private readonly masters = inject(MasterDataService);
+  private readonly zoneTariff = inject(ZoneTariffService);
   private readonly shipments = inject(ShipmentService);
   private readonly freight = inject(FreightCalculationService);
   private readonly router = inject(Router);
@@ -817,7 +852,10 @@ export class DomesticCashBooking implements OnInit {
     this.lookup(side, input.value);
   }
 
-  /** Six digits → the pincode's city (shown inside the field) and, for the destination, its Area and serviceability. */
+  /**
+   * Six digits → the pincode's zone, Area and city (shown under the field) and, for the destination, every Area of the
+   * pincode to choose from (the primary first) and the chosen Area's serviceability.
+   */
   private lookup(side: 'from' | 'to', code: string): void {
     (side === 'from' ? this.fromPincode : this.toPincode).set(code);
     const info = side === 'from' ? this.fromInfo : this.toInfo;
@@ -828,24 +866,53 @@ export class DomesticCashBooking implements OnInit {
       switchMap((page) => {
         const match = page.content.find((r) => r.code === code);
         if (!match) return of<PincodeInfo>({ state: 'error', message: 'This pincode is not on file.' });
-        return this.masters.pincodeAreas(match.id).pipe(
-          switchMap((areas) => {
-            const area = areas.find((a) => a.primary) ?? areas[0];
-            if (!area) return of<PincodeInfo>({ state: 'error', message: 'No area is set up for this pincode.' });
-            const geo = this.masters.pincodeGeo(code, area.areaId).pipe(catchError(() => of(null)));
-            if (side === 'from') {
-              return geo.pipe(map((g): PincodeInfo => ({ state: 'ok', city: g?.cityName ?? area.cityName, district: g?.districtName ?? null, areaId: area.areaId })));
-            }
-            return forkJoin({ geo, svc: this.shipments.checkServiceability(code, area.areaId, this.branchId).pipe(catchError(() => of(null))) }).pipe(
-              map(({ geo: g, svc }): PincodeInfo => svc && !svc.serviceable
-                ? { state: 'error', city: svc.cityName, message: svc.message ?? 'Delivery is not available to this pincode.' }
-                : { state: 'ok', city: g?.cityName ?? svc?.cityName ?? area.cityName, district: g?.districtName ?? null, areaId: area.areaId })
-            );
+        const masterZone = (match['zone'] as string | null | undefined) || null;
+        const zone$ = this.zoneTariff.resolve(code, side === 'from' ? 'FROM' : 'TO').pipe(
+          map((r) => r.zone?.code ?? masterZone), catchError(() => of(masterZone)));
+        return forkJoin({ areas: this.masters.pincodeAreas(match.id), zone: zone$ }).pipe(
+          switchMap(({ areas, zone }) => {
+            const sorted = [...areas].sort((a, b) => Number(b.primary) - Number(a.primary));
+            const area = sorted.find((a) => a.primary) ?? sorted[0];
+            if (!area) return of<PincodeInfo>({ state: 'error', zone, message: 'No area is set up for this pincode.' });
+            return this.resolveArea(side, code, area, zone, sorted);
           })
         );
       }),
       catchError(() => of<PincodeInfo>({ state: 'error', message: 'Could not check this pincode.' }))
     ).subscribe((r) => { if (seq === this.lookupSeq[side]) info.set(r); });
+  }
+
+  /** The chosen Area's city and district and, for the destination, whether delivery reaches it. */
+  private resolveArea(side: 'from' | 'to', code: string, area: PincodeAreaRow, zone: string | null,
+                      areas: PincodeAreaRow[]): Observable<PincodeInfo> {
+    const base = { zone, areas, areaId: area.areaId, areaName: area.areaName };
+    const geo = this.masters.pincodeGeo(code, area.areaId).pipe(catchError(() => of(null)));
+    if (side === 'from') {
+      return geo.pipe(map((g): PincodeInfo => ({ ...base, state: 'ok', city: g?.cityName ?? area.cityName, district: g?.districtName ?? null })));
+    }
+    return forkJoin({ geo, svc: this.shipments.checkServiceability(code, area.areaId, this.branchId).pipe(catchError(() => of(null))) }).pipe(
+      map(({ geo: g, svc }): PincodeInfo => svc && !svc.serviceable
+        ? { ...base, state: 'error', city: svc.cityName ?? area.cityName, message: svc.message ?? 'Delivery is not available to this area.' }
+        : { ...base, state: 'ok', city: g?.cityName ?? svc?.cityName ?? area.cityName, district: g?.districtName ?? null })
+    );
+  }
+
+  /** The destination Area picked from the pincode's list: re-checked, and the rates follow it. */
+  protected selectToArea(areaId: string): void {
+    const cur = this.toInfo();
+    const area = cur.areas?.find((a) => a.areaId === areaId);
+    if (!area || area.areaId === cur.areaId) return;
+    const seq = ++this.lookupSeq.to;
+    this.toInfo.set({ ...cur, state: 'loading', areaId: area.areaId, areaName: area.areaName });
+    this.resolveArea('to', this.toPincode(), area, cur.zone ?? null, cur.areas ?? [])
+      .subscribe((r) => { if (seq === this.lookupSeq.to) this.toInfo.set(r); });
+  }
+
+  /** "Zone PUNE · Area Kothrud · City Pune": what a pincode resolved to, under its field. */
+  protected placeLine(i: PincodeInfo): string {
+    if (i.state === 'idle' || i.state === 'loading' || (!i.city && !i.areaName && !i.zone)) return '';
+    return [`Zone ${i.zone || 'not set'}`, i.areaName ? `Area ${i.areaName}` : null, i.city ? `City ${i.city}` : null]
+      .filter(Boolean).join(' · ');
   }
 
   protected setNumPieces(e: Event): void {

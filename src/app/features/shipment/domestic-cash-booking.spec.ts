@@ -229,4 +229,29 @@ describe('DomesticCashBooking', () => {
       expect(c['booked']()).toBeNull();
     });
   });
+
+  it('shows a pincode\'s zone, area and city, and lets the destination area be picked from the pincode\'s list', () => {
+    const f = TestBed.createComponent(DomesticCashBooking);
+    const c = f.componentInstance as unknown as Record<string, any>;
+    const http = TestBed.inject(HttpTestingController);
+    c['lookup']('to', '411038');
+    http.expectOne((r) => r.url.endsWith('/global-masters/pincodes') && r.params.get('search') === '411038')
+      .flush({ success: true, data: { content: [{ id: 'pin-1', code: '411038', zone: 'PUNE' }], page: 0, size: 5, totalElements: 1, totalPages: 1 } });
+    http.expectOne((r) => r.url.endsWith('/tariff-zones/resolve')).flush({ success: true, data: { pincode: '411038', direction: 'TO', place: null, zone: null, matchedBy: null } });
+    http.expectOne((r) => r.url.endsWith('/global-masters/pincodes/pin-1/areas')).flush({ success: true, data: [
+      { id: 'l2', areaId: 'a-erandwane', areaName: 'Erandwane', cityName: 'Pune City', primary: false, odaApplicable: false, odaAmount: null, serviceable: true },
+      { id: 'l1', areaId: 'a-kothrud', areaName: 'Kothrud', cityName: 'Pune City', primary: true, odaApplicable: false, odaAmount: null, serviceable: true }] });
+    http.expectOne((r) => r.url.includes('/global-masters/pincodes/411038/geo')).flush({ success: true, data: { matched: true, areaName: 'Kothrud', cityName: 'Pune City', districtName: 'Pune' } });
+    http.expectOne((r) => r.url.endsWith('/serviceability/check') && r.params.get('areaId') === 'a-kothrud').flush({ success: true, data: { serviceable: true, cityName: 'Pune City' } });
+
+    const info = c['toInfo']();
+    expect(info.areaId).toBe('a-kothrud');
+    expect(info.areas.map((a: any) => a.areaName)).toEqual(['Kothrud', 'Erandwane']); // primary first
+    expect(c['placeLine'](info)).toBe('Zone PUNE · Area Kothrud · City Pune City'); // no tariff zone: the pincode's own
+
+    c['selectToArea']('a-erandwane');
+    http.expectOne((r) => r.url.includes('/global-masters/pincodes/411038/geo')).flush({ success: true, data: { matched: true, areaName: 'Erandwane', cityName: 'Pune City', districtName: 'Pune' } });
+    http.expectOne((r) => r.url.endsWith('/serviceability/check') && r.params.get('areaId') === 'a-erandwane').flush({ success: true, data: { serviceable: true, cityName: 'Pune City' } });
+    expect(c['toInfo']()).toMatchObject({ state: 'ok', areaId: 'a-erandwane', areaName: 'Erandwane', zone: 'PUNE' });
+  });
 });
