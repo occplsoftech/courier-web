@@ -7,6 +7,8 @@ import {
 } from '@core/models/zone-tariff.model';
 
 /** Zone tariff zones, rate cards (lanes, charges) and quotes — mirrors the backend endpoints one-to-one. */
+export type CardOwner = 'ALL' | 'COMPANY' | 'CUSTOMER';
+
 @Injectable({ providedIn: 'root' })
 export class ZoneTariffService {
   private readonly api = inject(ApiService);
@@ -36,7 +38,8 @@ export class ZoneTariffService {
   }
 
   // ---- rate cards ----------------------------------------------------------------
-  cards(filter: { fromZoneId?: string; status?: TariffStatus; search?: string } = {}) {
+  /** owner: COMPANY (the server default), CUSTOMER (business customers' own cards) or ALL. */
+  cards(filter: { fromZoneId?: string; status?: TariffStatus; search?: string; owner?: CardOwner } = {}) {
     return this.api.get<RateCard[]>(API.tariffRateCards, filter);
   }
   card(id: string) { return this.api.get<RateCard>(`${API.tariffRateCards}/${id}`); }
