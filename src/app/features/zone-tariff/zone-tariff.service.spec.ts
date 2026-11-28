@@ -47,6 +47,14 @@ describe('ZoneTariffService', () => {
     req.flush({ success: true, data: { pincode: '400001', direction: 'TO', zone: null } });
   });
 
+  it('lists rate cards by owner (ALL shows customer cards too)', () => {
+    service.cards({ owner: 'ALL' }).subscribe();
+
+    const req = http.expectOne((r) => r.url === `${base}/tariff-rate-cards`);
+    expect(req.request.params.get('owner')).toBe('ALL');
+    req.flush({ success: true, data: [] });
+  });
+
   it('saves a lane with PUT and removes it by its three ids', () => {
     service.saveLane('c-1', { toZoneId: 'z', serviceTypeId: 's', packageTypeId: 'p',
       slabs: [{ weightFromKg: 0.001, weightToKg: 1, rateType: 'FIXED', rate: 200, stepKg: null }] }).subscribe();

@@ -143,6 +143,8 @@ export interface RateCard {
   version: number;
   /** Set on a business customer's own card (uploaded from their row); null on the company's cards. */
   customerId?: string | null;
+  /** The business customer a customer card belongs to (list only). */
+  customerName?: string | null;
 }
 
 export interface RateCardRequest {
