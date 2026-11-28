@@ -80,7 +80,7 @@ export function defaultSlabs(document: boolean | null = null): RateSlab[] {
           <h1 class="text-h1">{{ isCreate() ? 'New Rate Card' : (card()?.code || 'Rate Card') }}</h1>
           <p class="text-caption">{{ isCreate() ? 'Prices for shipments that start in one from zone.' : card()?.name }}</p>
           @if (card()?.customerId) {
-            <p class="text-caption">A business customer's own card: their bookings use it before the company's card. Upload a new sheet from Business Customer → Customer → Upload Rates.</p>
+            <p class="text-caption">A business customer's own card: their bookings use it before the company's card. Upload a new sheet from Business Customer → Rate → Upload Rates.</p>
           }
         </div>
         @if (card(); as c) {
@@ -486,7 +486,12 @@ export class RateCardForm implements OnInit {
       this.loading.set(false);
     } else {
       this.service.card(this.cardId!).subscribe({
-        next: (c) => { this.setCard(c, true); this.loading.set(false); },
+        next: (c) => {
+          if (c.customerId) {
+            this.breadcrumb.set([{ label: 'Business Customer' }, { label: 'Rate', route: '/business-customer/rates' }, { label: 'Rates' }]);
+          }
+          this.setCard(c, true); this.loading.set(false);
+        },
         error: () => { this.card.set(null); this.loading.set(false); }
       });
     }
@@ -830,5 +835,5 @@ export class RateCardForm implements OnInit {
     });
   }
 
-  protected back(): void { this.router.navigate(['/zone-tariff/rate-cards']); }
+  protected back(): void { this.router.navigate([this.card()?.customerId ? '/business-customer/rates' : '/zone-tariff/rate-cards']); }
 }

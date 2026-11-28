@@ -16,13 +16,12 @@ import { UiSelect, SelectOption } from '@shared/components/ui-select/ui-select';
 import { UiTable, TableColumn } from '@shared/components/ui-table/ui-table';
 import { StatusBadge } from '@shared/components/status-badge/status-badge';
 import { DialogService } from '@shared/components/ui-dialog/dialog.service';
-import { CardOwner, ZoneTariffService } from './zone-tariff.service';
+import { ZoneTariffService } from './zone-tariff.service';
 
-const OWNER_OPTS: SelectOption[] = [{ value: 'ALL', label: 'All' }, { value: 'COMPANY', label: 'Company' }, { value: 'CUSTOMER', label: 'Customer' }];
 const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { value: 'INACTIVE', label: 'Inactive' }];
 
-/** Rate cards of the zone tariff — the company's (one per from zone and period) and business customers' own cards.
- *  Filter by owner, from zone and status. */
+/** The company's rate cards (cash bookings and company-level rates) — one per from zone and period. Filter by from zone
+ *  and status. Business customers' own cards are under Business Customer → Rate. */
 @Component({
   selector: 'app-rate-card-list',
   standalone: true,
@@ -40,7 +39,6 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
       </header>
 
       <div class="filters">
-        <app-select [control]="ownerCtl" label="Owner" [options]="ownerOpts" />
         <app-select [control]="zoneCtl" label="From zone" [options]="zoneOpts()" [allowEmpty]="true" emptyLabel="All" placeholder="All" />
         <app-select [control]="statusCtl" label="Status" [options]="statusOpts" [allowEmpty]="true" emptyLabel="All" placeholder="All" />
       </div>
@@ -50,8 +48,6 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
                  (rowClick)="open($event)">
         <ng-template #row let-c>
           <td><div class="zn">{{ c.code }}</div><div class="sub">{{ c.name }}</div></td>
-          <td>@if (c.customerId) { <span class="own own--cust">{{ c.customerName || 'Customer' }}</span> }
-              @else { <span class="own">Company</span> }</td>
           <td>{{ c.fromZoneCode || '—' }}</td>
           <td>{{ c.effectiveFrom | date: 'dd MMM yyyy' }} – {{ c.effectiveTo ? (c.effectiveTo | date: 'dd MMM yyyy') : 'open' }}</td>
           <td>{{ c.laneCount }} lanes · {{ c.chargeCount }} charges</td>
@@ -77,10 +73,8 @@ const STATUS_OPTS: SelectOption[] = [{ value: 'ACTIVE', label: 'Active' }, { val
     </div>
   `,
   styles: [`
-    .filters { display:grid; grid-template-columns:repeat(3,minmax(0,240px)); gap:16px; margin:0 0 16px; }
+    .filters { display:grid; grid-template-columns:repeat(2,minmax(0,280px)); gap:16px; margin:0 0 16px; }
     .zn { font:600 17px var(--font-sans); } .sub { font:400 15px var(--font-sans); color:var(--content-muted); }
-    .own { display:inline-block; padding:2px 10px; border-radius:999px; font:500 14px var(--font-sans); background:var(--surface-muted); color:var(--content-muted); }
-    .own--cust { background:var(--brand-50, #e8f0fe); color:var(--brand-700, #1a56db); }
     .col-actions { text-align:right; width:56px; }
     .kebab { border:0; background:transparent; cursor:pointer; color:var(--content-muted); display:inline-flex; padding:4px; border-radius:8px; }
     .kebab:hover { background:var(--surface-muted); }
@@ -95,8 +89,6 @@ export class RateCardList implements OnInit {
   private readonly router = inject(Router);
   private readonly confirm = inject(DialogService);
 
-  protected readonly ownerCtl = new FormControl<string>('ALL', { nonNullable: true });
-  protected readonly ownerOpts = OWNER_OPTS;
   protected readonly zoneCtl = new FormControl<string>('', { nonNullable: true });
   protected readonly statusCtl = new FormControl<string>('', { nonNullable: true });
   protected readonly statusOpts = STATUS_OPTS;
@@ -107,7 +99,6 @@ export class RateCardList implements OnInit {
 
   protected readonly columns: TableColumn<RateCard>[] = [
     { key: 'code', header: 'Rate card' },
-    { key: 'customerName', header: 'Customer' },
     { key: 'fromZoneCode', header: 'From zone' },
     { key: 'effectiveFrom', header: 'Valid' },
     { key: 'laneCount', header: 'Rates' },
@@ -123,7 +114,6 @@ export class RateCardList implements OnInit {
     this.breadcrumb.set([{ label: 'Zone Tariff' }, { label: 'Rate Cards' }]);
     this.service.zones().subscribe((zs) => this.zoneOpts.set(zs.filter((z) => z.usage !== 'TO')
       .map((z) => ({ value: z.id, label: `${z.code} — ${z.name}` }))));
-    this.ownerCtl.valueChanges.subscribe(() => this.load());
     this.zoneCtl.valueChanges.subscribe(() => this.load());
     this.statusCtl.valueChanges.subscribe(() => this.load());
     this.load();
@@ -135,7 +125,7 @@ export class RateCardList implements OnInit {
       fromZoneId: this.zoneCtl.value || undefined,
       status: (this.statusCtl.value || undefined) as TariffStatus | undefined,
       search: this.search || undefined,
-      owner: (this.ownerCtl.value || 'ALL') as CardOwner
+      owner: 'COMPANY'
     }).subscribe({
       next: (c) => { this.cards.set(c ?? []); this.loading.set(false); },
       error: () => this.loading.set(false)
