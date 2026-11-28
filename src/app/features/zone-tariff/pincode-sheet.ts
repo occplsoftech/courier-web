@@ -21,16 +21,28 @@ export interface PincodeSheetRow {
   // The 2026-11-27 sheet's cargo and premium columns (V185).
   airCargoTat?: string | null; surfaceCargoTat?: string | null; airCargoOda?: string | null; surfaceCargoOda?: string | null;
   premiumService?: string | null; premiumTat?: string | null;
-  /** Live, from the pincode master (what bookings check): true on, false off, null not set / pincode not on file. */
+  /** Live, from the pincode master (what bookings check); null when not set. */
   livePremium?: boolean | null; liveAirCargo?: boolean | null; liveSurfaceCargo?: boolean | null;
+  livePremiumOda?: boolean | null; liveAirCargoOda?: boolean | null; liveSurfaceCargoOda?: boolean | null;
+  livePremiumTat?: number | null; liveAirCargoTat?: number | null; liveSurfaceCargoTat?: number | null;
+  /** The pincode is in the pincode master, so its coverage can be changed. */
+  inMaster?: boolean;
 }
+
+/** One network's live coverage as the server returns it after a change. */
+interface Live { serviceable: boolean | null; oda: boolean | null; tatHours: number | null; }
+interface LiveCoverage { premium: Live; airCargo: Live; surfaceCargo: Live; }
 
 /** The networks the sheet can switch per pincode, with the row field holding each one's live state. */
 export type SwitchNetwork = 'PREMIUM' | 'AIR_CARGO' | 'SURFACE_CARGO';
-export const SWITCHES: { network: SwitchNetwork; field: 'livePremium' | 'liveAirCargo' | 'liveSurfaceCargo'; label: string }[] = [
-  { network: 'PREMIUM', field: 'livePremium', label: 'Premium' },
-  { network: 'AIR_CARGO', field: 'liveAirCargo', label: 'Air Cargo' },
-  { network: 'SURFACE_CARGO', field: 'liveSurfaceCargo', label: 'Surface Cargo' }
+type OnField = 'livePremium' | 'liveAirCargo' | 'liveSurfaceCargo';
+type OdaField = 'livePremiumOda' | 'liveAirCargoOda' | 'liveSurfaceCargoOda';
+type TatField = 'livePremiumTat' | 'liveAirCargoTat' | 'liveSurfaceCargoTat';
+export interface SwitchDef { network: SwitchNetwork; on: OnField; oda: OdaField; tat: TatField; key: keyof LiveCoverage; label: string; }
+export const SWITCHES: SwitchDef[] = [
+  { network: 'PREMIUM', on: 'livePremium', oda: 'livePremiumOda', tat: 'livePremiumTat', key: 'premium', label: 'Premium' },
+  { network: 'AIR_CARGO', on: 'liveAirCargo', oda: 'liveAirCargoOda', tat: 'liveAirCargoTat', key: 'airCargo', label: 'Air Cargo' },
+  { network: 'SURFACE_CARGO', on: 'liveSurfaceCargo', oda: 'liveSurfaceCargoOda', tat: 'liveSurfaceCargoTat', key: 'surfaceCargo', label: 'Surface Cargo' }
 ];
 
 const PAGE_SIZE = 50;
@@ -75,15 +87,32 @@ const ZONES = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL', 'INTERNATIONAL'];
           <td>{{ r.zone }}</td>
           @for (sw of switches; track sw.network) {
             <td class="live">
-              @if (r[sw.field] === undefined || (r[sw.field] === null && !r.pincode)) { <span class="muted">—</span> }
+              @if (!r.inMaster) { <span class="muted" title="Not in the pincode master">—</span> }
               @else if (canSwitch) {
-                <label class="sw" [class.sw--busy]="busy().has(r.pincode + sw.network)">
-                  <input type="checkbox" [checked]="!!r[sw.field]" [disabled]="busy().has(r.pincode + sw.network)"
-                         (change)="toggle(r, sw.network, sw.field, $any($event.target))"
-                         [attr.aria-label]="sw.label + ' at ' + r.pincode" />
-                  <span>{{ r[sw.field] ? 'On' : 'Off' }}</span>
-                </label>
-              } @else { <span [class.on]="r[sw.field]">{{ r[sw.field] ? 'On' : 'Off' }}</span> }
+                <div class="cov" [class.cov--busy]="busy().has(r.pincode + sw.network)">
+                  <label class="sw">
+                    <input type="checkbox" [checked]="!!r[sw.on]" [disabled]="busy().has(r.pincode + sw.network)"
+                           (change)="save(r, sw, { serviceable: $any($event.target).checked }, $any($event.target))"
+                           [attr.aria-label]="sw.label + ' at ' + r.pincode" />
+                    <span>{{ r[sw.on] ? 'On' : 'Off' }}</span>
+                  </label>
+                  <label class="sw sw--sm">
+                    <input type="checkbox" [checked]="!!r[sw.oda]" [disabled]="busy().has(r.pincode + sw.network)"
+                           (change)="save(r, sw, { oda: $any($event.target).checked }, $any($event.target))"
+                           [attr.aria-label]="sw.label + ' ODA at ' + r.pincode" />
+                    <span>ODA</span>
+                  </label>
+                  <label class="tat">
+                    <input type="number" min="1" max="2400" [value]="r[sw.tat] ?? ''" [disabled]="busy().has(r.pincode + sw.network)"
+                           (keydown.enter)="$any($event.target).blur()" (blur)="saveTat(r, sw, $any($event.target))"
+                           [attr.aria-label]="sw.label + ' TAT hours at ' + r.pincode" placeholder="—" />
+                    <span>h</span>
+                  </label>
+                </div>
+              } @else {
+                <span [class.on]="r[sw.on]">{{ r[sw.on] ? 'On' : 'Off' }}</span>
+                <span class="muted"> · ODA {{ r[sw.oda] ? 'Yes' : 'No' }} · {{ r[sw.tat] != null ? r[sw.tat] + ' h' : '—' }}</span>
+              }
             </td>
           }
           <td>{{ r.docIsOda }}</td>
@@ -110,9 +139,14 @@ const ZONES = ['NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL', 'INTERNATIONAL'];
     .filters { display:grid; grid-template-columns:repeat(2,minmax(0,280px)); gap:16px; margin:16px 0; }
     .pin { font-weight:600; font-variant-numeric:tabular-nums; }
     .live { white-space:nowrap; }
-    .sw { display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+    .cov { display:flex; align-items:center; gap:10px; }
+    .cov--busy { opacity:.55; cursor:progress; }
+    .sw { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
     .sw input { width:16px; height:16px; accent-color:var(--brand-600); cursor:pointer; }
-    .sw--busy { opacity:.55; cursor:progress; }
+    .sw--sm span { font-size:13px; color:var(--content-muted); }
+    .tat { display:inline-flex; align-items:center; gap:3px; font-size:13px; color:var(--content-muted); }
+    .tat input { width:58px; padding:3px 6px; border:1px solid var(--surface-border); border-radius:6px; font:inherit;
+      color:var(--content-fg); background:var(--surface-card, #fff); text-align:right; }
     .on { font-weight:600; color:var(--success-600, #15803d); }
     .muted { color:var(--content-muted); }
     @media (max-width:640px){ .filters { grid-template-columns:1fr; } }
@@ -145,9 +179,9 @@ export class PincodeSheet implements OnInit {
     { key: 'state', header: 'State' },
     { key: 'region', header: 'Region' },
     { key: 'zone', header: 'zone' },
-    { key: 'livePremium', header: 'Premium (live)' },
-    { key: 'liveAirCargo', header: 'Air Cargo (live)' },
-    { key: 'liveSurfaceCargo', header: 'Surface Cargo (live)' },
+    { key: 'livePremium', header: 'Premium (live) · ODA · TAT' },
+    { key: 'liveAirCargo', header: 'Air Cargo (live) · ODA · TAT' },
+    { key: 'liveSurfaceCargo', header: 'Surface Cargo (live) · ODA · TAT' },
     { key: 'docIsOda', header: 'Doc Is ODA' },
     { key: 'docServ', header: 'Doc Serv y/n' },
     { key: 'docTat', header: 'Doc TAT' },
@@ -183,26 +217,48 @@ export class PincodeSheet implements OnInit {
     });
   }
 
-  /** Saves one switch at once; on failure the row keeps its old state and the reason is shown. */
-  toggle(row: PincodeSheetRow, network: SwitchNetwork, field: (typeof SWITCHES)[number]['field'], box: HTMLInputElement): void {
-    const on = box.checked;
+  /** TAT box left: saves when the hours changed and are 1–2400; anything else puts the old value back. */
+  saveTat(row: PincodeSheetRow, sw: SwitchDef, box: HTMLInputElement): void {
+    const before = row[sw.tat] ?? null;
+    const text = box.value.trim();
+    const hours = text === '' ? null : Number(text);
+    if (hours === before) return;
+    if (hours === null || !Number.isInteger(hours) || hours < 1 || hours > 2400) {
+      box.value = before == null ? '' : String(before);
+      this.notify.error('TAT must be whole hours between 1 and 2400.');
+      return;
+    }
+    this.save(row, sw, { tatHours: hours }, box);
+  }
+
+  /**
+   * Saves one change to a network's coverage at once (on/off, ODA or TAT; what is not sent stays). On failure the box goes
+   * back to what it showed and the reason is shown.
+   */
+  save(row: PincodeSheetRow, sw: SwitchDef, change: { serviceable?: boolean; oda?: boolean; tatHours?: number }, box: HTMLInputElement): void {
     if (!row.pincode) return;
-    const key = row.pincode + network;
+    const key = row.pincode + sw.network;
     this.busy.update((s) => new Set(s).add(key));
-    const label = SWITCHES.find((s) => s.network === network)?.label ?? network;
-    this.api.put<{ premium: boolean | null; airCargo: boolean | null; surfaceCargo: boolean | null }>(
-      `${API.globalMasters}/pincode-sheet/${encodeURIComponent(row.pincode)}/coverage`, { network, serviceable: on }
-    ).subscribe({
+    this.api.put<LiveCoverage>(`${API.globalMasters}/pincode-sheet/${encodeURIComponent(row.pincode)}/coverage`,
+      { network: sw.network, ...change }).subscribe({
       next: (live) => {
-        this.patch(row.pincode!, { livePremium: live?.premium, liveAirCargo: live?.airCargo, liveSurfaceCargo: live?.surfaceCargo });
+        const patch: Partial<PincodeSheetRow> = {};
+        for (const d of SWITCHES) {
+          const l = live?.[d.key];
+          if (l) { patch[d.on] = l.serviceable; patch[d.oda] = l.oda; patch[d.tat] = l.tatHours; }
+        }
+        this.patch(row.pincode!, patch);
         this.done(key);
-        this.notify.success(`${label} ${on ? 'on' : 'off'} at ${row.pincode}.`);
+        const what = change.serviceable !== undefined ? (change.serviceable ? 'on' : 'off')
+          : change.oda !== undefined ? `ODA ${change.oda ? 'on' : 'off'}` : `TAT ${change.tatHours} h`;
+        this.notify.success(`${sw.label} ${what} at ${row.pincode}.`);
       },
       error: (e) => {
-        // The bound value did not change, so Angular would leave the box as clicked: put it back by hand.
-        box.checked = !!row[field];
+        // The bound value did not change, so Angular would leave the box as edited: put it back by hand.
+        if (box.type === 'checkbox') box.checked = change.serviceable !== undefined ? !!row[sw.on] : !!row[sw.oda];
+        else box.value = row[sw.tat] == null ? '' : String(row[sw.tat]);
         this.done(key);
-        this.notify.error(e?.error?.message ?? `Could not switch ${label} at ${row.pincode}.`);
+        this.notify.error(e?.error?.message ?? `Could not update ${sw.label} at ${row.pincode}.`);
       }
     });
   }

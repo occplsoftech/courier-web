@@ -10,7 +10,9 @@ import { PincodeSheet } from './pincode-sheet';
 const row = {
   rowNo: 1, pincode: '413102', city: 'Baramati', state: 'MAHARASHTRA', region: 'X - PUNE', zone: 'WEST',
   docIsOda: 'N', docServ: 'Y', docTat: '48', surfaceServ: 'Y', surfaceTat: '72', airService: 'N', airTat: null,
-  premiumService: 'No', premiumTat: null, livePremium: false, liveAirCargo: true, liveSurfaceCargo: null
+  premiumService: 'No', premiumTat: null, livePremium: false, liveAirCargo: true, liveSurfaceCargo: null,
+  livePremiumOda: false, liveAirCargoOda: true, liveSurfaceCargoOda: null, livePremiumTat: 24, liveAirCargoTat: 72, liveSurfaceCargoTat: null,
+  inMaster: true
 };
 
 function create(roles: AppRole[]) {
@@ -46,7 +48,8 @@ describe('PincodeSheet live switches', () => {
     const req = http.expectOne((r) => r.url.endsWith('/pincode-sheet/413102/coverage'));
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ network: 'PREMIUM', serviceable: true });
-    req.flush({ success: true, data: { premium: true, airCargo: true, surfaceCargo: null } });
+    req.flush({ success: true, data: { premium: { serviceable: true, oda: false, tatHours: 24 },
+      airCargo: { serviceable: true, oda: true, tatHours: 72 }, surfaceCargo: { serviceable: null, oda: null, tatHours: null } } });
     fixture.detectChanges();
     expect(el.querySelector<HTMLInputElement>('input[aria-label="Premium at 413102"]')!.checked).toBe(true);
   });
@@ -61,10 +64,36 @@ describe('PincodeSheet live switches', () => {
     expect(el.querySelector<HTMLInputElement>('input[aria-label="Premium at 413102"]')!.checked).toBe(false);
   });
 
+  it('shows ODA and TAT, and saves a new TAT on its own', () => {
+    const { fixture, http, el } = create([AppRole.COMPANY_ADMIN]);
+    expect(el.querySelector<HTMLInputElement>('input[aria-label="Air Cargo ODA at 413102"]')!.checked).toBe(true);
+    const tat = el.querySelector<HTMLInputElement>('input[aria-label="Premium TAT hours at 413102"]')!;
+    expect(tat.value).toBe('24');
+    tat.value = '48';
+    tat.dispatchEvent(new Event('blur'));
+    const req = http.expectOne((r) => r.url.endsWith('/pincode-sheet/413102/coverage'));
+    expect(req.request.body).toEqual({ network: 'PREMIUM', tatHours: 48 });
+    req.flush({ success: true, data: { premium: { serviceable: false, oda: false, tatHours: 48 },
+      airCargo: { serviceable: true, oda: true, tatHours: 72 }, surfaceCargo: { serviceable: null, oda: null, tatHours: null } } });
+    fixture.detectChanges();
+    expect(el.querySelector<HTMLInputElement>('input[aria-label="Premium TAT hours at 413102"]')!.value).toBe('48');
+  });
+
+  it('a TAT outside 1–2400 hours is not sent and goes back', () => {
+    const { http, el } = create([AppRole.COMPANY_ADMIN]);
+    const tat = el.querySelector<HTMLInputElement>('input[aria-label="Premium TAT hours at 413102"]')!;
+    tat.value = '0';
+    tat.dispatchEvent(new Event('blur'));
+    http.expectNone((r) => r.url.endsWith('/coverage'));
+    expect(tat.value).toBe('24');
+  });
+
   it('other users see On / Off, not switches', () => {
     const { el } = create([AppRole.BRANCH_MANAGER]);
     expect(el.querySelector('input[aria-label="Premium at 413102"]')).toBeNull();
     expect(el.textContent).toContain('On');
     expect(el.textContent).toContain('Off');
+    expect(el.textContent).toContain('ODA Yes');
+    expect(el.textContent).toContain('72 h');
   });
 });
