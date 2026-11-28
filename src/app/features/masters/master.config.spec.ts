@@ -151,6 +151,15 @@ describe('master definitions', () => {
     expect(MASTER_DEFINITIONS.pincodes.columns.some((c) => c.key === 'premium')).toBe(true);
   });
 
+  it('lets a company admin edit a pincode by role alone (no GLOBAL_MASTER_UPDATE), but not create or delete one', () => {
+    const access = writeAccessFor(MASTER_DEFINITIONS.pincodes);
+    expect(access.roles).toContain(AppRole.COMPANY_ADMIN);
+    expect(access.permissions.update).toEqual([]);
+    expect(access.permissions.create).toEqual(['GLOBAL_MASTER_CREATE']);
+    expect(access.permissions.delete).toEqual(['GLOBAL_MASTER_DELETE']);
+    expect(writeAccessFor(MASTER_DEFINITIONS.states).permissions.update).toEqual(['GLOBAL_MASTER_UPDATE']);
+  });
+
   it('reads geography as SUPER_ADMIN + COMPANY_ADMIN, writes it as SUPER_ADMIN only', () => {
     for (const key of ['countries', 'states', 'districts', 'cities', 'areas', 'pincodes'] as MasterKey[]) {
       const def = MASTER_DEFINITIONS[key];
