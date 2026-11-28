@@ -13,6 +13,8 @@ import { BusinessCustomerService } from '@features/business-customer/business-cu
 import { CustomerService } from '@features/customer/customer.service';
 import { MASTER_DEFINITIONS } from '@features/masters/master.config';
 import { MasterDataService } from '@features/masters/master-data.service';
+import { ZoneTariffService } from '@features/zone-tariff/zone-tariff.service';
+import { PincodeAreaRow } from '@core/models/master.model';
 import { FreightCalculationService } from './freight-calculation.service';
 import { ShipmentService } from './shipment.service';
 
@@ -28,8 +30,14 @@ type Locks = Partial<Record<Field, boolean>>;
 /** One generated AWB, for the session table. */
 export interface BookingRow { awb: string; id: string; consignee: string; to: string; pieces: number; kg: number; at: string; }
 
-/** A pincode as looked up: its city, and for the destination its Area and whether it is served. */
-interface PinInfo { state: 'idle' | 'loading' | 'ok' | 'error'; city?: string | null; areaId?: string | null; message?: string; }
+/**
+ * A pincode as looked up: its zone (the Zone Tariff zone pricing uses, else the pincode master's), Area and city, and for
+ * the destination every Area of the pincode to choose from and whether the chosen one is served.
+ */
+interface PinInfo {
+  state: 'idle' | 'loading' | 'ok' | 'error'; city?: string | null; areaId?: string | null; areaName?: string | null;
+  zone?: string | null; areas?: PincodeAreaRow[]; message?: string;
+}
 
 const EMPTY: QuickBookingFields = {
   clientId: '', consignorName: '', fromPincode: '', parcelType: 'PARCEL', pieces: '', weightGrams: '', awbNumber: '',
@@ -130,6 +138,16 @@ function readDone(): BookingRow[] {
           <div class="grid2">
             <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ k: 'consigneeName', label: 'Consignee Name', req: true }" />
             <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ k: 'toPincode', label: 'Receiver Pincode', req: true, pin: to() }" />
+            @if (to().areas?.length) {
+              <div class="f">
+                <label class="f__l" for="qi-area">Receiver Area</label>
+                <select class="f__i" id="qi-area" data-area-select [value]="to().areaId ?? ''" (change)="selectToArea($any($event.target).value)">
+                  @for (a of to().areas!; track a.areaId) {
+                    <option [value]="a.areaId" [selected]="a.areaId === to().areaId">{{ a.areaName || a.cityName }}{{ a.primary ? ' (primary)' : '' }}{{ a.serviceable ? '' : ' — not serviceable' }}</option>
+                  }
+                </select>
+              </div>
+            }
             <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ k: 'consigneeAddress', label: 'Address', req: true }" />
             <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ k: 'consigneePhone', label: 'Phone', req: true }" />
             <ng-container [ngTemplateOutlet]="field" [ngTemplateOutletContext]="{ k: 'declaredValue', label: 'Declared Value (₹)', req: true }" />
@@ -184,6 +202,7 @@ function readDone(): BookingRow[] {
           </div>
           <ng-container [ngTemplateOutlet]="lockBtn" [ngTemplateOutletContext]="{ k: k }" />
         </div>
+        @if (pin && placeLine(pin); as pl) { <span class="f__place">{{ pl }}</span> }
         @if (pin?.state === 'error') { <span class="f__err">{{ pin.message }}</span> }
         @if (err) { <span class="f__err">{{ err }}</span> }
       </div>
@@ -227,6 +246,7 @@ function readDone(): BookingRow[] {
       max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
     .f__adorn--muted { color: var(--content-muted); font-weight: 500; font-size: 15px; }
     .f__err { font: 500 14px var(--font-sans); color: var(--danger); }
+    .f__place { font: 500 15px var(--font-sans); color: var(--brand-700); }
     .seg { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
     .seg__opt { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
       border: 1px solid var(--surface-border); background: var(--surface); font: 500 16px var(--font-sans); color: var(--content-fg); }
@@ -267,6 +287,7 @@ export class QuickBooking {
   private readonly business = inject(BusinessCustomerService);
   private readonly customers = inject(CustomerService);
   private readonly masters = inject(MasterDataService);
+  private readonly zoneTariff = inject(ZoneTariffService);
   private readonly freight = inject(FreightCalculationService);
   private readonly shipments = inject(ShipmentService);
   private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
@@ -389,7 +410,7 @@ export class QuickBooking {
     }, 1200);
   }
 
-  /** Six digits → the city (shown in the field) and, for the receiver, its Area and whether we deliver there. */
+  /** Six digits → zone, Area and city (shown under the field); for the receiver, every Area to choose from and serviceability. */
   private lookup(side: 'from' | 'to', code: string): void {
     const info = side === 'from' ? this.from : this.to;
     const seq = ++this.seq[side];
@@ -399,21 +420,48 @@ export class QuickBooking {
       switchMap((page): Observable<PinInfo> => {
         const match = page.content.find((r) => r['code'] === code);
         if (!match) return of({ state: 'error', message: 'This pincode is not on file.' });
-        return this.masters.pincodeAreas(String(match['id'])).pipe(switchMap((areas): Observable<PinInfo> => {
-          const area = areas.find((a) => a.primary) ?? areas[0];
-          if (!area) return of({ state: 'error', message: 'No area is set up for this pincode.' });
-          if (side === 'from') {
-            return of({ state: 'ok', city: area.cityName, areaId: area.areaId });
-          }
-          return this.shipments.checkServiceability(code, area.areaId, this.branchId).pipe(
-            catchError(() => of(null)),
-            map((svc): PinInfo => svc && !svc.serviceable
-              ? { state: 'error', city: svc.cityName, message: svc.message ?? 'Currently Delivery service is not available in this pincode.' }
-              : { state: 'ok', city: svc?.cityName ?? area.cityName, areaId: area.areaId }));
+        const masterZone = (match['zone'] as string | null | undefined) || null;
+        const zone$ = this.zoneTariff.resolve(code, side === 'from' ? 'FROM' : 'TO').pipe(
+          map((r) => r.zone?.code ?? masterZone), catchError(() => of(masterZone)));
+        return forkJoin({ areas: this.masters.pincodeAreas(String(match['id'])), zone: zone$ }).pipe(switchMap(({ areas, zone }): Observable<PinInfo> => {
+          const sorted = [...areas].sort((a, b) => Number(b.primary) - Number(a.primary));
+          const area = sorted.find((a) => a.primary) ?? sorted[0];
+          if (!area) return of({ state: 'error', zone, message: 'No area is set up for this pincode.' });
+          return this.resolveArea(side, code, area, zone, sorted);
         }));
       }),
       catchError(() => of<PinInfo>({ state: 'error', message: 'Could not check this pincode.' }))
     ).subscribe((r) => { if (seq === this.seq[side]) info.set(r); });
+  }
+
+  private resolveArea(side: 'from' | 'to', code: string, area: PincodeAreaRow, zone: string | null, areas: PincodeAreaRow[]): Observable<PinInfo> {
+    const base = { zone, areas, areaId: area.areaId, areaName: area.areaName };
+    if (side === 'from') {
+      return of({ ...base, state: 'ok', city: area.cityName });
+    }
+    return this.shipments.checkServiceability(code, area.areaId, this.branchId).pipe(
+      catchError(() => of(null)),
+      map((svc): PinInfo => svc && !svc.serviceable
+        ? { ...base, state: 'error', city: svc.cityName ?? area.cityName, message: svc.message ?? 'Currently Delivery service is not available in this area.' }
+        : { ...base, state: 'ok', city: svc?.cityName ?? area.cityName }));
+  }
+
+  /** The receiver Area picked from the pincode's list: re-checked, and the rate follows it. */
+  protected selectToArea(areaId: string): void {
+    const cur = this.to();
+    const area = cur.areas?.find((a) => a.areaId === areaId);
+    if (!area || area.areaId === cur.areaId) return;
+    const seq = ++this.seq.to;
+    this.to.set({ ...cur, state: 'loading', areaId: area.areaId, areaName: area.areaName });
+    this.resolveArea('to', this.v().toPincode, area, cur.zone ?? null, cur.areas ?? [])
+      .subscribe((r) => { if (seq === this.seq.to) this.to.set(r); });
+  }
+
+  /** "Zone PUNE · Area Kothrud · City Pune" under a pincode field. */
+  protected placeLine(i: PinInfo): string {
+    if (i.state === 'idle' || i.state === 'loading' || (!i.city && !i.areaName && !i.zone)) return '';
+    return [`Zone ${i.zone || 'not set'}`, i.areaName ? `Area ${i.areaName}` : null, i.city ? `City ${i.city}` : null]
+      .filter(Boolean).join(' · ');
   }
 
   /** What is still missing, in the order the form is filled; null when the parcel can be booked. */
