@@ -143,6 +143,14 @@ describe('master definitions', () => {
     expect(country!.pattern).not.toBe(pincode!.pattern);
   });
 
+  it('edits a pincode\'s Premium, Air cargo and Surface cargo coverage like Document / Surface / Air', () => {
+    const fields = MASTER_DEFINITIONS.pincodes.fields;
+    for (const parent of ['premium', 'airCargo', 'surfaceCargo']) {
+      expect(fields.filter((f) => f.nested?.parent === parent).map((f) => f.nested!.prop)).toEqual(['serviceable', 'oda', 'tatHours']);
+    }
+    expect(MASTER_DEFINITIONS.pincodes.columns.some((c) => c.key === 'premium')).toBe(true);
+  });
+
   it('reads geography as SUPER_ADMIN + COMPANY_ADMIN, writes it as SUPER_ADMIN only', () => {
     for (const key of ['countries', 'states', 'districts', 'cities', 'areas', 'pincodes'] as MasterKey[]) {
       const def = MASTER_DEFINITIONS[key];

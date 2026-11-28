@@ -210,7 +210,7 @@ const NETWORK_LABEL: Record<string, string> = {
 };
 
 /** One delivery network's coverage at a pincode (V171): delivers, ODA, promised hours. */
-function coverageFields(parent: 'doc' | 'surface' | 'air', group: string): MasterField[] {
+function coverageFields(parent: 'doc' | 'surface' | 'air' | 'airCargo' | 'surfaceCargo' | 'premium', group: string): MasterField[] {
   return [
     { key: `${parent}Serviceable`, label: 'Delivers here', kind: 'select', options: TRI_STATE, triState: true,
       nested: { parent, prop: 'serviceable' }, group,
@@ -370,6 +370,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'doc', header: 'Document', width: '120px', value: (r) => coverageText(r['doc']) },
       { key: 'surface', header: 'Surface', width: '120px', value: (r) => coverageText(r['surface']) },
       { key: 'air', header: 'Air', width: '120px', value: (r) => coverageText(r['air']) },
+      { key: 'premium', header: 'Premium', width: '120px', value: (r) => coverageText(r['premium']) },
       STATUS_COLUMN
     ],
     fields: [
@@ -387,12 +388,16 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'odaApplicable', label: 'ODA applicable', kind: 'boolean', initial: false, group: 'Availability',
         hint: 'Out-of-Delivery-Area — still served, just not on the standard network.' },
       { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'PUNE', group: 'Zones',
-        hint: 'As in the pincode master: PUNE, X - PUNE, MAHARASHTRA, X - MAHARASHTRA, VIDHARBHA, REST OF INDIA or NORTH EAST.' },
+        hint: 'As in the pincode master\'s zone column: NORTH, SOUTH, EAST, WEST or CENTRAL.' },
       { key: 'regionalZoneId', label: 'Regional zone', kind: 'lookup', lookup: 'regional-zones', group: 'Zones',
-        hint: 'NORTH, SOUTH, EAST, WEST or CENTRAL. A Zone Tariff zone can take a whole regional zone.' },
+        hint: 'The pincode master\'s Region: PUNE, X_PUNE, MAHARASHTRA, X_MAHARASHTRA, VIDHARBHA, REST_OF_INDIA or NORTH_EAST. A Zone Tariff zone can take a whole regional zone.' },
       ...coverageFields('doc', 'Document service'),
       ...coverageFields('surface', 'Surface service'),
-      ...coverageFields('air', 'Air service')
+      ...coverageFields('air', 'Air service'),
+      // V185 networks: a booking on a Premium / cargo service type is checked against these.
+      ...coverageFields('premium', 'Premium service'),
+      ...coverageFields('airCargo', 'Air cargo service'),
+      ...coverageFields('surfaceCargo', 'Surface cargo service')
     ],
     filters: [
       { key: 'stateId', label: 'State', kind: 'lookup', lookup: 'states' },
@@ -402,7 +407,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
       { key: 'odaApplicable', label: 'ODA only', kind: 'boolean' },
       { key: 'zone', label: 'Zone', kind: 'text', maxLength: 20, placeholder: 'PUNE' }
     ],
-    exportColumns: ['code', 'name', 'areaName', 'districtName', 'stateName', 'zone', 'regionalZoneName', 'serviceable', 'doc', 'surface', 'air', 'codAvailable', 'prepaidAvailable', 'odaApplicable', 'status']
+    exportColumns: ['code', 'name', 'areaName', 'districtName', 'stateName', 'zone', 'regionalZoneName', 'serviceable', 'doc', 'surface', 'air', 'premium', 'codAvailable', 'prepaidAvailable', 'odaApplicable', 'status']
   },
 
   'regional-zones': {
