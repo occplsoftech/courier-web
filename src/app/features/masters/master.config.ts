@@ -146,6 +146,11 @@ export interface MasterDefinition {
    * Absent for every other list; the `global` flag alone decides for those.
    */
   writeRoles?: AppRole[];
+  /**
+   * Edit needs only a role in {@link writeRoles}, not the platform's GLOBAL_MASTER_UPDATE (which a company admin never
+   * holds): the server's pincode update is role-only (SUPER_ADMIN or COMPANY_ADMIN). Create / delete keep the permission.
+   */
+  roleOnlyUpdate?: boolean;
   singular: string;
   plural: string;
   icon: string;
@@ -354,7 +359,7 @@ export const MASTER_DEFINITIONS: Record<MasterKey, MasterDefinition> = {
   },
 
   pincodes: {
-    key: 'pincodes', global: true, writeRoles: [AppRole.SUPER_ADMIN, AppRole.COMPANY_ADMIN],
+    key: 'pincodes', global: true, writeRoles: [AppRole.SUPER_ADMIN, AppRole.COMPANY_ADMIN], roleOnlyUpdate: true,
     apiPath: '/global-masters/pincodes', singular: 'Pincode', plural: 'Pincodes',
     icon: 'markunread_mailbox', group: 'Geography',
     description: 'Postal codes, each belonging to one area. The code is the pincode itself.',
@@ -644,7 +649,8 @@ export function writeAccessFor(def: MasterDefinition): {
   permissions: typeof MASTER_PERMISSIONS;
 } {
   if (def.global) {
-    return { roles: def.writeRoles ?? GLOBAL_MASTER_WRITERS, permissions: GLOBAL_MASTER_PERMISSIONS };
+    const permissions = def.roleOnlyUpdate ? { ...GLOBAL_MASTER_PERMISSIONS, update: [] as string[] } : GLOBAL_MASTER_PERMISSIONS;
+    return { roles: def.writeRoles ?? GLOBAL_MASTER_WRITERS, permissions };
   }
   return { roles: MASTER_WRITERS, permissions: MASTER_PERMISSIONS };
 }
