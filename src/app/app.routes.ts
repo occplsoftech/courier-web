@@ -566,6 +566,11 @@ export const routes: Routes = [
         loadComponent: () => import('@features/reports/branch-report').then((m) => m.BranchReport)
       },
       {
+        // Every company role: managers see their branch's users, anyone else only their own row (backend-scoped).
+        path: 'reports/user-performance', title: 'User Performance', canActivate: [roleGuard], data: { roles: CUSTOMER_READERS },
+        loadComponent: () => import('@features/reports/user-performance-report').then((m) => m.UserPerformanceReport)
+      },
+      {
         path: 'reports/finance', title: 'Finance Report', canActivate: [roleGuard], data: { roles: FINANCE_REPORT_READERS },
         loadComponent: () => import('@features/reports/finance-report').then((m) => m.FinanceReport)
       },
