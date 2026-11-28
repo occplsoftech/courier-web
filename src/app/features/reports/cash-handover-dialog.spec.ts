@@ -11,51 +11,58 @@ function create(data: Partial<CashHandoverDialogData> = {}) {
   TestBed.configureTestingModule({
     providers: [provideHttpClient(), provideHttpClientTesting(), provideNoopAnimations(),
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: {
-        branchId: null, today: '2026-11-28', selfId: 'u-me',
-        users: [{ userId: 'u-ravi', userName: 'Ravi', outstanding: 400 },
-          { userId: 'u-me', userName: 'Me', outstanding: 10 }],
-        ...data } }]
+      { provide: MAT_DIALOG_DATA, useValue: { branchId: null, today: '2026-11-28', outstanding: 400, ...data } }]
   });
   const fixture = TestBed.createComponent(CashHandoverDialog);
   fixture.detectChanges();
   return { fixture, close, http: TestBed.inject(HttpTestingController), el: fixture.nativeElement as HTMLElement };
 }
 
+function choose(el: HTMLElement, file: File) {
+  const input = el.querySelector<HTMLInputElement>('input[aria-label="Proof image"]')!;
+  Object.defineProperty(input, 'files', { value: [file], configurable: true });
+  input.dispatchEvent(new Event('change'));
+}
+
 describe('CashHandoverDialog', () => {
-  it('prefills the chosen user\'s outstanding cash and records it', () => {
-    const { fixture, close, http, el } = create({ userId: 'u-ravi' });
-    const amount = el.querySelector<HTMLInputElement>('input[aria-label="Amount"]')!;
-    expect(Number(amount.value)).toBe(400);
-    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
-    const req = http.expectOne((r) => r.url.endsWith('/branch-wallet/cash-handovers'));
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ branchId: null, userId: 'u-ravi', amount: 400, mode: 'CASH',
-      handoverDate: '2026-11-28', reference: null, remarks: null });
-    req.flush({ success: true, data: { id: 'h1' } });
+  it('prefills what you hold, uploads the proof, then sends the handover for approval', () => {
+    const { fixture, close, http, el } = create();
+    expect(Number(el.querySelector<HTMLInputElement>('input[aria-label="Amount"]')!.value)).toBe(400);
+    choose(el, new File([new Uint8Array([1, 2, 3])], 'slip.jpg', { type: 'image/jpeg' }));
     fixture.detectChanges();
-    expect(close).toHaveBeenCalledWith({ id: 'h1' });
+    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+
+    const upload = http.expectOne((r) => r.url.endsWith('/cash-handovers/upload-proof'));
+    expect(upload.request.body instanceof FormData).toBe(true);
+    upload.flush({ success: true, data: { url: 'https://files.example/slip.jpg' } });
+    const submit = http.expectOne((r) => r.url.endsWith('/branch-wallet/cash-handovers'));
+    expect(submit.request.body).toEqual({ branchId: null, amount: 400, mode: 'CASH', handoverDate: '2026-11-28',
+      reference: null, remarks: null, proofImageUrl: 'https://files.example/slip.jpg' });
+    submit.flush({ success: true, data: { id: 'h1', status: 'PENDING' } });
+    expect(close).toHaveBeenCalledWith({ id: 'h1', status: 'PENDING' });
   });
 
-  it('never offers the signed-in user as the one handing over', () => {
-    const { el } = create();
-    const options = Array.from(el.querySelectorAll('select[aria-label="From user"] option')).map((o) => o.textContent!.trim());
-    expect(options.some((o) => o.startsWith('Ravi'))).toBe(true);
-    expect(options.some((o) => o.startsWith('Me'))).toBe(false);
+  it('sends nothing without a proof image', () => {
+    const { fixture, http, el } = create();
+    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Attach a proof image');
+    http.expectNone(() => true);
   });
 
-  it('warns when more than the outstanding amount is entered, and sends nothing without a user', () => {
-    const { fixture, http, el } = create({ userId: 'u-ravi' });
+  it('refuses a file that is not an image', () => {
+    const { fixture, el } = create();
+    choose(el, new File(['x'], 'notes.pdf', { type: 'application/pdf' }));
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Choose a JPEG, PNG, WEBP or HEIC image');
+  });
+
+  it('warns when more than you hold is entered', () => {
+    const { fixture, el } = create();
     const amount = el.querySelector<HTMLInputElement>('input[aria-label="Amount"]')!;
     amount.value = '450';
     amount.dispatchEvent(new Event('input'));
     fixture.detectChanges();
-    expect(el.textContent).toContain('More than the ₹400.00 outstanding');
-
-    const select = el.querySelector<HTMLSelectElement>('select[aria-label="From user"]')!;
-    select.value = '';
-    select.dispatchEvent(new Event('change'));
-    el.querySelector<HTMLFormElement>('form')!.dispatchEvent(new Event('submit'));
-    http.expectNone((r) => r.url.endsWith('/cash-handovers'));
+    expect(el.textContent).toContain('More than the ₹400.00 you hold');
   });
 });

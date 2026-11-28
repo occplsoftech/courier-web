@@ -69,19 +69,20 @@ export function todayIst(now: Date = new Date()): string {
               </select>
             </label>
           }
-          @if (report()?.canRecordHandover) {
-            <app-button icon="payments" (pressed)="receiveCash(null)">Receive cash</app-button>
+          @if (report()) {
+            <app-button icon="payments" (pressed)="handOver()">Hand over cash</app-button>
           }
           <app-button variant="stroked" icon="download" [disabled]="!report()" (pressed)="exportCsv()">Export</app-button>
         </div>
       </header>
 
-      @if (teamView()) {
+      @if (report()) {
         <nav class="tabs" role="tablist">
           <button role="tab" [class.on]="tab() === 'performance'" [attr.aria-selected]="tab() === 'performance'"
                   (click)="tab.set('performance')">Performance</button>
           <button role="tab" [class.on]="tab() === 'handovers'" [attr.aria-selected]="tab() === 'handovers'"
-                  (click)="openHandovers()">Cash handovers</button>
+                  (click)="openHandovers()">Cash handovers
+            @if (pending().length) { <span class="count" aria-label="pending handovers">{{ pending().length }}</span> }</button>
         </nav>
       }
 
@@ -108,15 +109,14 @@ export function todayIst(now: Date = new Date()): string {
                 <th colspan="2">Counter</th>
                 <th colspan="4">Delivery</th>
                 <th colspan="3">Branch wallet</th>
-                <th colspan="4">Cash in hand</th>
-                @if (report()?.canRecordHandover) { <th rowspan="2"></th> }
+                <th colspan="5">Cash in hand</th>
               </tr>
               <tr>
                 <th>Booked</th><th>Cancelled</th><th>Value</th><th>Paid / To-Pay / COD / Credit</th>
                 <th>Cash</th><th>UPI / online</th>
                 <th>Delivered</th><th>Pending</th><th>Success</th><th>Collected</th>
                 <th>Debit</th><th>Refund</th><th>Net</th>
-                <th>Collected</th><th>Opening</th><th>Handed over</th><th>Outstanding</th>
+                <th>Collected</th><th>Opening</th><th>Handed over</th><th>Awaiting approval</th><th>Outstanding</th>
               </tr>
             </thead>
             <tbody>
@@ -146,12 +146,8 @@ export function todayIst(now: Date = new Date()): string {
                   <td class="num strong">{{ money(r.cashCollected) }}</td>
                   <td class="num">{{ money(r.openingOutstanding) }}</td>
                   <td class="num"><button class="lnk" [disabled]="!r.handedOver && r.system" (click)="drill(r, 'HANDOVERS')">{{ money(r.handedOver) }}</button></td>
+                  <td class="num" [class.wait]="r.awaitingApproval > 0">{{ money(r.awaitingApproval) }}</td>
                   <td class="num strong" [class.due]="r.closingOutstanding > 0">{{ money(r.closingOutstanding) }}</td>
-                  @if (report()?.canRecordHandover) {
-                    <td>@if (r.userId && r.userId !== selfId && r.closingOutstanding > 0) {
-                      <button class="act" (click)="receiveCash(r)" [attr.aria-label]="'Receive cash from ' + r.userName">Receive</button>
-                    }</td>
-                  }
                 </tr>
               }
             </tbody>
@@ -169,8 +165,8 @@ export function todayIst(now: Date = new Date()): string {
                   <td class="num">{{ money(total()!.walletDebit) }}</td><td class="num">{{ money(total()!.walletRefund) }}</td>
                   <td class="num">{{ money(total()!.walletNet) }}</td>
                   <td class="num">{{ money(total()!.cashCollected) }}</td><td class="num">{{ money(total()!.openingOutstanding) }}</td>
-                  <td class="num">{{ money(total()!.handedOver) }}</td><td class="num">{{ money(total()!.closingOutstanding) }}</td>
-                  @if (report()?.canRecordHandover) { <td></td> }
+                  <td class="num">{{ money(total()!.handedOver) }}</td><td class="num">{{ money(total()!.awaitingApproval) }}</td>
+                  <td class="num">{{ money(total()!.closingOutstanding) }}</td>
                 </tr>
               </tfoot>
             }
@@ -193,22 +189,56 @@ export function todayIst(now: Date = new Date()): string {
           </section>
         }
       } @else {
+        <section class="sec" aria-label="Waiting for approval">
+          <h2 class="text-h3">Waiting for approval</h2>
+          <p class="text-caption">{{ report()?.canApproveHandover
+            ? 'Check the proof and that the money reached you, then approve. Approved cash is taken off what that user still holds.'
+            : 'Your handovers the branch manager or accounts desk has not checked yet.' }}</p>
+          @if (!pending().length) { <p class="muted">Nothing is waiting.</p> }
+          <div class="cards">
+            @for (h of pending(); track h.id) {
+              <article class="card" [attr.aria-label]="'Handover from ' + h.userName">
+                <button class="card__proof" (click)="viewProof(h)" [attr.aria-label]="'View proof from ' + h.userName">
+                  <img [src]="h.proofImageUrl" alt="Proof" loading="lazy" />
+                </button>
+                <div class="card__body">
+                  <strong class="card__amt">{{ money(h.amount) }}</strong>
+                  <span>{{ h.userName }} · {{ modeLabel(h.mode) }}</span>
+                  <span class="muted">{{ h.handoverDate | date: 'd MMM y' }}@if (h.reference) { · Ref {{ h.reference }} }</span>
+                  @if (h.remarks) { <span class="muted">{{ h.remarks }}</span> }
+                  <span class="muted">Sent {{ h.submittedAt | date: 'd MMM, h:mm a' }}</span>
+                  @if (report()?.canApproveHandover && h.userId !== selfId) {
+                    <div class="card__acts">
+                      <button class="act" (click)="approve(h)" [attr.aria-label]="'Approve handover from ' + h.userName">Approve</button>
+                      <button class="act act--danger" (click)="reject(h)" [attr.aria-label]="'Reject handover from ' + h.userName">Reject</button>
+                    </div>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+
+        <h2 class="text-h3 sec__h">Handovers on these days</h2>
         <div class="tbl app-scroll">
           <table aria-label="Cash handovers">
-            <thead><tr><th>Date</th><th>User</th><th>Amount</th><th>Mode</th><th>Reference</th><th>Received by</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>User</th><th>Amount</th><th>Mode</th><th>Reference</th><th>Proof</th><th>Status</th><th>Checked by</th><th></th></tr></thead>
             <tbody>
-              @if (handoversLoading()) { <tr><td colspan="8" class="muted center">Loading…</td></tr> }
-              @else if (!handovers().length) { <tr><td colspan="8" class="muted center">No cash handed over on these days.</td></tr> }
+              @if (handoversLoading()) { <tr><td colspan="9" class="muted center">Loading…</td></tr> }
+              @else if (!handovers().length) { <tr><td colspan="9" class="muted center">No cash handed over on these days.</td></tr> }
               @for (h of handovers(); track h.id) {
-                <tr [class.void]="h.voided">
+                <tr [class.void]="h.status === 'VOIDED' || h.status === 'REJECTED'">
                   <td>{{ h.handoverDate | date: 'd MMM y' }}</td>
                   <td>{{ h.userName }}</td>
                   <td class="num strong">{{ money(h.amount) }}</td>
                   <td>{{ modeLabel(h.mode) }}</td>
                   <td>{{ h.reference || '—' }}@if (h.remarks) { <span class="muted"> · {{ h.remarks }}</span> }</td>
-                  <td>{{ h.receivedByName }}<span class="muted"> · {{ h.receivedAt | date: 'd MMM, h:mm a' }}</span></td>
-                  <td>@if (h.voided) { <span class="badge badge--void" [title]="h.voidReason ?? ''">Voided</span> } @else { <span class="badge">Received</span> }</td>
-                  <td>@if (!h.voided && report()?.canRecordHandover) {
+                  <td><button class="lnk" (click)="viewProof(h)">View</button></td>
+                  <td><span [class]="'badge badge--' + h.status.toLowerCase()"
+                            [title]="h.voidReason ?? h.decisionRemarks ?? ''">{{ statusLabel(h.status) }}</span>
+                    @if (h.status === 'REJECTED' && h.decisionRemarks) { <span class="pend">{{ h.decisionRemarks }}</span> }</td>
+                  <td>@if (h.decidedByName) { {{ h.decidedByName }}<span class="muted"> · {{ h.decidedAt | date: 'd MMM, h:mm a' }}</span> } @else { — }</td>
+                  <td>@if (h.status === 'APPROVED' && canVoid(h)) {
                     <button class="act act--danger" (click)="voidHandover(h)" [attr.aria-label]="'Void handover from ' + h.userName">Void</button>
                   }</td>
                 </tr>
@@ -267,7 +297,23 @@ export function todayIst(now: Date = new Date()): string {
     .name { font-weight:600; }
     tr.sys td { color:var(--content-muted); font-style:italic; }
     tr.void td { opacity:.55; text-decoration:line-through; }
-    tr.void td:last-child, tr.void td:nth-last-child(2) { text-decoration:none; }
+    tr.void td:nth-last-child(-n+4) { text-decoration:none; }
+    .wait { color:var(--brand-600); }
+    .count { display:inline-block; min-width:20px; margin-left:6px; padding:0 6px; border-radius:999px; background:var(--danger);
+      color:#fff; font:700 13px/20px var(--font-sans); text-align:center; }
+    .sec { margin-bottom:18px; }
+    .sec__h { margin:6px 0 10px; }
+    .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px; margin-top:10px; }
+    .card { display:flex; gap:12px; padding:12px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); }
+    .card__proof { flex:0 0 96px; height:96px; padding:0; border:1px solid var(--surface-border); border-radius:8px; overflow:hidden;
+      background:var(--surface-sunken, var(--surface)); cursor:zoom-in; }
+    .card__proof img { width:100%; height:100%; object-fit:cover; }
+    .card__body { display:flex; flex-direction:column; gap:3px; font:400 15px var(--font-sans); min-width:0; }
+    .card__amt { font:700 20px var(--font-sans); }
+    .card__acts { display:flex; gap:8px; margin-top:6px; }
+    .badge--pending { background:var(--brand-100); }
+    .badge--approved { background:#dcfce7; color:#166534; }
+    .badge--rejected, .badge--voided { background:transparent; border:1px solid var(--danger); color:var(--danger); }
     .num { text-align:right; font-variant-numeric:tabular-nums; }
     .strong { font-weight:700; }
     .due { color:var(--warning, #b45309); }
@@ -280,7 +326,6 @@ export function todayIst(now: Date = new Date()): string {
       font:600 14px var(--font-sans); cursor:pointer; }
     .act--danger { border-color:var(--danger); color:var(--danger); }
     .badge { font:600 13px var(--font-sans); padding:2px 8px; border-radius:999px; background:var(--brand-100); color:var(--brand-700, var(--brand-600)); }
-    .badge--void { background:transparent; border:1px solid var(--danger); color:var(--danger); }
     .rec { margin-top:16px; padding:16px 18px; background:var(--surface); border:1px solid var(--surface-border); border-radius:var(--r-field); max-width:640px; }
     .rec__grid { display:grid; grid-template-columns:1fr auto; gap:6px 24px; margin:10px 0; font:400 15px var(--font-sans); }
     .rec__grid strong { text-align:right; font-variant-numeric:tabular-nums; }
@@ -313,6 +358,7 @@ export class UserPerformanceReport implements OnInit {
   protected readonly report = signal<UserPerformanceResult | null>(null);
   protected readonly handovers = signal<CashHandover[]>([]);
   protected readonly handoversLoading = signal(false);
+  protected readonly pending = signal<CashHandover[]>([]);
 
   protected readonly drawer = signal<{ title: string; subtitle: string; userId: string | null; metric: PerformanceMetric } | null>(null);
   protected readonly drawerLoading = signal(false);
@@ -321,7 +367,7 @@ export class UserPerformanceReport implements OnInit {
   protected readonly rows = computed(() => this.report()?.rows ?? []);
   protected readonly total = computed(() => this.report()?.total ?? null);
   protected readonly teamView = computed(() => this.report()?.teamView ?? false);
-  protected readonly colspan = computed(() => (this.report()?.canRecordHandover ? 19 : 18));
+  protected readonly colspan = signal(19);
   protected readonly reconciles = computed(() => {
     const rc = this.report()?.reconciliation;
     if (!rc) return null;
@@ -347,7 +393,15 @@ export class UserPerformanceReport implements OnInit {
       next: (r) => { this.report.set(r); this.loading.set(false); },
       error: (e) => { this.loading.set(false); this.notify.error(e?.error?.message ?? 'Could not load the report.'); }
     });
+    this.loadPending();
     if (this.tab() === 'handovers') this.loadHandovers();
+  }
+
+  private loadPending(): void {
+    this.service.pendingHandovers(this.companyWide ? this.branchId() : null).subscribe({
+      next: (p) => this.pending.set(p),
+      error: () => this.pending.set([])
+    });
   }
 
   private loadHandovers(): void {
@@ -383,42 +437,80 @@ export class UserPerformanceReport implements OnInit {
     });
   }
 
-  receiveCash(r: UserPerformanceRow | null): void {
+  /** The signed-in user hands over their own cash, with proof, for approval. */
+  handOver(): void {
+    const own = this.rows().find((r) => r.userId === this.selfId);
     const data: CashHandoverDialogData = {
       branchId: this.companyWide ? this.branchId() : null,
-      users: this.rows().filter((x) => !!x.userId).map((x) => ({ userId: x.userId!, userName: x.userName, outstanding: x.closingOutstanding })),
-      userId: r?.userId ?? null,
-      selfId: this.auth.hasAnyRole([AppRole.COMPANY_ADMIN]) ? null : this.selfId,
+      outstanding: own ? Math.max(0, own.closingOutstanding - own.awaitingApproval) : 0,
       today: todayIst()
     };
     this.dialog.open(CashHandoverDialog, { data, autoFocus: false, panelClass: 'app-dialog' })
       .afterClosed().subscribe((saved) => { if (saved) this.load(); });
   }
 
+  viewProof(h: CashHandover): void {
+    this.dialogs.previewImage(h.proofImageUrl, `${h.userName} · ${this.money(h.amount)} · ${this.modeLabel(h.mode)}`);
+  }
+
+  approve(h: CashHandover): void {
+    this.dialogs.confirm({
+      title: 'Approve handover', confirmLabel: 'Approve',
+      message: `Approve ${this.money(h.amount)} from ${h.userName}? Confirm you have checked the proof and received the money.`
+    }).subscribe((ok) => {
+      if (!ok) return;
+      this.service.approveHandover(h.id).subscribe({
+        next: () => { this.notify.success('Handover approved.'); this.refreshHandovers(); },
+        error: (e) => this.notify.error(e?.error?.message ?? 'Could not approve the handover.')
+      });
+    });
+  }
+
+  reject(h: CashHandover): void {
+    this.dialogs.prompt({
+      title: 'Reject handover', danger: true, confirmLabel: 'Reject', maxLength: 500, label: 'Reason',
+      message: `Reject ${this.money(h.amount)} from ${h.userName}? They will see your reason and can send it again.`
+    }).subscribe((reason) => {
+      if (!reason) return;
+      this.service.rejectHandover(h.id, reason).subscribe({
+        next: () => { this.notify.success('Handover rejected.'); this.refreshHandovers(); },
+        error: (e) => this.notify.error(e?.error?.message ?? 'Could not reject the handover.')
+      });
+    });
+  }
+
+  protected canVoid(h: CashHandover): boolean {
+    return !!this.report()?.canApproveHandover
+      && (h.decidedBy === this.selfId || this.auth.hasAnyRole([AppRole.COMPANY_ADMIN]));
+  }
+
   voidHandover(h: CashHandover): void {
     this.dialogs.prompt({
       title: 'Void handover', danger: true, confirmLabel: 'Void', maxLength: 500, label: 'Reason',
-      message: `Void ₹${h.amount.toFixed(2)} from ${h.userName}? It counts as outstanding again.`
+      message: `Void ${this.money(h.amount)} from ${h.userName}? It counts as outstanding again.`
     }).subscribe((reason) => {
       if (!reason) return;
       this.service.voidHandover(h.id, reason).subscribe({
-        next: () => { this.notify.success('Handover voided.'); this.load(); this.loadHandovers(); },
+        next: () => { this.notify.success('Handover voided.'); this.refreshHandovers(); },
         error: (e) => this.notify.error(e?.error?.message ?? 'Could not void the handover.')
       });
     });
   }
 
+  /** Report, pending list and (on this tab) the handover list — load() covers all three. */
+  private refreshHandovers(): void { this.load(); }
+
   exportCsv(): void {
     const header = ['user', 'booked', 'cancelled', 'bookingValue', 'paid', 'toPay', 'cod', 'credit', 'counterCash',
       'counterOnline', 'counterPending', 'delivered', 'deliveryPending', 'failedAttempts', 'successRate', 'deliveryCash',
       'walletDebit', 'walletRefund', 'walletNet', 'commission', 'cashCollected', 'openingOutstanding', 'handedOver',
-      'closingOutstanding'];
+      'awaitingApproval', 'closingOutstanding'];
     const lines = this.rows().map((r) => [r.userName, r.booked, r.cancelled, r.bookingValue, r.paidCount, r.toPayCount,
       r.codCount, r.creditCount, r.counterCash, r.counterOnline, r.counterPending, r.delivered, r.deliveryPending,
       r.failedAttempts, r.successRate ?? '', r.deliveryCash, r.walletDebit, r.walletRefund, r.walletNet, r.commission,
-      r.cashCollected, r.openingOutstanding, r.handedOver, r.closingOutstanding]);
+      r.cashCollected, r.openingOutstanding, r.handedOver, r.awaitingApproval, r.closingOutstanding]);
     downloadCsv(`user-performance-${this.from()}-to-${this.to()}.csv`, header, lines,
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
     this.notify.info(`Exported ${lines.length} user row(s).`);
   }
 
@@ -430,6 +522,9 @@ export class UserPerformanceReport implements OnInit {
       ['day', 'at', 'reference', 'type', 'detail', 'status', 'amount'], lines, [6]);
   }
 
+  protected statusLabel(st: string): string {
+    return st === 'PENDING' ? 'Awaiting approval' : st === 'APPROVED' ? 'Approved' : st === 'REJECTED' ? 'Rejected' : 'Voided';
+  }
   protected modeLabel(m: string): string { return m === 'BANK_DEPOSIT' ? 'Bank deposit' : m === 'UPI' ? 'UPI' : 'Cash'; }
   protected dash(v: number | null | undefined): string { return this.loading() || v == null ? '—' : String(v); }
   protected money(v: number | null | undefined): string {
